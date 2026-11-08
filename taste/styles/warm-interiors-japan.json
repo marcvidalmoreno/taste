@@ -1,0 +1,27 @@
+{
+  "name": "Warm interiors and Japan",
+  "description": "Calm lived-in rooms, mid-century and Japanese interiors, plus ukiyo-e and soft painted landscapes in muted earth tones with one cool accent.",
+  "palette": [
+    "#aaa59b",
+    "#614a3d",
+    "#272121",
+    "#a27656",
+    "#4d6f8e",
+    "#d9d8d1",
+    "#d58a5a"
+  ],
+  "light": "soft window daylight or warm lamp light, long gentle shadows, wood-toned glow",
+  "composition": "eye-level view into a room or landscape, window or doorway as a frame, balanced asymmetry, generous empty floor or sky",
+  "camera_or_medium": "architectural photography (35mm, natural light) or Japanese woodblock and gouache-style illustration",
+  "mood": "quiet, domestic, lived-in, unhurried",
+  "texture_detail": "natural materials (wood grain, tatami, linen, stone), paper texture on illustrations, restrained decor",
+  "avoid": [
+    "sterile showroom gloss",
+    "HDR over-processing",
+    "fisheye wide angle",
+    "neon colours",
+    "people posing at camera",
+    "clutter of knick-knacks",
+    "fake-kanji text"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Deep-space dark",
+  "description": "Near-black scenes with one small glowing light source (planet rim, star, portal, ring) and a lot of empty darkness.",
+  "palette": [
+    "#070608",
+    "#201f24",
+    "#333e4c",
+    "#566d82",
+    "#82543a",
+    "#b0afa9",
+    "#f0a050"
+  ],
+  "light": "single point or rim light, thin bright edge against void; cold blue-grey ambient with one warm amber accent",
+  "composition": "centred or low-horizon subject, 60-80 percent negative space, tiny figures or structures against huge scale",
+  "camera_or_medium": "mix of astronomy photography, matte painting and 70s-80s sci-fi illustration; sharp, no motion blur",
+  "mood": "awe, silence, solitude; contemplative not heroic",
+  "texture_detail": "fine star-field grain, subtle dust, crisp rock or cloud edges; instrument-panel or diagram elements allowed, sparse",
+  "avoid": [
+    "rainbow nebula saturation",
+    "multiple competing light sources",
+    "busy foregrounds",
+    "lens-flare streaks",
+    "hero-pose astronauts",
+    "glossy 3D-render plastic look",
+    "text and logos"
+  ]
+}

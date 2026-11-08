@@ -1,0 +1,19 @@
+# Other people's images: never published
+taste/data/exemplars/
+taste/data/added/
+taste/data/thumbs/
+taste/data/thumbs64.npy
+taste/data/contact-sheets/
+taste/data/inventory.json
+taste/data/duplicates-report.md
+taste/data/dup_extras.json
+taste/data/clusters_k*.json
+taste/data/exemplars.json
+taste/data/added.json
+inbox/*
+!inbox/.gitkeep
+generated/**/refs/
+
+# Local tooling
+.venv/
+__pycache__/
