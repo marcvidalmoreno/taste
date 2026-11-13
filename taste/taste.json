@@ -1,0 +1,30 @@
+{
+ "generated_from": "taste/styles/*.json by scripts/build_taste.py; do not edit",
+ "styles": {
+  "bright-airy-minimal": {
+   "name": "Bright and airy minimal",
+   "prompt": "High-key, pale scenes: white rooms, pale ukiyo-e, sunlit beaches and light flat illustrations with big calm areas of colour. Light: bright diffuse daylight, almost shadowless, gentle warm highlights; exposed high key. Composition: lots of white or pastel space, horizon or window line placed low, one small subject or object, symmetric or grid-like. Medium: clean interior or landscape photography, or flat pastel illustration and ink-wash drawing. Mood: light, tidy, breathable, optimistic but not cute. Detail: smooth surfaces, soft paper or plaster texture, very few objects, thin line detail. Palette: #e2e1da, #c1b8aa, #8a7f76, #548ec5, #4a3c37, #d58a5a, #f4d9a0. Avoid: dark vignettes; saturated neon; heavy contrast; busy patterns; stock-photo office people; cartoon outlines in thick black; text and logos. No text, no logos, no watermark.",
+   "subjects": []
+  },
+  "deep-space-dark": {
+   "name": "Deep-space dark",
+   "prompt": "Near-black scenes with one small glowing light source (planet rim, star, portal, ring) and a lot of empty darkness. Light: single point or rim light, thin bright edge against void; cold blue-grey ambient with one warm amber accent. Composition: centred or low-horizon subject, 60-80 percent negative space, tiny figures or structures against huge scale. Medium: mix of astronomy photography, matte painting and 70s-80s sci-fi illustration; sharp, no motion blur. Mood: awe, silence, solitude; contemplative not heroic. Detail: fine star-field grain, subtle dust, crisp rock or cloud edges; instrument-panel or diagram elements allowed, sparse. Palette: #070608, #201f24, #333e4c, #566d82, #82543a, #b0afa9, #f0a050. Avoid: rainbow nebula saturation; multiple competing light sources; busy foregrounds; lens-flare streaks; hero-pose astronauts; glossy 3D-render plastic look; text and logos. No text, no logos, no watermark.",
+   "subjects": []
+  },
+  "neon-dusk": {
+   "name": "Neon dusk",
+   "prompt": "Flat-shaded synthwave and sunset cityscapes where a magenta-to-violet gradient sky sits over a dark horizon. Light: low sun or glowing disc on the horizon; warm orange-pink rim against deep violet shadow; neon signs as the only other source. Composition: strong horizontal bands (sky / skyline / ground), one centred or rule-of-thirds focal disc or tower, lots of empty gradient sky, small human silhouettes for scale. Medium: digital vector or pixel-art illustration, flat colour planes, soft gradients; no lens effects. Mood: nostalgic, quiet, solitary; evening calm rather than action. Detail: clean edges, minimal grain, few small windows or grid lines as detail; simple shapes over rendered realism. Palette: #191124, #3a3257, #78445c, #ce5970, #ff8a5c, #4fd6d0, #d3b1bb. Avoid: lens flares and bokeh; photoreal skin or faces; crowded cluttered skylines; pure-black high-contrast 'epic' lighting; text and logos; teal-and-orange blockbuster grading; lightning, explosions, battle scenes. No text, no logos, no watermark.",
+   "subjects": []
+  },
+  "retro-sci-fi-painting": {
+   "name": "Retro sci-fi painting",
+   "prompt": "Dark painterly retro-futurist scenes in the manner of Moebius, Bekinski and 70s sci-fi covers: figures, vehicles and architecture in strange landscapes, plus human-and-machine moments. Light: low raking light, dusty ochre against cold blue-grey shade; one warm accent such as a window, sun or lamp. Composition: vast landscape with a small figure or craft, strong diagonal or monumental vertical structure, layered depth with haze. Medium: gouache, airbrush or oil illustration with visible brush or ink line; European comics and 70s book-cover painting. Mood: enigmatic, dreamlike, slightly melancholic; story implied but not shown. Detail: fine hatching, visible paint grain, worn surfaces, hand-drawn line; muted, earthy saturation. Palette: #141314, #3c3530, #7d5d43, #939082, #3d5d72, #c7cac1, #d9a441. Avoid: glossy CGI render look; symmetric hero poses; glowing neon outlines; anime big-eye faces; lens flares; over-sharpened HDR; text and logos. No text, no logos, no watermark.",
+   "subjects": []
+  },
+  "warm-interiors-japan": {
+   "name": "Warm interiors and Japan",
+   "prompt": "Calm lived-in rooms, mid-century and Japanese interiors, plus ukiyo-e and soft painted landscapes in muted earth tones with one cool accent. Light: soft window daylight or warm lamp light, long gentle shadows, wood-toned glow. Composition: eye-level view into a room or landscape, window or doorway as a frame, balanced asymmetry, generous empty floor or sky. Medium: architectural photography (35mm, natural light) or Japanese woodblock and gouache-style illustration. Mood: quiet, domestic, lived-in, unhurried. Detail: natural materials (wood grain, tatami, linen, stone), paper texture on illustrations, restrained decor. Palette: #aaa59b, #614a3d, #272121, #a27656, #4d6f8e, #d9d8d1, #d58a5a. Avoid: sterile showroom gloss; HDR over-processing; fisheye wide angle; neon colours; people posing at camera; clutter of knick-knacks; fake-kanji text. No text, no logos, no watermark.",
+   "subjects": []
+  }
+ }
+}
