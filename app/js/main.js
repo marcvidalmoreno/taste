@@ -5,6 +5,7 @@
 //   #/overview                  ratings per style
 import { renderBatches } from './batches.js';
 import { renderBatch } from './grid.js';
+import { renderOverview } from './overview.js';
 import { closeViewer } from './viewer.js';
 import './job.js';   // picks up a variation job that may already be running
 
@@ -24,6 +25,7 @@ async function route() {
   }
   if (page !== 'batch') closeViewer();
   if (page === 'batch' && parts[1]) return renderBatch(view, parts[1], query.get('show'), parts[2]);
+  if (page === 'overview') return renderOverview(view);
   await renderBatches(view);
 }
 

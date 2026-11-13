@@ -3,6 +3,7 @@
 Usage (from the project root):
   .venv/Scripts/python -I scripts/app.py              # starts on http://127.0.0.1:8777 and opens the browser
   .venv/Scripts/python -I scripts/app.py --no-browser --port 8780
+  .venv/Scripts/python -I scripts/app.py --dry-run    # try the variations button without spending allowance
 
 How the pieces fit
   app/ (HTML, CSS, JS in the browser)  <-- JSON over HTTP -->  this file  <-- files -->  generated/codex/
@@ -18,6 +19,7 @@ Files this server reads or writes (all in generated/codex/)
   app-drafts.json      marks not saved yet, so they survive closing the tab (written)
   app-ignored.json     images hidden from the grid and left out of ratings (written)
   .thumbs/             small JPEG copies for the grid (written, safe to delete)
+  distil-state.json    where the last distil stopped (read only: --mark stays a command-line step)
 
 Draft, then save: marks are drafts until "Save ratings" appends them to ratings.csv in one go.
 Saved ratings are read-only here, because distil.py remembers its place by row count.
@@ -248,6 +250,8 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/guess'): 'post_guess',
         ('POST', 'api/variations'): 'post_variations',
         ('GET', 'api/job'): 'get_job',
+        ('GET', 'api/overview'): 'get_overview',
+        ('GET', 'api/distil'): 'get_distil',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -431,6 +435,34 @@ class Handler(BaseHTTPRequestHandler):
 
     def get_job(self):
         return job_state()
+
+    def get_overview(self):
+        """Saved ratings per style (all, and since the last distil), the distil countdown, unsaved marks."""
+        import collections
+        rows = list(csv.DictReader(open(rate.RATINGS, encoding='utf-8'))) if rate.RATINGS.exists() else []
+        state = read_json(rate.STATE, {})
+        done = state.get('rows', 0)
+        per = collections.defaultdict(lambda: {'all': {'keep': 0, 'almost': 0, 'no': 0},
+                                               'since': {'keep': 0, 'almost': 0, 'no': 0}})
+        for i, r in enumerate(rows):
+            if r['rating'] in rate.RATINGS_ALLOWED:
+                per[r['style'] or '(no style)']['all'][r['rating']] += 1
+                if i >= done:
+                    per[r['style'] or '(no style)']['since'][r['rating']] += 1
+        # Unsaved = what "Save ratings" would write: marked, not ignored, not saved already.
+        unsaved = {b: sum(1 for im in batch_images(b) if im['status'] == 'draft')
+                   for b in read_json(DRAFTS, {}) if is_batch(b)}
+        return {'styles': per, 'total': len(rows), 'since_last': max(0, len(rows) - done), 'due': rate.DUE,
+                'marked': state.get('marked'),
+                'unsaved': {b: n for b, n in unsaved.items() if n},
+                'ignored': sum(len(v) for v in read_json(IGNORED, {}).values())}
+
+    def get_distil(self):
+        """What distil.py prints now. Read-only: --mark is never run from here."""
+        import subprocess
+        r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'distil.py')], cwd=ROOT, capture_output=True,
+                           text=True, encoding='utf-8', errors='replace', timeout=60)
+        return {'output': (r.stdout + r.stderr).strip(), 'returncode': r.returncode}
 
     def get_styles(self):
         """The 14 styles: key, display name and palette (for the style picker and labels)."""
