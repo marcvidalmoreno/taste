@@ -22,7 +22,7 @@ export const FILTERS = {
 };
 export const visible = () => (store.data?.items || []).filter(FILTERS[store.show].test);
 
-// kind: 'mark' | 'why' | 'ignore' (one image), 'saved' (the batch was saved: read it again)
+// kind: 'mark' | 'why' | 'ignore' (one image); 'saved', 'reload' (read the batch again); 'job' (progress)
 const listeners = new Set();
 export const onChange = (fn) => listeners.add(fn);
 export const changed = (name, kind) => listeners.forEach((fn) => fn(name, kind));

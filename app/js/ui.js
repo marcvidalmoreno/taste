@@ -62,6 +62,9 @@ export function toast(message, { action, onAction, timeout = 5000, tone = '' } =
     h('span', {}, message),
     action && h('button', { class: 'secondary outline', onClick: () => { close(); onAction(); } }, action));
   box.append(el);
+  // The toast area is a popover: shown again on each toast, it sits in the top layer above any open dialog.
+  if (box.matches(':popover-open')) box.hidePopover();
+  box.showPopover();
   if (timeout) setTimeout(close, timeout);
   return close;
 }

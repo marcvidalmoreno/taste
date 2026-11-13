@@ -46,9 +46,9 @@
   --surface-2: #242424;
   --frame: #101010;                          /* behind images: darker than the page, still neutral */
   --line: #2c2c2c;
-  --keep: #7dbd8f;
-  --almost: #d8ae5c;
-  --no: #d98477;
+  --keep: #2f9e7a;                           /* validated (dataviz validate_palette.js, dark, #161616): all checks pass */
+  --almost: #bd8a1c;
+  --no: #d9567f;
   --radius: .5rem;
 }
 
@@ -97,7 +97,8 @@ main:focus { outline: none; }
 }
 
 /* 4. Toasts ------------------------------------------------------------------------------------ */
-#toasts { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); z-index: 100;
+#toasts { position: fixed; inset: auto auto 1.25rem 50%; transform: translateX(-50%); z-index: 100; margin: 0;
+          border: 0; padding: 0; background: none; overflow: visible; color: inherit;
           display: grid; gap: .5rem; justify-items: center; pointer-events: none; }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 1rem; padding: .55rem .6rem .55rem 1rem;
          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: var(--radius); font-size: .9rem;
@@ -240,3 +241,39 @@ dialog.review h3 { margin: 0; font-size: 1.1rem; }
 .review-list .mark { position: static; flex: none; }
 dialog.review footer { display: flex; justify-content: flex-end; gap: .5rem; }
 dialog.review footer button { margin: 0; width: auto; }
+
+/* 8. Variations: dialog, job chip, placeholders ----------------------------------------------- */
+dialog.variations article { max-width: 40rem; width: 100%; }
+.var-head { display: flex; align-items: center; gap: 1rem; }
+.var-head img { width: 120px; aspect-ratio: 16 / 10; object-fit: contain; background: var(--frame); border-radius: 4px; }
+.var-head hgroup { margin: 0; }
+.var-head h3 { margin: 0 0 .15rem; font-size: 1.1rem; }
+dialog.variations fieldset { margin-bottom: 1.25rem; }
+dialog.variations legend { font-weight: 600; margin-bottom: .25rem; }
+.style-opts { display: grid; gap: .35rem; margin-bottom: .6rem; }
+.style-opt { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: .6rem;
+             padding: .45rem .7rem; border: 1px solid var(--line); border-radius: var(--radius); margin: 0; cursor: pointer; }
+.style-opt:hover { background: var(--surface); }
+.style-opt.is-on { border-color: #8a8a8a; background: var(--surface); }
+.style-opt input { margin: 0; }
+.style-opt small { min-width: 6rem; text-align: right; }
+.other select { margin-top: .3rem; margin-bottom: 0; }
+.count { margin-bottom: .75rem; }
+.count button { font-size: .88rem; padding: .45rem .6rem; }
+.cost { background: var(--surface); border-radius: var(--radius); padding: .8rem 1rem; }
+.cost p { margin-bottom: .4rem; }
+.cost p:last-child { margin-bottom: 0; }
+.cost .over { color: var(--almost); }
+.notice { border-left: 3px solid #8a8a8a; padding-left: .6rem; font-size: .88rem; }
+.meters { display: grid; gap: .35rem; margin-bottom: .6rem; }
+.meter { display: grid; grid-template-columns: 9rem 1fr 6rem; align-items: center; gap: .75rem; font-size: .88rem; }
+.meter .bar { height: 6px; background: #2e2e2e; border-radius: 3px; overflow: hidden; }
+.meter .bar i { display: block; height: 100%; background: #cfcfcf; border-radius: 3px; }
+.meter .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--pico-muted-color); }
+pre.log { font-size: .8rem; max-height: 50vh; overflow: auto; white-space: pre-wrap; background: var(--surface); padding: .75rem; }
+
+.job-chip { display: inline-flex; align-items: center; gap: .45rem; font-size: .88rem; padding: .2rem .7rem;
+            border: 1px solid #3a3a3a; border-radius: 99px; color: var(--text); text-decoration: none; }
+.pulse { width: .5rem; height: .5rem; border-radius: 50%; background: #cfcfcf; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.pending-tile .frame { color: var(--pico-muted-color); font-size: .9rem; border: 1px dashed #3a3a3a; }

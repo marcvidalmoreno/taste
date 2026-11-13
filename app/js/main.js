@@ -6,6 +6,7 @@
 import { renderBatches } from './batches.js';
 import { renderBatch } from './grid.js';
 import { closeViewer } from './viewer.js';
+import './job.js';   // picks up a variation job that may already be running
 
 const view = document.getElementById('view');
 

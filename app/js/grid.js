@@ -4,6 +4,7 @@ import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './st
 import { toggleMark, ignoreWithUndo } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { renderSaveBar } from './save.js';
+import { job } from './job.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, markBadge, isTyping, showError } from './ui.js';
 
 let view;
@@ -54,7 +55,7 @@ function draw() {
       filters()),
     list.length
       ? h('ul', { class: 'grid', onKeydown: onGridKey },
-          store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile))
+          store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile), pendingTiles())
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
     h('div', { id: 'save-slot' }),
   ));
@@ -75,6 +76,18 @@ function filters() {
     Object.entries(FILTERS).map(([key, f]) => h('a', {
       href: batchHref(store.data.batch, key), 'aria-current': store.show === key ? 'page' : null,
     }, f.label, ' ', h('span', { class: 'n' }, c[key]))));
+}
+
+// Images the running variation job hasn't made yet: a placeholder each, replaced as they land.
+function pendingTiles() {
+  if (!job.running || job.batch !== store.data.batch || store.show !== 'to-rate') return [];
+  const have = new Set(store.data.items.map((im) => im.name));
+  return job.expected.filter((n) => !have.has(n)).map((n, i) => h('li', { class: 'pending-tile' },
+    h('div', { class: 'frame' }, h('span', { 'aria-busy': i === 0 ? 'true' : null },
+      i === 0 ? 'Making…' : 'Waiting')),
+    h('div', { class: 'caption' }, h('span', { class: 'num' }, n.split('-')[0]),
+      h('span', { class: 'muted' }, job.dry_run ? 'dry run' : 'about a minute each'),
+      h('span', { class: 'kind' }, n.split('-').slice(1).join('-')))));
 }
 
 function seedTile(d) {
@@ -105,7 +118,12 @@ function tile(im) {
 // Redraw one tile (or remove it if it no longer fits the filter) instead of the whole grid:
 // no image reloads, no lost scroll, focus stays put.
 onChange((name, kind) => {
-  if (kind === 'saved') return reloadBatch().catch(showError);
+  if (kind === 'saved' || kind === 'reload') return reloadBatch().catch(showError);
+  if (kind === 'job') {   // progress: only the placeholders change
+    const ul = view?.querySelector('.grid');
+    if (ul && store.data?.batch === job.batch) { ul.querySelectorAll('.pending-tile').forEach((li) => li.remove()); ul.append(...pendingTiles()); }
+    return;
+  }
   if (!view?.querySelector('.grid-page') || !name) return;
   const im = item(name);
   const old = view.querySelector(`.tile[data-name="${CSS.escape(name)}"]`)?.closest('li');

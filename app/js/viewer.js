@@ -2,6 +2,7 @@
 // inside it, the page behind is inert, and Esc closes it.
 import { store, item, styleName, kindOf, onChange, visible } from './store.js';
 import { toggleMark, setWhy, flushWhy, ignoreWithUndo } from './marks.js';
+import { openVariations } from './variations.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATINGS, markBadge, isTyping, toast } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
@@ -98,13 +99,13 @@ function draw() {
   canvas.className = `canvas ${fit ? 'fit' : 'actual'}`;
   prevBtn.disabled = index === 0;
   nextBtn.disabled = index === order.length - 1;
-  bar.replaceChildren(
+  bar.replaceChildren(...[   // replaceChildren would print "null": drop the empty parts first
     h('button', { class: 'ghost', onClick: requestClose }, '← ', batchTitle(d.batch)),
     h('span', { class: 'muted' }, `${index + 1} of ${order.length}`),
     h('span', { class: 'spacer' }),
     d.seed && h('span', { class: 'muted small' }, 'Hold ', h('kbd', {}, 'S'), ' to see the seed'),
     h('button', { class: 'ghost', onClick: toggleFit, 'aria-pressed': String(!fit),
-                  title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1'));
+                  title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1')].filter(Boolean));
   drawPanel(im);
   // Load the neighbours now, so the next arrow press shows the image at once.
   for (const j of [index - 1, index + 1]) {
@@ -123,7 +124,7 @@ function drawPanel(im) {
     details(im),
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'K'), h('kbd', {}, 'A'), h('kbd', {}, 'N'),
-      ' mark  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'F'), ' 1:1  ',
+      ' mark  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'V'), ' variations  ', h('kbd', {}, 'F'), ' 1:1  ',
       h('kbd', {}, 'Esc'), ' close'));
 }
 
@@ -154,9 +155,12 @@ function markSection(im) {
 
 function actions(im) {
   return h('section', { class: 'actions' },
+    h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Make variations… ', h('kbd', {}, 'V')),
     !im.saved && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
       im.status === 'ignored' ? 'Restore' : 'Ignore', ' ', h('kbd', {}, 'I')));
 }
+
+const variationsOf = (im) => openVariations({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style });
 
 function details(im) {
   const st = store.styles[im.style];
@@ -214,6 +218,7 @@ function showSeed(on) {
 
 function onKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.querySelector('dialog[open]:not(.viewer)')) return;   // another dialog on top has the keys
   if (isTyping(e)) {
     // Esc in the field leaves the field, not the view. (Some browsers still fire "cancel"; skip that one.)
     if (e.key === 'Escape') { skipCancel = true; e.target.blur(); setTimeout(() => { skipCancel = false; }, 0); }
@@ -229,6 +234,7 @@ function onKey(e) {
   else if (key === 'End') go(order.length);
   else if (key === 'i') { if (!im.saved) ignoreAndMove(im.name); }
   else if (key === 'f') toggleFit();
+  else if (key === 'v') variationsOf(im);
   else if (key === 's') { if (!e.repeat) showSeed(true); }
   else if (key === 'Enter' && !e.target.closest('button, a')) panel.querySelector('.why:not([disabled])')?.focus();
   else return;
