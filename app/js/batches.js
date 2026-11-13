@@ -27,7 +27,6 @@ export async function renderBatches(view) {
       h('p', {}, left ? `${plural(left, 'image')} to rate` : 'Everything is rated')),
     h('ul', { class: 'batch-list' }, batches.map(batchRow)),
   );
-  view.querySelector('.batch-list a')?.focus({ preventScroll: true });
 }
 
 function batchRow(b) {

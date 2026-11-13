@@ -123,6 +123,7 @@ main:focus { outline: none; }
 .filters a[aria-current] { background: #3a3a3a; color: var(--pico-color); }
 .filters .n { font-variant-numeric: tabular-nums; opacity: .75; }
 .empty-filter { color: var(--pico-muted-color); padding: 3rem 0; text-align: center; }
+.hint { margin-top: 1rem; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem 1rem;
         list-style: none; padding: 0; margin: 0; }

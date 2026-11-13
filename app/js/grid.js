@@ -57,6 +57,8 @@ function draw() {
       ? h('ul', { class: 'grid', onKeydown: onGridKey },
           store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile), pendingTiles())
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
+    store.show === 'ignored' && list.length > 0 &&
+      h('p', { class: 'muted small hint' }, 'To bring one back, open it and choose Restore, or press I on it here.'),
     h('div', { id: 'save-slot' }),
   ));
   renderSaveBar();
