@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- One page, no build step. Pico.css gives calm defaults for type, forms and dialogs;
+     app.css only sets the neutral theme and the few layouts Pico doesn't have. -->
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>taste · ratings</title>
+  <link rel="stylesheet" href="/vendor/pico.min.css">
+  <link rel="stylesheet" href="/app.css">
+  <script type="module" src="/js/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="container-fluid">
+      <ul>
+        <li><a href="#/" class="brand" aria-label="taste, all batches">taste</a></li>
+      </ul>
+      <ul>
+        <li id="job-chip" hidden></li>
+        <li><a href="#/" data-nav="batches">Batches</a></li>
+        <li><a href="#/overview" data-nav="overview">Overview</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Each view (batches, one batch, overview) renders into #view. -->
+  <main id="view" class="container-fluid" tabindex="-1"></main>
+
+  <!-- Short confirmations and errors. aria-live so screen readers hear them too. -->
+  <div id="toasts" role="status" aria-live="polite"></div>
+</body>
+</html>
