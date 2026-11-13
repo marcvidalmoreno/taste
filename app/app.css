@@ -41,6 +41,7 @@
   --pico-modal-overlay-backdrop-filter: none;
 
   /* app tokens */
+  --text: #e4e4e4;                           /* Pico redefines --pico-color inside buttons */
   --surface: #1d1d1d;
   --surface-2: #242424;
   --frame: #101010;                          /* behind images: darker than the page, still neutral */
@@ -54,7 +55,7 @@
 body { min-height: 100vh; }
 :where(a, button, [tabindex]):focus-visible { outline: 2px solid #d0d0d0; outline-offset: 2px; }
 .muted { color: var(--pico-muted-color); }
-kbd { background: var(--surface-2); color: var(--pico-color); border: 1px solid var(--line);
+kbd { background: var(--surface-2); color: var(--text); border: 1px solid var(--line);
       padding: .05em .4em; font-size: .8em; border-radius: .25rem; }
 
 /* 2. Layout ------------------------------------------------------------------------------------ */
@@ -105,3 +106,120 @@ main:focus { outline: none; }
 .toast.error { border-color: var(--no); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; transition: none !important; } }
+
+/* 5. One batch: head, filters, grid ------------------------------------------------------------- */
+.crumbs ul { padding: 0; margin: 0 0 .5rem; }
+.crumbs li { padding-block: 0; font-size: .85rem; }
+.crumbs, .crumbs a { color: var(--pico-muted-color); }
+.grid-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+             margin-bottom: 1.25rem; }
+.grid-head hgroup { margin: 0; }
+.grid-head h1 { margin-bottom: .2rem; font-size: 1.5rem; text-transform: capitalize; }
+.filters { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface); border-radius: var(--radius); }
+.filters a { padding: .35rem .85rem; border-radius: calc(var(--radius) - 2px); color: var(--pico-muted-color);
+             text-decoration: none; font-size: .9rem; }
+.filters a:hover { color: var(--pico-color); }
+.filters a[aria-current] { background: #3a3a3a; color: var(--pico-color); }
+.filters .n { font-variant-numeric: tabular-nums; opacity: .75; }
+.empty-filter { color: var(--pico-muted-color); padding: 3rem 0; text-align: center; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem 1rem;
+        list-style: none; padding: 0; margin: 0; }
+.grid > li { list-style: none; margin: 0; min-width: 0; }
+.tile { display: block; color: inherit; text-decoration: none; border-radius: var(--radius); }
+.tile:focus-visible { outline: none; box-shadow: none; }
+.tile:focus-visible .frame { outline: 2px solid #e4e4e4; outline-offset: 3px; }
+/* Fixed frame, image contained: a square or 16:9 image is always seen whole. Cropping would hide
+   exactly what is being judged (composition, empty space). */
+.frame { position: relative; aspect-ratio: 16 / 10; background: var(--frame); border-radius: var(--radius);
+         overflow: hidden; display: grid; place-items: center; }
+.frame img { width: 100%; height: 100%; object-fit: contain; }
+.tile:hover .frame img { opacity: .92; }
+.caption { display: flex; align-items: baseline; gap: .5rem; padding: .5rem .15rem 0; font-size: .9rem; min-width: 0; }
+.caption .num { color: var(--pico-muted-color); font-variant-numeric: tabular-nums; min-width: 1.2em; }
+.caption .style { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.caption .kind, .panel-head .kind { margin-left: auto; font-size: .78rem; color: var(--pico-muted-color);
+         border: 1px solid var(--line); border-radius: 99px; padding: 0 .5rem; white-space: nowrap; }
+.tile .why { font-size: .82rem; color: var(--pico-muted-color); padding: .1rem .15rem 0 1.9rem;
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seed-tile .frame { outline: 1px dashed #4a4a4a; outline-offset: -1px; }
+.seed-tile .caption .muted { font-size: .8rem; margin-left: auto; }
+
+/* Marks: letter in a circle. Dashed ring = draft, filled = saved. */
+.mark { position: absolute; top: .5rem; left: .5rem; width: 1.7rem; height: 1.7rem; border-radius: 50%;
+        display: grid; place-items: center; font-size: .8rem; font-weight: 700;
+        background: rgba(16, 16, 16, .85); border: 2px dashed currentColor; }
+.mark.keep { color: var(--keep); } .mark.almost { color: var(--almost); } .mark.no { color: var(--no); }
+.mark.saved { border-style: solid; color: #111; }
+.mark.saved.keep { background: var(--keep); border-color: var(--keep); }
+.mark.saved.almost { background: var(--almost); border-color: var(--almost); }
+.mark.saved.no { background: var(--no); border-color: var(--no); }
+
+/* 6. Large view --------------------------------------------------------------------------------- */
+.small { font-size: .82rem; }
+button.ghost { background: none; border: 0; color: var(--pico-muted-color); padding: .3rem .5rem; margin: 0;
+               width: auto; font-size: .9rem; }
+button.ghost:hover { color: var(--text); }
+dialog.viewer:focus { outline: none; }
+dialog.viewer[open] { display: grid; grid-template-columns: minmax(0, 1fr) 380px; padding: 0;
+                      background: #0e0e0e; backdrop-filter: none; }
+.stage { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; height: 100vh; }
+.stage-bar { display: flex; align-items: center; gap: .75rem; padding: .4rem .75rem; }
+.stage-bar .spacer { flex: 1; }
+.stage-bar button.ghost:first-child { text-transform: capitalize; }
+.canvas { min-height: 0; display: grid; place-items: center; position: relative; }
+.canvas.fit { padding: 0 3.5rem 1.25rem; cursor: zoom-in; overflow: hidden; }
+.canvas.fit img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.canvas.actual { overflow: auto; cursor: zoom-out; place-items: start; }
+.canvas.actual img { max-width: none; }
+.seed-tag { position: absolute; top: .5rem; left: 50%; transform: translateX(-50%); background: #e4e4e4; color: #111;
+            font-size: .8rem; font-weight: 600; padding: .1rem .6rem; border-radius: 99px; }
+.nav { position: absolute; top: 50%; transform: translateY(-50%); width: 2.75rem; height: 4.5rem; padding: 0;
+       margin: 0; font-size: 1.8rem; line-height: 1; background: rgba(30, 30, 30, .6); border: 0;
+       color: var(--text); opacity: .35; transition: opacity .15s; }
+.nav:hover, .nav:focus-visible { opacity: 1; }
+.nav:disabled { opacity: 0; pointer-events: none; }
+.nav.prev { left: .4rem; } .nav.next { right: .4rem; }
+
+.panel { background: var(--pico-background-color); border-left: 1px solid var(--line); overflow-y: auto;
+         padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; height: 100vh; }
+.panel-head { display: flex; align-items: baseline; gap: .6rem; }
+.panel-head .num { color: var(--pico-muted-color); font-variant-numeric: tabular-nums; }
+.panel-head h2 { font-size: 1.05rem; margin: 0; }
+.marks { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; margin-bottom: .6rem; }
+.mark-btn { margin: 0; padding: .55rem .3rem; font-size: .92rem; background: var(--surface); color: var(--text);
+            border: 1px solid #3a3a3a; display: flex; gap: .45rem; align-items: center; justify-content: center; }
+.mark-btn:hover { background: var(--surface-2); border-color: #555; }
+.mark-btn kbd { font-size: .72rem; }
+.mark-btn[aria-pressed=true] { color: #111; font-weight: 600; }
+.mark-btn[aria-pressed=true] kbd { background: rgba(0, 0, 0, .15); border-color: transparent; color: #111; }
+.mark-btn.keep[aria-pressed=true] { background: var(--keep); border-color: var(--keep); }
+.mark-btn.almost[aria-pressed=true] { background: var(--almost); border-color: var(--almost); }
+.mark-btn.no[aria-pressed=true] { background: var(--no); border-color: var(--no); }
+.mark-box input.why { margin-bottom: .4rem; }
+.mark-box .status { margin: 0; }
+.saved-note { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
+.saved-note .mark { position: static; }
+.actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.actions button { margin: 0; width: auto; padding: .4rem .8rem; font-size: .9rem; }
+.details dl { display: grid; grid-template-columns: 5.5rem 1fr; gap: .45rem .75rem; margin: 0 0 1rem; font-size: .9rem; }
+.details dt { color: var(--pico-muted-color); }
+.details dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.swatches { display: inline-flex; margin-left: .5rem; vertical-align: middle; }
+.swatches i { width: .8rem; height: .8rem; display: inline-block; }
+.swatches i:first-child { border-radius: 2px 0 0 2px; } .swatches i:last-child { border-radius: 0 2px 2px 0; }
+.seed-cell { display: flex; align-items: center; gap: .5rem; }
+.seed-cell img { width: 64px; border-radius: 3px; }
+.prompt-head { display: flex; justify-content: space-between; align-items: center; color: var(--pico-muted-color);
+               font-size: .9rem; }
+.prompt { font-size: .85rem; line-height: 1.55; color: #c8c8c8; background: var(--surface); border-radius: var(--radius);
+          padding: .75rem .85rem; max-height: 16rem; overflow-y: auto; white-space: pre-wrap; }
+.keys { margin-top: auto; line-height: 2; }
+.keys kbd { margin-right: 2px; }
+@media (max-width: 900px) {
+  dialog.viewer:focus { outline: none; }
+dialog.viewer[open] { grid-template-columns: 1fr; grid-template-rows: 60vh auto; overflow-y: auto; }
+  .stage, .panel { height: auto; }
+  .stage { height: 60vh; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); }
+}

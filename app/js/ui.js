@@ -42,6 +42,15 @@ export const RATINGS = {
   no: { label: 'No', key: 'n' },
 };
 
+// Small K / A / N badge. Dashed = draft, solid = saved (same shape, the fill says how final it is).
+export function markBadge(im) {
+  const r = im.saved?.rating || im.draft?.rating;
+  if (!r) return null;
+  const saved = !!im.saved;
+  return h('span', { class: `mark ${r}${saved ? ' saved' : ''}`,
+    title: `${RATINGS[r].label}${saved ? ' (saved)' : ' (draft, not saved yet)'}` }, RATINGS[r].key.toUpperCase());
+}
+
 // A key press in a text field is typing, not a shortcut.
 export const isTyping = (e) => !!e.target.closest?.('input, textarea, select, [contenteditable]');
 
