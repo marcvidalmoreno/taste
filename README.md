@@ -16,6 +16,9 @@ Google's Nano Banana (Gemini app, prompt packs).
   a style (top-3 guess, confirmed by eye), `build/` is how the styles were found (`restyle.py`: tags to style
   members, measured palettes, exemplars; the older scripts did the 8 Nov colour clustering).
   Codex route: `codex_run.py`, `variations.py`, `sheet.py`, `rate.py`, `distil.py`, `nearest.py` (below).
+- [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to look at the Codex
+  batches, mark keep / almost / no with a reason, ignore broken images, save ratings, start variations and see
+  ratings per style. Plain HTML, CSS (Pico.css, vendored) and JavaScript modules; Python standard library + Pillow.
 - [`generated/`](generated/): images **I** generated with these styles, with the prompts used.
 
 ## What's not here, on purpose
@@ -36,6 +39,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 
 | Step | Command |
 |---|---|
+| **View, mark and save ratings in the browser** (also starts variations, shows the overview) | `.venv/Scripts/python -I scripts/app.py` → http://127.0.0.1:8777 (`--dry-run`: the variations button spends nothing) |
 | Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> --style S [--subject "..."]` (no `--style`: prints the top-3 guess) |
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
 | Contact sheet of a batch | `.venv/Scripts/python -I scripts/sheet.py generated/codex/<batch>` |
@@ -58,6 +62,14 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **13 Nov 2026** – Rating web app: `scripts/app.py` serves `app/` on http://127.0.0.1:8777. Batches newest first,
+  a grid per batch (to rate / rated / ignored), a large view with prompt, style, seed and change; keys K / A / N,
+  Enter for the why, I to ignore, arrows, hold S for the seed. Marks are drafts (`generated/codex/app-drafts.json`)
+  until "Save ratings" appends them to `ratings.csv` through `rate.append_ratings`, the writer `rate.py` now shares.
+  Ignored images (`app-ignored.json`) stay on disk and out of ratings. Variations from the large view with the
+  top-3 style guess, the allowance and a confirm step, one job at a time. Overview: ratings per style, distil
+  countdown. Undo: `git revert` the commits from `713214d` to the README commit; then delete `app-drafts.json`,
+  `app-ignored.json` and `.thumbs/` in `generated/codex/` by hand if wanted (`ratings.csv` keeps the saved ratings).
 - **13 Nov 2026** – Taste rebuilt from zero: 14 styles replace the old five (bright-airy-minimal, deep-space-dark,
   neon-dusk, retro-sci-fi-painting, warm-interiors-japan). Styles defined by eye, not by colour clustering; colour
   alone finds the right style only 36 % of the time, so `nearest.py` / `inbox.py` / `variations.py` now show a
