@@ -62,6 +62,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **13 Nov 2026** – Web app, after the first real variations run (3 images, all made): a new batch shows the seed
+  and placeholders before its first image, and each tile re-reads its style once `runs.csv` has the row.
+  Undo: `git revert c38b518` and this README commit.
 - **13 Nov 2026** – Rating web app: `scripts/app.py` serves `app/` on http://127.0.0.1:8777. Batches newest first,
   a grid per batch (to rate / rated / ignored), a large view with prompt, style, seed and change; keys K / A / N,
   Enter for the why, I to ignore, arrows, hold S for the seed. Marks are drafts (`generated/codex/app-drafts.json`)
