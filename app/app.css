@@ -223,3 +223,20 @@ dialog.viewer[open] { grid-template-columns: 1fr; grid-template-rows: 60vh auto;
   .stage { height: 60vh; }
   .panel { border-left: 0; border-top: 1px solid var(--line); }
 }
+
+/* 7. Save bar and review --------------------------------------------------------------------- */
+/* Sticky at the bottom: always in reach while marking, never covering an image's caption for long. */
+.save-bar { position: sticky; bottom: 1rem; margin-top: 2rem; display: flex; align-items: center;
+            justify-content: space-between; gap: 1rem; padding: .6rem .6rem .6rem 1.1rem;
+            background: #262626; border: 1px solid #3a3a3a; border-radius: var(--radius);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, .5); }
+.save-bar button { margin: 0; width: auto; padding: .45rem 1rem; }
+dialog.review article { max-width: 36rem; width: 100%; }
+dialog.review h3 { margin: 0; font-size: 1.1rem; }
+.review-list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .5rem; }
+.review-list li { list-style: none; display: flex; align-items: center; gap: .6rem; margin: 0; font-size: .92rem; }
+.review-list img { width: 72px; aspect-ratio: 16 / 10; object-fit: contain; background: var(--frame); border-radius: 3px; }
+.review-list .num { color: var(--pico-muted-color); min-width: 1.2em; text-align: right; }
+.review-list .mark { position: static; flex: none; }
+dialog.review footer { display: flex; justify-content: flex-end; gap: .5rem; }
+dialog.review footer button { margin: 0; width: auto; }

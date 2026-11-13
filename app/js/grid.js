@@ -3,6 +3,7 @@ import { api, styles } from './api.js';
 import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './store.js';
 import { toggleMark, ignoreWithUndo } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
+import { renderSaveBar } from './save.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, markBadge, isTyping, showError } from './ui.js';
 
 let view;
@@ -57,6 +58,7 @@ function draw() {
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
     h('div', { id: 'save-slot' }),
   ));
+  renderSaveBar();
   if (focused) view.querySelector(`.tile[data-name="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
 }
 
@@ -103,7 +105,8 @@ function tile(im) {
 // Redraw one tile (or remove it if it no longer fits the filter) instead of the whole grid:
 // no image reloads, no lost scroll, focus stays put.
 onChange((name, kind) => {
-  if (!view?.querySelector('.grid-page') || kind === 'reload') return;
+  if (kind === 'saved') return reloadBatch().catch(showError);
+  if (!view?.querySelector('.grid-page') || !name) return;
   const im = item(name);
   const old = view.querySelector(`.tile[data-name="${CSS.escape(name)}"]`)?.closest('li');
   const fits = im && FILTERS[store.show].test(im);
