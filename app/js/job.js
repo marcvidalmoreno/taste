@@ -7,6 +7,7 @@ import { h, batchHref, batchTitle, plural, toast } from './ui.js';
 export let job = { running: false };
 let timer;
 let seen = -1;             // images made at the last look
+let settle = 0;            // polls left that should re-read the open batch
 let followHash = null;     // where Marc was when he started: if he is still there, take him to the new batch
 let reportFor = null;      // the job (by start time) whose end this page should report
 
@@ -31,7 +32,11 @@ export async function poll() {
       followHash = null;
       location.hash = batchHref(job.batch);
     }
-    if (job.made.length !== seen && store.data?.batch === job.batch) changed(null, 'reload');
+    // An image file lands a few seconds before codex_run.py writes its runs.csv row (style, prompt):
+    // read the batch again on the next two polls too, and once more when the job ends.
+    if (job.made.length !== seen || !job.running) settle = 3;
+    if (settle > 0 && store.data?.batch === job.batch) changed(null, 'reload');
+    settle = Math.max(0, settle - 1);
     seen = job.made.length;
     changed(null, 'job');
   }

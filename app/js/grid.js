@@ -53,7 +53,8 @@ function draw() {
         h('p', {}, [shortDate(d.date), plural(d.items.length, 'image'), d.seed && 'variations of the seed']
           .filter(Boolean).join(' · '))),
       filters()),
-    list.length
+    // A new variations batch has no images yet, only placeholders: still a grid, not "nothing to rate".
+    list.length || pendingTiles().length
       ? h('ul', { class: 'grid', onKeydown: onGridKey },
           store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile), pendingTiles())
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
@@ -122,8 +123,11 @@ function tile(im) {
 onChange((name, kind) => {
   if (kind === 'saved' || kind === 'reload') return reloadBatch().catch(showError);
   if (kind === 'job') {   // progress: only the placeholders change
-    const ul = view?.querySelector('.grid');
-    if (ul && store.data?.batch === job.batch) { ul.querySelectorAll('.pending-tile').forEach((li) => li.remove()); ul.append(...pendingTiles()); }
+    if (!view?.querySelector('.grid-page') || store.data?.batch !== job.batch) return;
+    const ul = view.querySelector('.grid');
+    if (!ul) return draw();
+    ul.querySelectorAll('.pending-tile').forEach((li) => li.remove());
+    ul.append(...pendingTiles());
     return;
   }
   if (!view?.querySelector('.grid-page') || !name) return;
