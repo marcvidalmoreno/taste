@@ -1,8 +1,8 @@
 """Local web app to view, mark and save ratings for the images made through Codex.
 
 Usage (from the project root):
-  .venv/Scripts/python -I scripts/app.py              # starts on http://127.0.0.1:8765 and opens the browser
-  .venv/Scripts/python -I scripts/app.py --no-browser --port 8770
+  .venv/Scripts/python -I scripts/app.py              # starts on http://127.0.0.1:8777 and opens the browser
+  .venv/Scripts/python -I scripts/app.py --no-browser --port 8780
 
 How the pieces fit
   app/ (HTML, CSS, JS in the browser)  <-- JSON over HTTP -->  this file  <-- files -->  generated/codex/
@@ -139,6 +139,92 @@ def thumbnail(batch, file):
     return dst
 
 
+# ---------------------------------------------------------------- variations: one job at a time
+
+PY = sys.executable
+CHANGES = ['palette', 'subject', 'composition', 'mood']   # the order scripts/variations.py makes them in
+WEEK_BUDGET = 40          # README "Allowance": 10 % of the week for images = at least ~40 images
+DRY_RUN = False           # --dry-run: jobs run variations.py --dry-run (no Codex, no allowance)
+JOB = {'running': False}  # the one variation job; read by GET /api/job
+_guess = None             # nearest.model, loaded on first use (a few seconds: sklearn + 1,000 thumbnails)
+_GUESS_LOCK = threading.Lock()  # its own lock: loading it must not hold up marking
+
+
+def allowance():
+    """Codex usage now (scripts/codex_run.py read: from Codex's own session log, never typed)
+    plus how many images were made in the last 7 days (runs.csv)."""
+    import datetime, subprocess
+    r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'read'],
+                       capture_output=True, text=True, encoding='utf-8', timeout=60)
+    now = json.loads(r.stdout) if r.returncode == 0 and r.stdout.strip().startswith('{') else None
+    since = (datetime.date.today() - datetime.timedelta(days=6)).isoformat()
+    week = 0
+    if rate.RUNS.exists():
+        week = sum(1 for row in csv.DictReader(open(rate.RUNS, encoding='utf-8'))
+                   if row['ok'] == 'yes' and row['date'] >= since)
+    return {'now': now, 'unknown_reason': None if now else (r.stderr or r.stdout).strip()[-300:],
+            'week_images': week, 'week_budget': WEEK_BUDGET, 'dry_run': DRY_RUN}
+
+
+def source_image(batch, file):
+    """The image to vary: any PNG in a batch, the seed included."""
+    if not is_batch(batch) or file.startswith('.') or '/' in file or '\\' in file \
+            or not (BASE / batch / file).is_file() or Path(file).suffix.lower() not in ('.png', '.jpg', '.jpeg', '.webp'):
+        raise ApiError(404, f'no image "{file}" in batch "{batch}"')
+    return BASE / batch / file
+
+
+def guess_styles(path):
+    """Top-3 style guess, the same function variations.py uses without --style."""
+    global _guess
+    with _GUESS_LOCK:
+        if _guess is None:
+            from nearest import model
+            _guess = model(str(ROOT))
+    top, far, _ = _guess(str(path))
+    return {'top': [{'style': s, 'distance': d} for s, d in top], 'far': far}
+
+
+def free_slug(stem):
+    """variations.py writes to generated/codex/<today>-<slug>/; never reuse a folder (it would overwrite)."""
+    import datetime
+    base = ''.join(c if c.isalnum() else '-' for c in stem.lower()).strip('-')[:24] or 'variations'
+    day, slug, i = datetime.date.today().isoformat(), base, 2
+    while (BASE / f'{day}-{slug}').exists():
+        slug, i = f'{base}-{i}', i + 1
+    return slug, f'{day}-{slug}'
+
+
+def start_job(src, style, subject, n):
+    import subprocess, time
+    slug, batch = free_slug(src.stem if src.stem != 'seed' else src.parent.name[11:] + '-seed')
+    cmd = [PY, '-I', str(ROOT / 'scripts' / 'variations.py'), str(src), '--style', style, '--n', str(n), '--slug', slug]
+    if subject:
+        cmd += ['--subject', subject]
+    if DRY_RUN:
+        cmd.append('--dry-run')
+    proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, encoding='utf-8', errors='replace')
+    JOB.clear()
+    JOB.update(running=True, batch=batch, source={'batch': src.parent.name, 'file': src.name}, style=style, n=n,
+               expected=[f'{i}-{c}' for i, c in enumerate(CHANGES[:n], 1)], started=time.time(),
+               finished=None, returncode=None, log=[], dry_run=DRY_RUN)
+
+    def follow():  # read the script's output as it comes, keep the last lines for the page
+        for line in proc.stdout:
+            JOB['log'] = (JOB['log'] + [line.rstrip()])[-80:]
+        JOB.update(running=False, returncode=proc.wait(), finished=time.time())
+    threading.Thread(target=follow, daemon=True).start()
+
+
+def job_state():
+    if 'batch' not in JOB:
+        return {'running': False}
+    folder = BASE / JOB['batch']
+    made = [n for n in JOB['expected'] if (folder / f'{n}.png').exists()]
+    return {**JOB, 'exists': folder.is_dir(), 'made': made}
+
+
 # ---------------------------------------------------------------- HTTP
 
 class ApiError(Exception):
@@ -158,6 +244,10 @@ class Handler(BaseHTTPRequestHandler):
         ('PUT', 'api/draft'): 'put_draft',
         ('POST', 'api/ignore'): 'post_ignore',
         ('POST', 'api/save'): 'post_save',
+        ('GET', 'api/allowance'): 'get_allowance',
+        ('POST', 'api/guess'): 'post_guess',
+        ('POST', 'api/variations'): 'post_variations',
+        ('GET', 'api/job'): 'get_job',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -315,6 +405,33 @@ class Handler(BaseHTTPRequestHandler):
             write_json(DRAFTS, drafts)
         return {'saved': len(rows), 'since_last': len(rate.since_last()), 'due': rate.DUE}
 
+    def get_allowance(self):
+        return allowance()
+
+    def post_guess(self):
+        body = self.read_body()
+        return guess_styles(source_image(str(body.get('batch', '')), str(body.get('file', ''))))
+
+    def post_variations(self):
+        """Start variations.py on one image: {batch, file, style, subject, n}. Spends Codex allowance
+        (unless --dry-run), so the page only calls this after Marc confirmed the style and the cost."""
+        body = self.read_body()
+        src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+        style, n = str(body.get('style', '')), body.get('n', 3)
+        subject = ' '.join(str(body.get('subject') or '').split())[:200]
+        if not (ROOT / 'taste' / 'styles' / f'{style}.json').exists():
+            raise ApiError(400, f'unknown style "{style}"')
+        if n not in (3, 4):
+            raise ApiError(400, 'n must be 3 or 4')
+        with LOCK:
+            if JOB.get('running'):
+                raise ApiError(409, 'a variation job is already running: one at a time')
+            start_job(src, style, subject, n)
+        return job_state()
+
+    def get_job(self):
+        return job_state()
+
     def get_styles(self):
         """The 14 styles: key, display name and palette (for the style picker and labels)."""
         out = {}
@@ -327,9 +444,13 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--port', type=int, default=8765)
+    ap.add_argument('--port', type=int, default=8777)
     ap.add_argument('--no-browser', action='store_true', help='do not open the browser')
+    ap.add_argument('--dry-run', action='store_true',
+                    help='variation jobs run variations.py --dry-run: no Codex call, no allowance spent')
     a = ap.parse_args()
+    global DRY_RUN
+    DRY_RUN = a.dry_run
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
     for port in range(a.port, a.port + 10):  # next free port if this one is taken
@@ -341,7 +462,7 @@ def main():
     else:
         sys.exit(f'no free port between {a.port} and {a.port + 9}')
     url = f'http://127.0.0.1:{port}/'
-    print(f'taste app on {url}  (Ctrl+C to stop)')
+    print(f'taste app on {url}  (Ctrl+C to stop)' + ('  [dry run: variations spend nothing]' if DRY_RUN else ''))
     if not a.no_browser:
         webbrowser.open(url)
     try:
