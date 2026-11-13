@@ -1,0 +1,34 @@
+{
+  "name": "Quiet landscapes",
+  "description": "Landscape photos: Milky Way over desert or mountains, coastlines, still lakes at dusk. Empty and calm.",
+  "palette": [
+    "#19181d",
+    "#45424f",
+    "#677ea6",
+    "#a27d60",
+    "#cbd2d4",
+    "#a66427",
+    "#3462a0"
+  ],
+  "light": "blue hour or night sky with a faint warm glow on the horizon",
+  "composition": "low horizon, two-thirds sky, one silhouetted tree or peak",
+  "camera_or_medium": "landscape photography, wide lens, long exposure",
+  "mood": "empty, calm, restorative",
+  "texture_detail": "fine stars, still water reflections, natural grain",
+  "avoid": [
+    "people",
+    "over-saturated HDR",
+    "light-painting gimmicks",
+    "text and logos"
+  ],
+  "subjects": [
+    "the Milky Way over a desert with one tree",
+    "a still mountain lake at blue hour",
+    "a sea cliff at dusk",
+    "snow peaks under stars"
+  ],
+  "use": [
+    "teams",
+    "desktop"
+  ]
+}

@@ -22,3 +22,5 @@ __pycache__/
 # Codex runs: generated images, run log, ratings (local only, the repo is public)
 generated/codex/
 codex-test/
+# Everything under taste/data is local (wallpapers, thumbs, tags, members)
+taste/data/

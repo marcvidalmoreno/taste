@@ -1,0 +1,36 @@
+{
+  "name": "Neon night cities",
+  "description": "Rain-wet cyberpunk streets, towers and film-still sci-fi at night, plus flat synthwave sunsets and grids.",
+  "palette": [
+    "#11131a",
+    "#383a48",
+    "#576f8e",
+    "#b65867",
+    "#bcb5bf",
+    "#306097",
+    "#b94557"
+  ],
+  "light": "neon magenta and cyan signs, wet reflections, haze; a low orange sun disc in the synthwave variant",
+  "composition": "street-level one-point perspective or a skyline band, one small figure or car, deep haze in the distance",
+  "camera_or_medium": "cinematic film still, or flat vector synthwave illustration",
+  "mood": "lonely, nocturnal, nostalgic",
+  "texture_detail": "rain, mist, subtle light bloom, film grain in stills",
+  "avoid": [
+    "readable text on signs",
+    "crowds",
+    "weapons and violence",
+    "teal-and-orange blockbuster grading",
+    "cluttered HUD overlays",
+    "logos"
+  ],
+  "subjects": [
+    "an empty rain-wet alley with neon signs",
+    "a hovercar crossing between megatowers in fog",
+    "a lone figure on a rooftop over a neon skyline",
+    "a synthwave sun over a purple grid horizon"
+  ],
+  "use": [
+    "desktop",
+    "phone"
+  ]
+}

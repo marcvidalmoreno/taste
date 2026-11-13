@@ -1,0 +1,36 @@
+{
+  "name": "Japanese rooms",
+  "description": "Traditional Japanese interiors: tatami, shoji screens and dark timber, low furniture, a garden framed by the opening.",
+  "palette": [
+    "#1e160f",
+    "#513f2a",
+    "#846c4e",
+    "#bda37a",
+    "#e5e0cd",
+    "#81592d",
+    "#c5924b"
+  ],
+  "light": "soft side light through paper screens or an open veranda, warm interior shadow, bright green garden outside",
+  "composition": "symmetrical or one-point view through the room to the garden, low camera height, strong horizontal beams",
+  "camera_or_medium": "interior photography or careful photoreal render, natural lens",
+  "mood": "warm, still, contemplative, a little dim",
+  "texture_detail": "tatami weave, paper grain, polished wood, moss and maple outside",
+  "avoid": [
+    "people",
+    "tourist clutter",
+    "red lanterns everywhere",
+    "cherry-blossom overload",
+    "cold blue light",
+    "text and logos"
+  ],
+  "subjects": [
+    "a tatami room opening onto a moss garden",
+    "an engawa veranda in rain",
+    "a tea room at dusk with one paper lamp",
+    "a ryokan corridor with sliding doors"
+  ],
+  "use": [
+    "teams",
+    "desktop"
+  ]
+}

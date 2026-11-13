@@ -1,35 +1,45 @@
-"""Closest sub-style for an image (same colour/composition model as inbox.py).
+"""Closest styles for an image, by colour and composition. A hint only.
 
-Usage: .venv/Scripts/python -I scripts/nearest.py <project-root> <image>
+The 14 styles (13 Nov 2026) were defined by eye (subject, medium, mood), which pixel statistics can't see:
+over the 999 tagged wallpapers this guess is right 36 % of the time as first choice and 63 % within the top 3.
+So callers show the top 3 and Claude (looking at the image) or Marc picks the style.
+Style members come from taste/data/style_members.json (scripts/build/restyle.py).
+
+Usage: .venv/Scripts/python -I scripts/nearest.py <project-root> <image> [<image> ...]
 """
 import sys, os, json
 import numpy as np
 
-NAMES = {0: 'neon-dusk', 1: 'deep-space-dark', 2: 'warm-interiors-japan',
-         3: 'bright-airy-minimal', 4: 'retro-sci-fi-painting'}
 
-
-def nearest_style(root, path):
-    """Return (style, distance, far_from_all) for one image."""
+def model(root):
+    """Return guess(path) -> [(style, distance), ...] best first, plus far_from_all flag."""
     from sklearn.preprocessing import StandardScaler
     from sklearn.decomposition import PCA
     sys.path.insert(0, os.path.join(root, 'scripts'))
     from features import thumb64, features
     data = os.path.join(root, 'taste', 'data')
-    rows = json.load(open(os.path.join(data, 'clusters_k5.json')))
+    rows = {r['idx']: r for r in json.load(open(os.path.join(data, 'clusters_k5.json')))}
+    members = json.load(open(os.path.join(data, 'style_members.json')))
     T = np.load(os.path.join(data, 'thumbs64.npy'))
-    F = np.array([features(T[r['idx']], r['w'], r['h']) for r in rows])
+    idx = [i for m in members.values() for i in m]
+    lab = np.array([s for s, m in members.items() for _ in m])
+    F = np.array([features(T[i], rows[i]['w'], rows[i]['h']) for i in idx])
     sc = StandardScaler().fit(F)
     pca = PCA(12, random_state=0).fit(sc.transform(F))
     X = pca.transform(sc.transform(F))
-    labels = np.array([r['cluster'] for r in rows])
-    a, w, h, _ = thumb64(path)
-    x = pca.transform(sc.transform([features(a, w, h)]))[0]
-    d = {c: float(np.linalg.norm(x - X[labels == c].mean(0))) for c in NAMES}
-    c = min(d, key=d.get)
-    limit = np.percentile(np.linalg.norm(X[labels == c] - X[labels == c].mean(0), axis=1), 90)
-    return NAMES[c], round(d[c], 2), bool(d[c] > limit)
+    cent = {s: X[lab == s].mean(0) for s in members}
+    limit = {s: np.percentile(np.linalg.norm(X[lab == s] - cent[s], axis=1), 90) for s in members}
+
+    def guess(path):
+        a, w, h, thumb = thumb64(path)
+        x = pca.transform(sc.transform([features(a, w, h)]))[0]
+        d = sorted(((s, round(float(np.linalg.norm(x - c)), 2)) for s, c in cent.items()), key=lambda t: t[1])
+        return d[:3], bool(d[0][1] > limit[d[0][0]]), thumb
+    return guess
 
 
 if __name__ == '__main__':
-    print(nearest_style(sys.argv[1], sys.argv[2]))
+    g = model(sys.argv[1])
+    for p in sys.argv[2:]:
+        top, far, _ = g(p)
+        print(os.path.basename(p), '->', ', '.join(s for s, _ in top), '(far from all)' if far else '')

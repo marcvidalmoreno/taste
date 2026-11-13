@@ -1,0 +1,34 @@
+{
+  "name": "Psychedelic dreams",
+  "description": "Saturated, detailed illustration: glowing mushrooms, iris-like portals, cosmic eyes, melting landscapes.",
+  "palette": [
+    "#0d0c0e",
+    "#373438",
+    "#4f6579",
+    "#a3674a",
+    "#b8aea5",
+    "#ad6035",
+    "#2a6592"
+  ],
+  "light": "self-luminous colour, glowing edges on a dark ground",
+  "composition": "one central portal, eye or form radiating outwards, or a dense valley leading to a glow",
+  "camera_or_medium": "detailed digital illustration, high contrast, fine linework",
+  "mood": "intense, playful, trippy",
+  "texture_detail": "dense patterns, fractal detail, iridescent rims",
+  "avoid": [
+    "drug references",
+    "faces distorted into horror",
+    "muddy colours",
+    "text and logos"
+  ],
+  "subjects": [
+    "an iris-like portal opening in the night sky",
+    "a valley of glowing mushrooms",
+    "a cosmic eye in a nebula",
+    "a landscape melting into colour bands"
+  ],
+  "use": [
+    "phone",
+    "desktop"
+  ]
+}

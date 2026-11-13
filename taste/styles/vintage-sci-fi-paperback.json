@@ -1,0 +1,36 @@
+{
+  "name": "Vintage sci-fi paperback",
+  "description": "1970s-80s sci-fi book-cover and pop illustration and retro collage: white towers on cliffs, huge planets over beaches, chunky rovers.",
+  "palette": [
+    "#1f1f21",
+    "#2b588b",
+    "#5f4f44",
+    "#a08672",
+    "#c7cac3",
+    "#bd6136",
+    "#1d5598"
+  ],
+  "light": "bright flat daylight or a big glowing planet, clear sky gradients",
+  "composition": "poster-like, one huge celestial body or tower, small people for scale, strong diagonal or central axis",
+  "camera_or_medium": "gouache or airbrush illustration with a printed-paper feel; sometimes photo collage",
+  "mood": "sunny, hopeful, slightly ironic",
+  "texture_detail": "visible print grain, smooth airbrush gradients, clean ink outlines",
+  "avoid": [
+    "modern glossy 3D",
+    "grim dark tone",
+    "gore",
+    "photoreal faces",
+    "text and logos"
+  ],
+  "subjects": [
+    "a white futurist villa on a sea cliff under a ringed planet",
+    "beachgoers under a giant Earth in the sky",
+    "a chunky orange rover on a red desert",
+    "a spire city above clouds"
+  ],
+  "use": [
+    "post",
+    "phone",
+    "desktop"
+  ]
+}

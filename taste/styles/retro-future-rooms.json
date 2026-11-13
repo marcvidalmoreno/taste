@@ -1,0 +1,36 @@
+{
+  "name": "Retro-future rooms",
+  "description": "Lived-in sci-fi interiors: cockpits, sunken lounges, cluttered workshops, with a porthole or big window onto space or a city.",
+  "palette": [
+    "#1b1613",
+    "#44413c",
+    "#905f36",
+    "#7b8888",
+    "#cecdc3",
+    "#9e5823",
+    "#2f709b"
+  ],
+  "light": "warm lamp and screen glow inside against cool blue light outside the window",
+  "composition": "room seen from the back, the window as the focal frame, a chair or bed facing it",
+  "camera_or_medium": "photoreal render or 1970s film photograph, slight warm grain",
+  "mood": "cosy, curious, solitary",
+  "texture_detail": "analog switches, CRT screens, cables, books, plants, worn fabric",
+  "avoid": [
+    "sterile white spaceship corridors",
+    "people facing the camera",
+    "weapons",
+    "text on screens",
+    "logos"
+  ],
+  "subjects": [
+    "a sunken orange lounge with a round window onto Earth",
+    "a cluttered workshop with CRT screens and a rainy city view",
+    "a sleeping pod with a porthole to the stars",
+    "a cockpit at night above clouds"
+  ],
+  "use": [
+    "teams",
+    "desktop",
+    "phone"
+  ]
+}

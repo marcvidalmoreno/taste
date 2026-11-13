@@ -1,30 +1,145 @@
 {
  "generated_from": "taste/styles/*.json by scripts/build_taste.py; do not edit",
  "styles": {
-  "bright-airy-minimal": {
-   "name": "Bright and airy minimal",
-   "prompt": "High-key, pale scenes: white rooms, pale ukiyo-e, sunlit beaches and light flat illustrations with big calm areas of colour. Light: bright diffuse daylight, almost shadowless, gentle warm highlights; exposed high key. Composition: lots of white or pastel space, horizon or window line placed low, one small subject or object, symmetric or grid-like. Medium: clean interior or landscape photography, or flat pastel illustration and ink-wash drawing. Mood: light, tidy, breathable, optimistic but not cute. Detail: smooth surfaces, soft paper or plaster texture, very few objects, thin line detail. Palette: #e2e1da, #c1b8aa, #8a7f76, #548ec5, #4a3c37, #d58a5a, #f4d9a0. Avoid: dark vignettes; saturated neon; heavy contrast; busy patterns; stock-photo office people; cartoon outlines in thick black; text and logos. No text, no logos, no watermark.",
-   "subjects": []
+  "calm-surreal-pastel": {
+   "name": "Calm surreal pastel",
+   "prompt": "Soft-render or flat-colour surreal scenes: a lone figure, a giant object, pastel gradient sky, lots of space. Light: soft even light, pastel gradient sky from peach to sky blue. Composition: a tiny lone figure and one oversized object, low horizon, most of the frame empty sky. Medium: soft 3D render or flat colour illustration. Mood: gentle, wry, dreamy. Detail: smooth surfaces, minimal detail, a little film grain. Palette: #342b2b, #74737e, #468cd0, #db8a51, #d9d1c2, #d57838, #3b87cc. Avoid: dark tones; clutter; many figures; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a lone figure on a pink sea under a giant crystal",
+    "a tiny astronaut on a pastel dune",
+    "a chair floating above calm water",
+    "a person walking toward a huge door in a desert"
+   ]
   },
-  "deep-space-dark": {
-   "name": "Deep-space dark",
-   "prompt": "Near-black scenes with one small glowing light source (planet rim, star, portal, ring) and a lot of empty darkness. Light: single point or rim light, thin bright edge against void; cold blue-grey ambient with one warm amber accent. Composition: centred or low-horizon subject, 60-80 percent negative space, tiny figures or structures against huge scale. Medium: mix of astronomy photography, matte painting and 70s-80s sci-fi illustration; sharp, no motion blur. Mood: awe, silence, solitude; contemplative not heroic. Detail: fine star-field grain, subtle dust, crisp rock or cloud edges; instrument-panel or diagram elements allowed, sparse. Palette: #070608, #201f24, #333e4c, #566d82, #82543a, #b0afa9, #f0a050. Avoid: rainbow nebula saturation; multiple competing light sources; busy foregrounds; lens-flare streaks; hero-pose astronauts; glossy 3D-render plastic look; text and logos. No text, no logos, no watermark.",
-   "subjects": []
+  "dark-painted-epics": {
+   "name": "Dark painted epics",
+   "prompt": "Painterly concept art: megastructures, ruins and cathedral-like towers, tiny figures, ochre and dusty teal, some eerie dream-paintings. Light: low dusty sunlight or a single distant glow through haze. Composition: huge structure filling the frame, tiny human figure at the base, deep atmospheric perspective. Medium: oil or digital painting with visible brushwork. Mood: awe with a touch of dread, silent. Detail: weathered stone, dust, organic growth on architecture. Palette: #1b1917, #493e36, #6f7777, #a36b3d, #c5bea9, #c87c38, #7c5036. Avoid: gore and horror creatures; bright saturated colours; clean CG look; battle scenes; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a cathedral-sized tower in a dust storm",
+    "ruins of a megastructure overgrown with roots",
+    "a tiny pilgrim before a colossal gate",
+    "a city carved into a canyon wall"
+   ]
   },
-  "neon-dusk": {
-   "name": "Neon dusk",
-   "prompt": "Flat-shaded synthwave and sunset cityscapes where a magenta-to-violet gradient sky sits over a dark horizon. Light: low sun or glowing disc on the horizon; warm orange-pink rim against deep violet shadow; neon signs as the only other source. Composition: strong horizontal bands (sky / skyline / ground), one centred or rule-of-thirds focal disc or tower, lots of empty gradient sky, small human silhouettes for scale. Medium: digital vector or pixel-art illustration, flat colour planes, soft gradients; no lens effects. Mood: nostalgic, quiet, solitary; evening calm rather than action. Detail: clean edges, minimal grain, few small windows or grid lines as detail; simple shapes over rendered realism. Palette: #191124, #3a3257, #78445c, #ce5970, #ff8a5c, #4fd6d0, #d3b1bb. Avoid: lens flares and bokeh; photoreal skin or faces; crowded cluttered skylines; pure-black high-contrast 'epic' lighting; text and logos; teal-and-orange blockbuster grading; lightning, explosions, battle scenes. No text, no logos, no watermark.",
-   "subjects": []
+  "daylight-rooms": {
+   "name": "Daylight rooms",
+   "prompt": "Real, modern rooms and offices in soft daylight: big windows, pale wood, white walls, a few plants and a view outside. Light: diffuse daylight from one large window side, soft shadows, no visible lamps, slightly warm white balance. Composition: eye-level, straight verticals, one wall of windows, a sofa or desk in the middle ground, uncluttered centre. Medium: architectural interior photography, 24-35 mm, deep focus. Mood: calm, tidy, liveable, quietly premium. Detail: real materials (oak, linen, concrete, plaster), clean surfaces, small natural details. Palette: #221c18, #5a4c41, #8b7c6d, #b4aca2, #deddd9, #9d6433, #335c91. Avoid: clutter and cables; people in frame; fisheye distortion; HDR halos; neon or coloured lighting; stock-office cubicle rows; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a white living room with a long linen sofa and a garden view",
+    "a small studio office with an oak desk by a tall window",
+    "a loft kitchen with concrete floor and morning light",
+    "a reading corner with a lounge chair facing the sea"
+   ]
   },
-  "retro-sci-fi-painting": {
-   "name": "Retro sci-fi painting",
-   "prompt": "Dark painterly retro-futurist scenes in the manner of Moebius, Bekinski and 70s sci-fi covers: figures, vehicles and architecture in strange landscapes, plus human-and-machine moments. Light: low raking light, dusty ochre against cold blue-grey shade; one warm accent such as a window, sun or lamp. Composition: vast landscape with a small figure or craft, strong diagonal or monumental vertical structure, layered depth with haze. Medium: gouache, airbrush or oil illustration with visible brush or ink line; European comics and 70s book-cover painting. Mood: enigmatic, dreamlike, slightly melancholic; story implied but not shown. Detail: fine hatching, visible paint grain, worn surfaces, hand-drawn line; muted, earthy saturation. Palette: #141314, #3c3530, #7d5d43, #939082, #3d5d72, #c7cac1, #d9a441. Avoid: glossy CGI render look; symmetric hero poses; glowing neon outlines; anime big-eye faces; lens flares; over-sharpened HDR; text and logos. No text, no logos, no watermark.",
-   "subjects": []
+  "earth-and-deep-space": {
+   "name": "Earth and deep space",
+   "prompt": "Earth from orbit, planets, nebulae and spacecraft on black: photographic or photoreal, vast and quiet. Light: one hard sun source, thin atmospheric blue limb, city lights on the night side, black space. Composition: planet curve low or off-centre, most of the frame empty black or star field, one small craft for scale. Medium: space photography or photoreal render, long lens, no lens flare. Mood: vast, silent, humbling. Detail: fine stars, cloud bands, crisp terminator line. Palette: #09080d, #2d3040, #5c718a, #aa5f30, #babfbf, #2c60a1, #b45d25. Avoid: lens flares; cartoon planets; crowded star fields; meteors hitting Earth; space battles; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "the thin blue limb of Earth at dawn over the Pacific",
+    "a space station silhouetted against the night side",
+    "Earthrise over a grey lunar horizon",
+    "a nebula in deep red and teal with a few bright stars"
+   ]
   },
-  "warm-interiors-japan": {
-   "name": "Warm interiors and Japan",
-   "prompt": "Calm lived-in rooms, mid-century and Japanese interiors, plus ukiyo-e and soft painted landscapes in muted earth tones with one cool accent. Light: soft window daylight or warm lamp light, long gentle shadows, wood-toned glow. Composition: eye-level view into a room or landscape, window or doorway as a frame, balanced asymmetry, generous empty floor or sky. Medium: architectural photography (35mm, natural light) or Japanese woodblock and gouache-style illustration. Mood: quiet, domestic, lived-in, unhurried. Detail: natural materials (wood grain, tatami, linen, stone), paper texture on illustrations, restrained decor. Palette: #aaa59b, #614a3d, #272121, #a27656, #4d6f8e, #d9d8d1, #d58a5a. Avoid: sterile showroom gloss; HDR over-processing; fisheye wide angle; neon colours; people posing at camera; clutter of knick-knacks; fake-kanji text. No text, no logos, no watermark.",
-   "subjects": []
+  "engraved-sci-fi-poster": {
+   "name": "Engraved sci-fi poster",
+   "prompt": "Fine contour-line illustration on black: layered cloud bands, a beam of light or a sun disc, tiny monoliths. Light: one vertical beam or a sun disc on the horizon, lines catching orange, red and teal. Composition: portrait format, horizon in the lower third, symmetric beam or disc, big black sky. Medium: engraving-like vector linework, every form built from parallel contour lines. Mood: mysterious, meditative, cosmic. Detail: thin even lines, no gradients, no photographic texture. Palette: #090808, #332725, #53555d, #944523, #af9d86, #284f91, #a34e25. Avoid: filled flat colour areas; photographic elements; busy skies; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a vertical beam of light rising from a sea of contour clouds",
+    "a sun disc over layered red dunes",
+    "a tiny monolith under a ringed eclipse",
+    "a comet over line-drawn mountains"
+   ]
+  },
+  "iridescent-abstract": {
+   "name": "Iridescent abstract",
+   "prompt": "No subject: glass and soap-bubble orbs, liquid 3D gradients, rainbow light leaks, smooth colour fields. Light: studio light on glossy surfaces, thin-film rainbow reflections. Composition: one central form on a dark or soft background, generous negative space. Medium: 3D render or macro photograph. Mood: smooth, modern, calm or playful. Detail: glass, liquid metal, thin-film interference, soft blur. Palette: #0d0a0e, #413640, #5d788f, #c25f49, #ccbeae, #2e6ba4, #c2553d. Avoid: busy patterns; recognisable objects; harsh noise; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a soap-bubble orb on black",
+    "a liquid ribbon of rainbow gradient",
+    "a glass ring with thin-film colours",
+    "a soft colour field with a light leak"
+   ]
+  },
+  "japanese-print-and-anime": {
+   "name": "Japanese print and anime",
+   "prompt": "Ukiyo-e and ink (waves, plum branches, birds, snowy villages) plus hand-painted anime scenes. Paper textures, quiet colour. Light: flat even light, or soft painted daylight in the anime variant. Composition: asymmetric, one branch or wave as the main line, empty paper space; anime: wide landscape with a small house or figure. Medium: woodblock print or sumi ink on aged paper; hand-painted anime background. Mood: quiet, poetic, seasonal. Detail: paper fibre, woodgrain in flat colour, soft brush edges. Palette: #151619, #59524d, #6c8a8b, #bc9d7b, #dcd8be, #af5a36, #367596. Avoid: modern 3D; neon; readable text or seals; copies of famous prints; named characters or studios. No text, no logos, no watermark.",
+   "subjects": [
+    "a plum branch over a snowy river",
+    "a great wave under a small moon",
+    "a hillside house among summer clouds",
+    "cranes over a misty marsh"
+   ]
+  },
+  "japanese-rooms": {
+   "name": "Japanese rooms",
+   "prompt": "Traditional Japanese interiors: tatami, shoji screens and dark timber, low furniture, a garden framed by the opening. Light: soft side light through paper screens or an open veranda, warm interior shadow, bright green garden outside. Composition: symmetrical or one-point view through the room to the garden, low camera height, strong horizontal beams. Medium: interior photography or careful photoreal render, natural lens. Mood: warm, still, contemplative, a little dim. Detail: tatami weave, paper grain, polished wood, moss and maple outside. Palette: #1e160f, #513f2a, #846c4e, #bda37a, #e5e0cd, #81592d, #c5924b. Avoid: people; tourist clutter; red lanterns everywhere; cherry-blossom overload; cold blue light; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a tatami room opening onto a moss garden",
+    "an engawa veranda in rain",
+    "a tea room at dusk with one paper lamp",
+    "a ryokan corridor with sliding doors"
+   ]
+  },
+  "neon-night-cities": {
+   "name": "Neon night cities",
+   "prompt": "Rain-wet cyberpunk streets, towers and film-still sci-fi at night, plus flat synthwave sunsets and grids. Light: neon magenta and cyan signs, wet reflections, haze; a low orange sun disc in the synthwave variant. Composition: street-level one-point perspective or a skyline band, one small figure or car, deep haze in the distance. Medium: cinematic film still, or flat vector synthwave illustration. Mood: lonely, nocturnal, nostalgic. Detail: rain, mist, subtle light bloom, film grain in stills. Palette: #11131a, #383a48, #576f8e, #b65867, #bcb5bf, #306097, #b94557. Avoid: readable text on signs; crowds; weapons and violence; teal-and-orange blockbuster grading; cluttered HUD overlays; logos. No text, no logos, no watermark.",
+   "subjects": [
+    "an empty rain-wet alley with neon signs",
+    "a hovercar crossing between megatowers in fog",
+    "a lone figure on a rooftop over a neon skyline",
+    "a synthwave sun over a purple grid horizon"
+   ]
+  },
+  "people-and-tech": {
+   "name": "People and tech",
+   "prompt": "Topic imagery for posts about AI and technology: a person with a headset or screen, a glowing interface, a human hand meeting a machine. Light: cool screen glow on a face, one warm accent, dark background. Composition: one person or one hand in focus, interface light as the second element, simple background. Medium: editorial photography or photoreal render, shallow depth of field. Mood: thoughtful, human, curious rather than scary. Detail: real skin and fabric, subtle interface glow, no noise. Palette: #0f121b, #2a3849, #8d553f, #5f7e8f, #b5bbb9, #296b9b, #b35329. Avoid: robot-takeover cliches; binary code rain; readable UI text; stock-photo grins; brain-with-circuits cliches; logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a designer lit by a screen in a dark studio",
+    "a person taking off a VR headset, thinking",
+    "a human hand and a robot hand passing a small object",
+    "a person sketching beside a glowing interface"
+   ]
+  },
+  "psychedelic-dreams": {
+   "name": "Psychedelic dreams",
+   "prompt": "Saturated, detailed illustration: glowing mushrooms, iris-like portals, cosmic eyes, melting landscapes. Light: self-luminous colour, glowing edges on a dark ground. Composition: one central portal, eye or form radiating outwards, or a dense valley leading to a glow. Medium: detailed digital illustration, high contrast, fine linework. Mood: intense, playful, trippy. Detail: dense patterns, fractal detail, iridescent rims. Palette: #0d0c0e, #373438, #4f6579, #a3674a, #b8aea5, #ad6035, #2a6592. Avoid: drug references; faces distorted into horror; muddy colours; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "an iris-like portal opening in the night sky",
+    "a valley of glowing mushrooms",
+    "a cosmic eye in a nebula",
+    "a landscape melting into colour bands"
+   ]
+  },
+  "quiet-landscapes": {
+   "name": "Quiet landscapes",
+   "prompt": "Landscape photos: Milky Way over desert or mountains, coastlines, still lakes at dusk. Empty and calm. Light: blue hour or night sky with a faint warm glow on the horizon. Composition: low horizon, two-thirds sky, one silhouetted tree or peak. Medium: landscape photography, wide lens, long exposure. Mood: empty, calm, restorative. Detail: fine stars, still water reflections, natural grain. Palette: #19181d, #45424f, #677ea6, #a27d60, #cbd2d4, #a66427, #3462a0. Avoid: people; over-saturated HDR; light-painting gimmicks; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "the Milky Way over a desert with one tree",
+    "a still mountain lake at blue hour",
+    "a sea cliff at dusk",
+    "snow peaks under stars"
+   ]
+  },
+  "retro-future-rooms": {
+   "name": "Retro-future rooms",
+   "prompt": "Lived-in sci-fi interiors: cockpits, sunken lounges, cluttered workshops, with a porthole or big window onto space or a city. Light: warm lamp and screen glow inside against cool blue light outside the window. Composition: room seen from the back, the window as the focal frame, a chair or bed facing it. Medium: photoreal render or 1970s film photograph, slight warm grain. Mood: cosy, curious, solitary. Detail: analog switches, CRT screens, cables, books, plants, worn fabric. Palette: #1b1613, #44413c, #905f36, #7b8888, #cecdc3, #9e5823, #2f709b. Avoid: sterile white spaceship corridors; people facing the camera; weapons; text on screens; logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a sunken orange lounge with a round window onto Earth",
+    "a cluttered workshop with CRT screens and a rainy city view",
+    "a sleeping pod with a porthole to the stars",
+    "a cockpit at night above clouds"
+   ]
+  },
+  "vintage-sci-fi-paperback": {
+   "name": "Vintage sci-fi paperback",
+   "prompt": "1970s-80s sci-fi book-cover and pop illustration and retro collage: white towers on cliffs, huge planets over beaches, chunky rovers. Light: bright flat daylight or a big glowing planet, clear sky gradients. Composition: poster-like, one huge celestial body or tower, small people for scale, strong diagonal or central axis. Medium: gouache or airbrush illustration with a printed-paper feel; sometimes photo collage. Mood: sunny, hopeful, slightly ironic. Detail: visible print grain, smooth airbrush gradients, clean ink outlines. Palette: #1f1f21, #2b588b, #5f4f44, #a08672, #c7cac3, #bd6136, #1d5598. Avoid: modern glossy 3D; grim dark tone; gore; photoreal faces; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a white futurist villa on a sea cliff under a ringed planet",
+    "beachgoers under a giant Earth in the sky",
+    "a chunky orange rover on a red desert",
+    "a spire city above clouds"
+   ]
   }
  }
 }

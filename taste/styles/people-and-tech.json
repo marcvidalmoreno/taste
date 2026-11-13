@@ -1,0 +1,35 @@
+{
+  "name": "People and tech",
+  "description": "Topic imagery for posts about AI and technology: a person with a headset or screen, a glowing interface, a human hand meeting a machine.",
+  "palette": [
+    "#0f121b",
+    "#2a3849",
+    "#8d553f",
+    "#5f7e8f",
+    "#b5bbb9",
+    "#296b9b",
+    "#b35329"
+  ],
+  "light": "cool screen glow on a face, one warm accent, dark background",
+  "composition": "one person or one hand in focus, interface light as the second element, simple background",
+  "camera_or_medium": "editorial photography or photoreal render, shallow depth of field",
+  "mood": "thoughtful, human, curious rather than scary",
+  "texture_detail": "real skin and fabric, subtle interface glow, no noise",
+  "avoid": [
+    "robot-takeover cliches",
+    "binary code rain",
+    "readable UI text",
+    "stock-photo grins",
+    "brain-with-circuits cliches",
+    "logos"
+  ],
+  "subjects": [
+    "a designer lit by a screen in a dark studio",
+    "a person taking off a VR headset, thinking",
+    "a human hand and a robot hand passing a small object",
+    "a person sketching beside a glowing interface"
+  ],
+  "use": [
+    "post"
+  ]
+}

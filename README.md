@@ -5,13 +5,16 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
 Google's Nano Banana (Gemini app, prompt packs).
 
 ## What's here
-- [`taste/styles/`](taste/styles/): five sub-styles found in about 1,100 wallpapers I've saved over the years,
-  each with a palette, light, composition, medium, mood and an **avoid** list.
+- [`taste/styles/`](taste/styles/): fourteen styles found in about 1,000 wallpapers I've saved over the years,
+  each with a palette, light, composition, medium, mood, an **avoid** list, starter subjects and the uses it suits
+  (Teams background, desktop, phone, post). Rebuilt on 13 Nov 2026: every image tagged by eye on contact sheets
+  (subject, medium, mood, light), grouped into styles I approved one by one; palettes measured from the images.
 - [`taste/gem-instructions.md`](taste/gem-instructions.md): instructions for a Gemini Gem that uses the styles.
 - [`taste/taste.json`](taste/taste.json): one short prompt block per style, generated from the style files by
   `scripts/build_taste.py`. Never edited by hand.
 - [`scripts/`](scripts/): `pack.py` builds a prompt pack for a post, `inbox.py` sorts newly liked images into
-  the closest style, `build/` is how the styles were found (colour and composition clustering, k-means).
+  a style (top-3 guess, confirmed by eye), `build/` is how the styles were found (`restyle.py`: tags to style
+  members, measured palettes, exemplars; the older scripts did the 8 Nov colour clustering).
   Codex route: `codex_run.py`, `variations.py`, `sheet.py`, `rate.py`, `distil.py`, `nearest.py` (below).
 - [`generated/`](generated/): images **I** generated with these styles, with the prompts used.
 
@@ -33,7 +36,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 
 | Step | Command |
 |---|---|
-| Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> [--style S] [--subject "..."]` |
+| Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> --style S [--subject "..."]` (no `--style`: prints the top-3 guess) |
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
 | Contact sheet of a batch | `.venv/Scripts/python -I scripts/sheet.py generated/codex/<batch>` |
 | Rate (numbers from the sheet) | `.venv/Scripts/python -I scripts/rate.py <batch> 1=keep 2=almost:too-busy 3=no:dark` |
@@ -55,6 +58,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **13 Nov 2026** – Taste rebuilt from zero: 14 styles replace the old five (bright-airy-minimal, deep-space-dark,
+  neon-dusk, retro-sci-fi-painting, warm-interiors-japan). Styles defined by eye, not by colour clustering; colour
+  alone finds the right style only 36 % of the time, so `nearest.py` / `inbox.py` / `variations.py` now show a
+  top-3 guess and the style is confirmed by eye. `gem-instructions.md` regenerated from the new styles.
+  Undo: `git revert <this commit>` (old exemplar copies kept locally in `taste/data/exemplars-2026-11-08/`).
 - **13 Nov 2026** – Codex route: `codex_run.py` (one image + run log), `variations.py`, `sheet.py`, `rate.py`,
   `distil.py`, `nearest.py`, `build_taste.py` → `taste/taste.json`; `generated/codex/` git-ignored; repo `CLAUDE.md`
   (automatic pushes). Undo: `git revert <this commit>` (local images and logs in `generated/codex/` are untouched;

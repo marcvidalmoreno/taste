@@ -4,7 +4,8 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/variations.py <seed image> [--style <style>] [--subject "<new subject>"] [--n 3|4]
         [--slug <name>] [--dry-run]
 
-- Style: the closest of the five (scripts/nearest.py) unless --style is given.
+- Style: give --style (Claude looks at the seed once, or Marc names it). Without it the script prints the
+  top-3 guesses from scripts/nearest.py and stops: the guess alone is right only about a third of the time.
 - One fresh Codex run per image (scripts/codex_run.py), the seed attached as reference.
   1 palette  - same subject and composition, palette and light pulled to the style
   2 subject  - same palette, light and composition, new subject (--subject, or one from the style, or Codex picks)
@@ -40,9 +41,12 @@ taste = json.load(open(ROOT / 'taste' / 'taste.json', encoding='utf-8'))['styles
 style = a.style
 if not style:
     sys.path.insert(0, str(ROOT / 'scripts'))
-    from nearest import nearest_style
-    style, dist, far = nearest_style(str(ROOT), str(seed))
-    print(f'style: {style} (distance {dist}{", far from all five styles" if far else ""})')
+    from nearest import model
+    top, far, _ = model(str(ROOT))(str(seed))
+    print(f'pick a style with --style; best guesses: {", ".join(s for s, _ in top)}{" (far from all styles)" if far else ""}')
+    sys.exit(3)
+if style not in taste:
+    sys.exit(f'unknown style "{style}"; pick one of: {", ".join(taste)}')
 s = taste[style]
 subject = a.subject or (random.choice(s['subjects']) if s['subjects'] else
                         'a different subject that suits the same kind of scene (your choice)')

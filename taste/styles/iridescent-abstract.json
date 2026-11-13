@@ -1,0 +1,35 @@
+{
+  "name": "Iridescent abstract",
+  "description": "No subject: glass and soap-bubble orbs, liquid 3D gradients, rainbow light leaks, smooth colour fields.",
+  "palette": [
+    "#0d0a0e",
+    "#413640",
+    "#5d788f",
+    "#c25f49",
+    "#ccbeae",
+    "#2e6ba4",
+    "#c2553d"
+  ],
+  "light": "studio light on glossy surfaces, thin-film rainbow reflections",
+  "composition": "one central form on a dark or soft background, generous negative space",
+  "camera_or_medium": "3D render or macro photograph",
+  "mood": "smooth, modern, calm or playful",
+  "texture_detail": "glass, liquid metal, thin-film interference, soft blur",
+  "avoid": [
+    "busy patterns",
+    "recognisable objects",
+    "harsh noise",
+    "text and logos"
+  ],
+  "subjects": [
+    "a soap-bubble orb on black",
+    "a liquid ribbon of rainbow gradient",
+    "a glass ring with thin-film colours",
+    "a soft colour field with a light leak"
+  ],
+  "use": [
+    "post",
+    "desktop",
+    "phone"
+  ]
+}

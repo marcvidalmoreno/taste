@@ -1,0 +1,37 @@
+{
+  "name": "Daylight rooms",
+  "description": "Real, modern rooms and offices in soft daylight: big windows, pale wood, white walls, a few plants and a view outside.",
+  "palette": [
+    "#221c18",
+    "#5a4c41",
+    "#8b7c6d",
+    "#b4aca2",
+    "#deddd9",
+    "#9d6433",
+    "#335c91"
+  ],
+  "light": "diffuse daylight from one large window side, soft shadows, no visible lamps, slightly warm white balance",
+  "composition": "eye-level, straight verticals, one wall of windows, a sofa or desk in the middle ground, uncluttered centre",
+  "camera_or_medium": "architectural interior photography, 24-35 mm, deep focus",
+  "mood": "calm, tidy, liveable, quietly premium",
+  "texture_detail": "real materials (oak, linen, concrete, plaster), clean surfaces, small natural details",
+  "avoid": [
+    "clutter and cables",
+    "people in frame",
+    "fisheye distortion",
+    "HDR halos",
+    "neon or coloured lighting",
+    "stock-office cubicle rows",
+    "text and logos"
+  ],
+  "subjects": [
+    "a white living room with a long linen sofa and a garden view",
+    "a small studio office with an oak desk by a tall window",
+    "a loft kitchen with concrete floor and morning light",
+    "a reading corner with a lounge chair facing the sea"
+  ],
+  "use": [
+    "teams",
+    "desktop"
+  ]
+}

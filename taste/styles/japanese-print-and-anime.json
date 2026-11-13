@@ -1,0 +1,35 @@
+{
+  "name": "Japanese print and anime",
+  "description": "Ukiyo-e and ink (waves, plum branches, birds, snowy villages) plus hand-painted anime scenes. Paper textures, quiet colour.",
+  "palette": [
+    "#151619",
+    "#59524d",
+    "#6c8a8b",
+    "#bc9d7b",
+    "#dcd8be",
+    "#af5a36",
+    "#367596"
+  ],
+  "light": "flat even light, or soft painted daylight in the anime variant",
+  "composition": "asymmetric, one branch or wave as the main line, empty paper space; anime: wide landscape with a small house or figure",
+  "camera_or_medium": "woodblock print or sumi ink on aged paper; hand-painted anime background",
+  "mood": "quiet, poetic, seasonal",
+  "texture_detail": "paper fibre, woodgrain in flat colour, soft brush edges",
+  "avoid": [
+    "modern 3D",
+    "neon",
+    "readable text or seals",
+    "copies of famous prints",
+    "named characters or studios"
+  ],
+  "subjects": [
+    "a plum branch over a snowy river",
+    "a great wave under a small moon",
+    "a hillside house among summer clouds",
+    "cranes over a misty marsh"
+  ],
+  "use": [
+    "post",
+    "desktop"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Calm surreal pastel",
+  "description": "Soft-render or flat-colour surreal scenes: a lone figure, a giant object, pastel gradient sky, lots of space.",
+  "palette": [
+    "#342b2b",
+    "#74737e",
+    "#468cd0",
+    "#db8a51",
+    "#d9d1c2",
+    "#d57838",
+    "#3b87cc"
+  ],
+  "light": "soft even light, pastel gradient sky from peach to sky blue",
+  "composition": "a tiny lone figure and one oversized object, low horizon, most of the frame empty sky",
+  "camera_or_medium": "soft 3D render or flat colour illustration",
+  "mood": "gentle, wry, dreamy",
+  "texture_detail": "smooth surfaces, minimal detail, a little film grain",
+  "avoid": [
+    "dark tones",
+    "clutter",
+    "many figures",
+    "text and logos"
+  ],
+  "subjects": [
+    "a lone figure on a pink sea under a giant crystal",
+    "a tiny astronaut on a pastel dune",
+    "a chair floating above calm water",
+    "a person walking toward a huge door in a desert"
+  ],
+  "use": [
+    "post",
+    "teams",
+    "desktop"
+  ]
+}

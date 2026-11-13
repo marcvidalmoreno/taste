@@ -1,0 +1,35 @@
+{
+  "name": "Dark painted epics",
+  "description": "Painterly concept art: megastructures, ruins and cathedral-like towers, tiny figures, ochre and dusty teal, some eerie dream-paintings.",
+  "palette": [
+    "#1b1917",
+    "#493e36",
+    "#6f7777",
+    "#a36b3d",
+    "#c5bea9",
+    "#c87c38",
+    "#7c5036"
+  ],
+  "light": "low dusty sunlight or a single distant glow through haze",
+  "composition": "huge structure filling the frame, tiny human figure at the base, deep atmospheric perspective",
+  "camera_or_medium": "oil or digital painting with visible brushwork",
+  "mood": "awe with a touch of dread, silent",
+  "texture_detail": "weathered stone, dust, organic growth on architecture",
+  "avoid": [
+    "gore and horror creatures",
+    "bright saturated colours",
+    "clean CG look",
+    "battle scenes",
+    "text and logos"
+  ],
+  "subjects": [
+    "a cathedral-sized tower in a dust storm",
+    "ruins of a megastructure overgrown with roots",
+    "a tiny pilgrim before a colossal gate",
+    "a city carved into a canyon wall"
+  ],
+  "use": [
+    "desktop",
+    "phone"
+  ]
+}

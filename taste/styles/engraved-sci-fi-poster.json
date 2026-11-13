@@ -1,0 +1,34 @@
+{
+  "name": "Engraved sci-fi poster",
+  "description": "Fine contour-line illustration on black: layered cloud bands, a beam of light or a sun disc, tiny monoliths.",
+  "palette": [
+    "#090808",
+    "#332725",
+    "#53555d",
+    "#944523",
+    "#af9d86",
+    "#284f91",
+    "#a34e25"
+  ],
+  "light": "one vertical beam or a sun disc on the horizon, lines catching orange, red and teal",
+  "composition": "portrait format, horizon in the lower third, symmetric beam or disc, big black sky",
+  "camera_or_medium": "engraving-like vector linework, every form built from parallel contour lines",
+  "mood": "mysterious, meditative, cosmic",
+  "texture_detail": "thin even lines, no gradients, no photographic texture",
+  "avoid": [
+    "filled flat colour areas",
+    "photographic elements",
+    "busy skies",
+    "text and logos"
+  ],
+  "subjects": [
+    "a vertical beam of light rising from a sea of contour clouds",
+    "a sun disc over layered red dunes",
+    "a tiny monolith under a ringed eclipse",
+    "a comet over line-drawn mountains"
+  ],
+  "use": [
+    "phone",
+    "desktop"
+  ]
+}

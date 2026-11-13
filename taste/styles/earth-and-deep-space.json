@@ -1,0 +1,37 @@
+{
+  "name": "Earth and deep space",
+  "description": "Earth from orbit, planets, nebulae and spacecraft on black: photographic or photoreal, vast and quiet.",
+  "palette": [
+    "#09080d",
+    "#2d3040",
+    "#5c718a",
+    "#aa5f30",
+    "#babfbf",
+    "#2c60a1",
+    "#b45d25"
+  ],
+  "light": "one hard sun source, thin atmospheric blue limb, city lights on the night side, black space",
+  "composition": "planet curve low or off-centre, most of the frame empty black or star field, one small craft for scale",
+  "camera_or_medium": "space photography or photoreal render, long lens, no lens flare",
+  "mood": "vast, silent, humbling",
+  "texture_detail": "fine stars, cloud bands, crisp terminator line",
+  "avoid": [
+    "lens flares",
+    "cartoon planets",
+    "crowded star fields",
+    "meteors hitting Earth",
+    "space battles",
+    "text and logos"
+  ],
+  "subjects": [
+    "the thin blue limb of Earth at dawn over the Pacific",
+    "a space station silhouetted against the night side",
+    "Earthrise over a grey lunar horizon",
+    "a nebula in deep red and teal with a few bright stars"
+  ],
+  "use": [
+    "desktop",
+    "phone",
+    "post"
+  ]
+}
