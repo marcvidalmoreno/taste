@@ -15,7 +15,12 @@ Files this server reads or writes (all in generated/codex/)
   <batch>/*.png        images (read), seed.* is the seed of a variations batch
   runs.csv             one row per generated image (read): style, change, seed, prompt
   ratings.csv          saved ratings (read; appended through rate.append_ratings)
+  app-drafts.json      marks not saved yet, so they survive closing the tab (written)
+  app-ignored.json     images hidden from the grid and left out of ratings (written)
   .thumbs/             small JPEG copies for the grid (written, safe to delete)
+
+Draft, then save: marks are drafts until "Save ratings" appends them to ratings.csv in one go.
+Saved ratings are read-only here, because distil.py remembers its place by row count.
 """
 import argparse, csv, json, os, sys, threading, webbrowser
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -88,7 +93,8 @@ def batch_images(batch):
     for i, name in enumerate(rate.batch_images(batch), 1):
         run = runs.get(name, {})
         s = saved.get((batch, name))
-        status = 'rated' if s else 'ignored' if name in ignored else 'draft' if name in drafts else 'new'
+        marked = (drafts.get(name) or {}).get('rating')  # a "why" alone is kept, but is not a draft yet
+        status = 'rated' if s else 'ignored' if name in ignored else 'draft' if marked else 'new'
         out.append({
             'name': name, 'file': f'{name}.png', 'number': i, 'status': status,
             'mtime': int((BASE / batch / f'{name}.png').stat().st_mtime),
@@ -149,6 +155,9 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/batches'): 'get_batches',
         ('GET', 'api/batch'): 'get_batch',
         ('GET', 'api/styles'): 'get_styles',
+        ('PUT', 'api/draft'): 'put_draft',
+        ('POST', 'api/ignore'): 'post_ignore',
+        ('POST', 'api/save'): 'post_save',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -162,6 +171,28 @@ class Handler(BaseHTTPRequestHandler):
         host = (self.headers.get('Host') or '').rsplit(':', 1)[0]
         if host not in ('127.0.0.1', 'localhost'):
             raise ApiError(403, 'local use only')
+
+    def read_body(self):
+        """JSON body of a write. Writes need the page's own header: a page on another site can't add it
+        without a CORS preflight, which this server never answers, so only the taste page can write."""
+        if self.headers.get('X-Taste-App') != '1' or 'application/json' not in (self.headers.get('Content-Type') or ''):
+            raise ApiError(403, 'writes only from the taste page')
+        n = int(self.headers.get('Content-Length') or 0)
+        if n > 100_000:
+            raise ApiError(413, 'request too large')
+        try:
+            return json.loads(self.rfile.read(n) or b'{}')
+        except json.JSONDecodeError:
+            raise ApiError(400, 'bad JSON')
+
+    def image_from(self, body):
+        """(batch, name) from a request body, checked: the image must exist and not be saved yet."""
+        batch, name = str(body.get('batch', '')), str(body.get('name', ''))
+        if not is_batch(batch) or name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in batch "{batch}"')
+        if (batch, name) in saved_ratings():
+            raise ApiError(409, 'this rating is saved already; saved ratings are read-only')
+        return batch, name
 
     def send(self, status, body, ctype='application/json', cache=None):
         if not isinstance(body, bytes):
@@ -211,6 +242,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.handle_any('GET')
 
+    def do_POST(self):
+        self.handle_any('POST')
+
+    def do_PUT(self):
+        self.handle_any('PUT')
+
     # -- API handlers: return plain data, the plumbing turns it into JSON
 
     def get_batches(self):
@@ -221,6 +258,62 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(404, f'no batch "{batch}"')
         images = batch_images(batch)
         return {**summary(batch, images), 'items': images}
+
+    def put_draft(self):
+        """Set or clear one draft: {batch, name, rating: keep|almost|no|null, why}."""
+        body = self.read_body()
+        batch, name = self.image_from(body)
+        rating, why = body.get('rating'), ' '.join(str(body.get('why') or '').split())[:300]
+        if rating not in (None, *rate.RATINGS_ALLOWED):
+            raise ApiError(400, 'rating must be keep, almost, no or null')
+        with LOCK:
+            drafts = read_json(DRAFTS, {})
+            mine = drafts.setdefault(batch, {})
+            if rating is None and not why:
+                mine.pop(name, None)
+            else:
+                mine[name] = {'rating': rating, 'why': why}
+            if not mine:
+                drafts.pop(batch)
+            write_json(DRAFTS, drafts)
+        return {'ok': True}
+
+    def post_ignore(self):
+        """Hide or show one image: {batch, name, ignored: true|false}. The file stays on disk."""
+        body = self.read_body()
+        batch, name = self.image_from(body)
+        with LOCK:
+            ignored = read_json(IGNORED, {})
+            names = set(ignored.get(batch, []))
+            (names.add if body.get('ignored') else names.discard)(name)
+            if names:
+                ignored[batch] = sorted(names)
+            else:
+                ignored.pop(batch, None)
+            write_json(IGNORED, ignored)
+        return {'ok': True}
+
+    def post_save(self):
+        """Append the batch's drafts to ratings.csv (ignored images left out), then clear those drafts."""
+        batch = str(self.read_body().get('batch', ''))
+        if not is_batch(batch):
+            raise ApiError(404, f'no batch "{batch}"')
+        with LOCK:
+            drafts = read_json(DRAFTS, {})
+            mine = drafts.get(batch, {})
+            ignored = set(read_json(IGNORED, {}).get(batch, []))
+            saved, names = saved_ratings(), rate.batch_images(batch)
+            marks = [(n, d['rating'], d.get('why', '')) for n, d in sorted(mine.items())
+                     if d.get('rating') and n in names and n not in ignored and (batch, n) not in saved]
+            if not marks:
+                raise ApiError(400, 'nothing to save: mark an image first')
+            rows = rate.append_ratings(batch, marks)   # the one writer, shared with rate.py
+            for n, _, _ in marks:
+                mine.pop(n)
+            if not mine:
+                drafts.pop(batch, None)
+            write_json(DRAFTS, drafts)
+        return {'saved': len(rows), 'since_last': len(rate.since_last()), 'due': rate.DUE}
 
     def get_styles(self):
         """The 14 styles: key, display name and palette (for the style picker and labels)."""
