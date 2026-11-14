@@ -30,11 +30,17 @@ def model(root):
     cent = {s: X[lab == s].mean(0) for s in members}
     limit = {s: np.percentile(np.linalg.norm(X[lab == s] - cent[s], axis=1), 90) for s in members}
 
-    def guess(path):
-        a, w, h, thumb = thumb64(path)
+    def score(a, w, h):
+        """Top 3 for a 64x64 thumbnail array, plus distance / the best style's 90th percentile (<= 1: inside)."""
         x = pca.transform(sc.transform([features(a, w, h)]))[0]
         d = sorted(((s, round(float(np.linalg.norm(x - c)), 2)) for s, c in cent.items()), key=lambda t: t[1])
-        return d[:3], bool(d[0][1] > limit[d[0][0]]), thumb
+        return d[:3], d[0][1] / limit[d[0][0]]
+
+    def guess(path):
+        a, w, h, thumb = thumb64(path)
+        top, ratio = score(a, w, h)
+        return top, bool(ratio > 1), thumb
+    guess.score = score
     return guess
 
 

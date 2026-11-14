@@ -13,7 +13,7 @@ Google's Nano Banana (Gemini app, prompt packs).
 - [`taste/taste.json`](taste/taste.json): one short prompt block per style, generated from the style files by
   `scripts/build_taste.py`. Never edited by hand.
 - [`scripts/`](scripts/): `pack.py` builds a prompt pack for a post, `inbox.py` sorts newly liked images into
-  a style (top-3 guess, confirmed by eye), `build/` is how the styles were found (`restyle.py`: tags to style
+  a style (top-3 guess, confirmed by eye), `ingest.py` adds a whole folder of images (see "Add a collection"), `build/` is how the styles were found (`restyle.py`: tags to style
   members, measured palettes, exemplars; the older scripts did the 8 Nov colour clustering).
   Codex route: `codex_run.py`, `variations.py`, `sheet.py`, `rate.py`, `distil.py`, `nearest.py` (below).
 - [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to look at the Codex
@@ -35,6 +35,30 @@ The wallpapers themselves and every reference image belong to their creators. Th
    no free tier for image models) and save the result next to the prompts.
 3. Images I like later go into `inbox/`; `scripts/inbox.py` files them under the closest style and the style
    descriptions get updated.
+
+## Add a collection (a folder of images I like)
+The same five steps every time, for any folder: more wallpapers, an art folder, a Pinterest export.
+1. **Inventory and dedupe** and 2. **triage**: one command.
+   `.venv/Scripts/python -I scripts/ingest.py <folder> --name <collection>`
+   It reads every image (sub-folder names are kept as a group, e.g. the artist), drops duplicates within the
+   folder and against everything ingested before, and guesses the closest styles for each image. Images close to a
+   style land on "fits" contact sheets for that style. Images far from every style land on "new" sheets: they're
+   the candidates for new styles. Output: `taste/data/collections/<name>/` (git-ignored) with `REVIEW.md`, the
+   counts and links to the numbered sheets.
+3. **Tag by eye**: Claude Code reads the sheets ("new" first) and tags subject, medium, mood and light per image.
+   This is the costly step in Claude usage. The triage only sees colour and composition: for a folder close to
+   the existing styles, tagging the "new" sheets may be enough; for a folder of a different kind (ART, 14 Nov:
+   Dubuffet, Escher and Léger landed under "japanese-print" by colour) every sheet needs tagging, with the
+   sub-folders (artists) as the better hint.
+4. **Propose styles**: new styles and edits to existing ones, one by one, for my OK; then palettes and exemplars
+   are measured and `scripts/build_taste.py` rebuilds `taste/taste.json`.
+5. **Test**: 2–3 Codex images per new style, rated in the web app; distil after ~20 ratings.
+
+### Make your own taste
+Fork the repo, empty `taste/styles/`, and run `ingest.py` on your own folder. With no styles yet, every image
+goes to the "new" sheets, and Claude Code (or you) tags them and proposes your first styles. Your reference images
+stay on your machine (`taste/data/` is git-ignored); only the written styles and your own generated images get
+published.
 
 ## Codex route (ChatGPT plan, no API key, no bill)
 Claude Code owns the taste; Codex CLI only generates. One fresh `codex exec` per image. Images, the run log and
@@ -65,6 +89,12 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **14 Nov 2026** – Add a collection: `scripts/ingest.py <folder> --name <c>` (inventory, dedupe against everything
+  ingested, triage into "fits <style>" and "new" contact sheets, `REVIEW.md` with counts and groups), all output in
+  the git-ignored `taste/data/collections/`. `nearest.py` exposes `score()` for thumbnail arrays. README: "Add a
+  collection" and "Make your own taste". First run, ART: 828 unique images in 37 groups; the colour triage is a
+  weak hint there, so every sheet needs tagging. Undo: `git revert` the "Add a collection" commit and delete
+  `taste/data/collections/`.
 - **14 Nov 2026** – Variations can add or remove one thing in every image: `variations.py --note "..."` and a new
   "In every variation" field in the Make variations dialog (e.g. "no planet in the sky"); the note goes in each
   prompt above the style notes. Local `.claude/launch.json` (not in git) gains `taste-app-real` (port 8791, spends allowance).
