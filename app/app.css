@@ -314,3 +314,90 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
   .overview { grid-template-columns: 1fr; }
   .bar-row { grid-template-columns: 8rem 1fr 2rem; }
 }
+
+/* 10. Gallery, Taste, About (read-only pages) ---------------------------------------------------- */
+/* Rating pill: word + colour, so the meaning never rests on colour alone. */
+.rating-pill { display: inline-block; font-size: .8rem; font-weight: 600; padding: .1rem .55rem; border-radius: 99px;
+               border: 1px solid var(--line); color: var(--text); }
+.rating-pill.keep { background: var(--keep); border-color: var(--keep); color: #111; }
+.rating-pill.almost { background: var(--almost); border-color: var(--almost); color: #111; }
+.rating-pill.no { background: var(--no); border-color: var(--no); color: #111; }
+
+.gallery-filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1.25rem; }
+.gallery-filters select { width: auto; flex: 0 1 auto; margin: 0; padding-block: .4rem; }
+.rseg { display: inline-flex; width: auto; margin: 0; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.rseg-btn { margin: 0; border: 0; border-radius: 0; padding: .4rem .8rem; font-size: .9rem; width: auto;
+           background: transparent; color: var(--pico-muted-color); }
+.rseg-btn + .rseg-btn { border-left: 1px solid var(--line); }
+.rseg-btn small { opacity: .7; }
+.rseg-btn:hover { background: var(--surface-2); color: var(--text); }
+.rseg-btn[aria-pressed=true] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+
+/* Justified rows: tiles grow by their width/height ratio; the filler keeps the last row from stretching. */
+.justified { display: flex; flex-wrap: wrap; gap: 6px; }
+.justified .filler { flex: 1000 1 0; height: 0; }
+.jtile { position: relative; margin: 0; padding: 0; border: 0; border-radius: 4px; overflow: hidden;
+         background: var(--frame); cursor: zoom-in; width: auto; }
+.jtile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .15s; }
+.jtile:hover img { opacity: .85; }
+.jtile .mark { top: .4rem; left: .4rem; width: 1.4rem; height: 1.4rem; font-size: .7rem; }
+
+/* Large view: full screen like the batch viewer (Pico makes dialogs full screen); image left, facts right. */
+dialog.glarge:focus { outline: none; }
+dialog.glarge[open] { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; padding: 0;
+                      background: #0e0e0e; backdrop-filter: none; }
+.glarge-img { display: grid; place-items: center; min-width: 0; height: 100vh; padding: 1.25rem; }
+.glarge-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.glarge-side { padding: 1rem 1.25rem; overflow: auto; height: 100vh; background: var(--surface); }
+.glarge-nav { display: flex; gap: .4rem; align-items: center; margin-bottom: 1rem; }
+.glarge-nav button { width: auto; margin: 0; padding: .3rem .7rem; }
+.glarge-nav .close { margin-left: auto; }
+.glarge dl { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; font-size: .9rem; }
+.glarge dt { color: var(--pico-muted-color); font-weight: 400; }
+.glarge dd { margin: 0; }
+.glarge .prompt { font-size: .85rem; color: var(--pico-muted-color); white-space: pre-wrap; }
+@media (max-width: 900px) {
+  dialog.glarge[open] { grid-template-columns: 1fr; grid-template-rows: 60vh auto; overflow-y: auto; }
+  .glarge-img, .glarge-side { height: auto; }
+}
+
+.style-index { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin-bottom: 1.5rem; font-size: .9rem; }
+.style-index a { display: inline-flex; gap: .4rem; align-items: center; color: var(--pico-muted-color); text-decoration: none; }
+.style-index a:hover { color: var(--text); }
+.mini-swatch { display: inline-flex; border-radius: 3px; overflow: hidden; }
+.mini-swatch i { width: .55rem; height: .9rem; }
+.style-card { margin-bottom: 1.25rem; scroll-margin-top: 4.5rem; }
+.style-card header { margin-bottom: 1rem; padding: 0; background: none; border: 0; }
+.style-card h2 { font-size: 1.2rem; color: var(--text); font-weight: 600; margin-bottom: .3rem; }
+.swatches { display: flex; flex-wrap: wrap; gap: .5rem; }
+.swatches span { display: inline-flex; align-items: center; gap: .3rem; }
+.swatches i { width: 1.5rem; height: 1.5rem; border-radius: 4px; border: 1px solid var(--line); }
+.swatches code { font-size: .72rem; background: none; padding: 0; color: var(--pico-muted-color); }
+.style-body { display: grid; grid-template-columns: minmax(16rem, 2fr) 3fr; gap: 1.5rem; }
+@media (max-width: 1000px) { .style-body { grid-template-columns: 1fr; } }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: .35rem 1rem; font-size: .9rem; margin: 0; }
+.facts dt { color: var(--pico-muted-color); font-weight: 400; }
+.facts dd { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: .3rem; padding: 0; margin: 0; }
+.chips li { list-style: none; margin: 0; font-size: .8rem; padding: .05rem .5rem; border: 1px solid var(--line); border-radius: 99px; }
+.examples { margin-bottom: 1rem; }
+.examples h3 { font-size: .9rem; margin-bottom: .4rem; font-weight: 400; }
+.ex-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; }
+.ex-row figure { margin: 0; }
+.ex { margin: 0; padding: 0; border: 0; width: 100%; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden;
+      background: var(--frame); cursor: zoom-in; }
+.ex img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ex-row figcaption { font-size: .78rem; color: var(--pico-muted-color); margin-top: .2rem; }
+
+/* About: reading width, not app width. */
+.about-toc { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: .4rem 1.2rem; margin-bottom: 2rem; }
+.about { max-width: 46rem; }
+.about section { margin-bottom: 2.5rem; scroll-margin-top: 4.5rem; }
+.about h2 { font-size: 1.2rem; }
+.timeline { padding-left: 1.2rem; }
+.timeline li { margin-bottom: .6rem; }
+.timeline time { color: var(--pico-muted-color); font-variant-numeric: tabular-nums; margin-right: .4rem; }
+.decisions dt { font-weight: 600; margin-top: .9rem; }
+.decisions dd { margin: .2rem 0 0; color: var(--pico-muted-color); }
+.draft-note { max-width: 46rem; padding: .6rem .9rem; border: 1px dashed #6a6a6a; border-radius: var(--radius);
+              color: var(--pico-muted-color); font-size: .9rem; }

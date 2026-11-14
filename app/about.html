@@ -1,0 +1,103 @@
+<!-- About page, loaded into #view by js/about.js. Plain HTML so it is easy to edit by hand.
+     DRAFT written by Claude Code on 14 Nov 2026 from the README, the repo CLAUDE.md and the git history;
+     waiting for Marc's review. Remove the .draft-note paragraph once approved. -->
+<hgroup class="page-head">
+  <h1>About</h1>
+  <p>What this project is, how it came to be, and how it works.</p>
+</hgroup>
+
+<p class="draft-note">Draft for Marc's review: facts come from the README and the git history, wording is not final.</p>
+
+<nav class="about-toc" aria-label="On this page">
+  <a href="#/about/why">Why</a>
+  <a href="#/about/history">History</a>
+  <a href="#/about/how">How it works</a>
+  <a href="#/about/decisions">Decisions</a>
+  <a href="#/about/together">How we work</a>
+</nav>
+
+<div class="about">
+
+<section id="about-why">
+  <h2>Why</h2>
+  <p>I make images for my posts and wallpapers, and I know what I like when I see it. Over the years I saved
+    about 1,000 wallpapers. An image model can't read that folder, but it can read a written description.</p>
+  <p>So this project turns the folder into words: styles with a palette, light, composition, medium, mood and,
+    just as important, what to avoid. Then every image I make, and how I rate it, feeds back into those words.
+    The taste is meant to grow from evidence, not from guesses.</p>
+  <p>The wallpapers belong to the people who made them. They stay on my laptop. Only the descriptions and the
+    images I generate are mine to show.</p>
+</section>
+
+<section id="about-history">
+  <h2>History</h2>
+  <ol class="timeline">
+    <li><time>8 Nov 2026</time> <strong>First version.</strong> Five styles found by clustering the wallpapers by
+      colour, prompt packs for the Gemini app (Nano Banana), and an inbox that sorts newly liked images into a style.</li>
+    <li><time>13 Nov 2026</time> <strong>Codex route.</strong> Images made with ChatGPT through Codex CLI, on my
+      plan, with no API key and no bill. One image per run, every run logged with its cost in allowance.
+      Variations, contact sheets, ratings and a "distil" step that turns ratings into style edits.</li>
+    <li><time>13 Nov 2026</time> <strong>Taste rebuilt from zero.</strong> Colour alone found the right style only
+      36 % of the time. Every wallpaper was tagged by eye on contact sheets (subject, medium, mood, light) and grouped
+      into fourteen styles, each approved one by one. Palettes are measured from the images.</li>
+    <li><time>13 Nov 2026</time> <strong>This web app.</strong> Look at a batch, mark keep / almost / no with a
+      reason, save, start variations, see ratings per style.</li>
+    <li><time>14 Nov 2026</time> <strong>Gallery, Taste and About pages.</strong> Everything I've made in one place,
+      and the styles shown with my own images as examples.</li>
+  </ol>
+</section>
+
+<section id="about-how">
+  <h2>How it works</h2>
+  <ol>
+    <li><strong>Styles.</strong> Each style is one JSON file in <code>taste/styles/</code>.
+      <code>build_taste.py</code> turns them into short prompt blocks in <code>taste/taste.json</code>.</li>
+    <li><strong>Generate.</strong> <code>codex_run.py</code> starts one fresh <code>codex exec</code> per image with
+      a style and a subject. Native size is 1672 × 941, about a minute and ~95k tokens per image (mostly cached).</li>
+    <li><strong>Vary.</strong> <code>variations.py</code> changes one thing at a time: palette, subject,
+      composition or mood. The seed goes in as a reference.</li>
+    <li><strong>Rate.</strong> In this app or with <code>rate.py</code>: keep, almost or no, with a short why.</li>
+    <li><strong>Distil.</strong> About every 20 ratings, <code>distil.py</code> sums up what the ratings say per
+      style; Claude Code proposes edits to the style files, I approve each one, and the prompts are rebuilt.</li>
+  </ol>
+  <p>The app is plain HTML, CSS (Pico.css) and JavaScript modules, served by a small Python server on
+    127.0.0.1 only. No framework, no build step. Images, ratings and logs stay in <code>generated/codex/</code>,
+    which git ignores.</p>
+</section>
+
+<section id="about-decisions">
+  <h2>Decisions</h2>
+  <dl class="decisions">
+    <dt>Styles by eye, not by colour</dt>
+    <dd>Colour clustering was quick but wrong two times out of three. Tagging by eye took longer and gives styles
+      I recognise as mine. Tools still offer a top-3 guess, and I confirm it.</dd>
+    <dt>Codex for images, Claude Code for the taste</dt>
+    <dd>One tool generates, the other one thinks. Codex never edits a style file; Claude Code never edits one
+      without my OK. Files are the hand-off between them.</dd>
+    <dt>One change per variation</dt>
+    <dd>If a variation changes palette and subject at once, I can't tell which one I liked. One change, one lesson.</dd>
+    <dt>Draft, then save</dt>
+    <dd>Marks stay drafts until I save them. Saved ratings are read-only, because the distil step counts rows to
+      know where it stopped.</dd>
+    <dt>Local first</dt>
+    <dd>The wallpapers and every reference image stay private. The app listens on this machine only.</dd>
+    <dt>Measure the allowance, don't guess it</dt>
+    <dd>Every run logs the allowance read from Codex's own log, so the budget (about 40 images a week) rests on
+      numbers.</dd>
+  </dl>
+</section>
+
+<section id="about-together">
+  <h2>How we work</h2>
+  <p>Three of us, each with a clear job:</p>
+  <ul>
+    <li><strong>Me:</strong> I look, rate and decide. Every style edit needs my OK.</li>
+    <li><strong>Claude Code:</strong> owns the taste files, reads my ratings, proposes edits, builds the tools and
+      this app, and writes a changelog entry with an undo line for every change.</li>
+    <li><strong>Codex CLI:</strong> makes the images, one fresh run per image, and nothing else.</li>
+  </ul>
+  <p>The rules for Claude Code are in the repo's <code>CLAUDE.md</code>: stop and report after one failed retry,
+    ask before spending a large share of the allowance, check every push for private data.</p>
+</section>
+
+</div>

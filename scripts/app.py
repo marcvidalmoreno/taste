@@ -252,6 +252,7 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/job'): 'get_job',
         ('GET', 'api/overview'): 'get_overview',
         ('GET', 'api/distil'): 'get_distil',
+        ('GET', 'api/gallery'): 'get_gallery',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -465,13 +466,33 @@ class Handler(BaseHTTPRequestHandler):
         return {'output': (r.stdout + r.stderr).strip(), 'returncode': r.returncode}
 
     def get_styles(self):
-        """The 14 styles: key, display name and palette (for the style picker and labels)."""
+        """The 14 styles, whole: name, palette, description, light, composition, medium, mood, detail,
+        avoid, subjects and uses (the picker and labels use the first three, the Taste page all of it)."""
         out = {}
         for p in sorted((ROOT / 'taste' / 'styles').glob('*.json')):
             s = read_json(p, {})
-            out[p.stem] = {'name': s.get('name', p.stem), 'palette': s.get('palette', [])[:7],
+            out[p.stem] = {**s, 'name': s.get('name', p.stem), 'palette': s.get('palette', [])[:7],
                            'description': s.get('description', '')}
         return {'styles': out}
+
+    def get_gallery(self):
+        """Every image of every batch, newest first, ignored ones left out. Read-only: the Gallery and
+        Taste pages show these; marking stays in the batch view. Seeds are left out (rate.batch_images
+        skips them), so wallpapers by other people never show here."""
+        out = []
+        names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
+        for b in names:
+            for im in batch_images(b):
+                if im['status'] == 'ignored':
+                    continue
+                s = im['saved']
+                out.append({'batch': b, 'name': im['name'], 'file': im['file'], 'mtime': im['mtime'],
+                            'style': im['style'], 'mode': im['mode'], 'change': im['change'],
+                            'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
+                            'date': im['date'] or b[:10],
+                            'rating': s['rating'] if s else None, 'why': s['why'] if s else ''})
+        out.sort(key=lambda x: x['mtime'], reverse=True)
+        return {'images': out}
 
 
 def main():

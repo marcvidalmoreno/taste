@@ -19,6 +19,9 @@ Google's Nano Banana (Gemini app, prompt packs).
 - [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to look at the Codex
   batches, mark keep / almost / no with a reason, ignore broken images, save ratings, start variations and see
   ratings per style. Plain HTML, CSS (Pico.css, vendored) and JavaScript modules; Python standard library + Pillow.
+  Also read-only pages: **Gallery** (every image in justified rows, filters by style, rating and batch),
+  **Taste** (the styles with my kept and rejected images as examples) and **About** (`app/about.html`: why,
+  history, how it works, decisions, how we work).
 - [`generated/`](generated/): images **I** generated with these styles, with the prompts used.
 
 ## What's not here, on purpose
@@ -62,6 +65,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **14 Nov 2026** – Web app: Gallery, Taste and About pages (read-only; images still come from the git-ignored
+  `generated/codex/`, nothing uploaded). New `GET /api/gallery`; `GET /api/styles` now returns whole style files.
+  About text is a draft for my review. Undo: `git revert <this commit>`.
 - **13 Nov 2026** – Web app, after the first real variations run (3 images, all made): a new batch shows the seed
   and placeholders before its first image, and each tile re-reads its style once `runs.csv` has the row.
   Undo: `git revert c38b518` and this README commit.
