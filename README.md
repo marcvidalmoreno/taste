@@ -77,8 +77,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   neon-dusk, retro-sci-fi-painting, warm-interiors-japan). Styles defined by eye, not by colour clustering; colour
   alone finds the right style only 36 % of the time, so `nearest.py` / `inbox.py` / `variations.py` now show a
   top-3 guess and the style is confirmed by eye. `gem-instructions.md` regenerated from the new styles.
-  Undo: `git revert <this commit>` (old exemplar copies kept locally in `taste/data/exemplars-2026-11-08/`).
+  Undo: `git revert 9133a5a` (old exemplar copies kept locally in `taste/data/exemplars-2026-11-08/`).
 - **13 Nov 2026** – Codex route: `codex_run.py` (one image + run log), `variations.py`, `sheet.py`, `rate.py`,
   `distil.py`, `nearest.py`, `build_taste.py` → `taste/taste.json`; `generated/codex/` git-ignored; repo `CLAUDE.md`
-  (automatic pushes). Undo: `git revert <this commit>` (local images and logs in `generated/codex/` are untouched;
+  (automatic pushes). Undo: `git revert 24c1543` (local images and logs in `generated/codex/` are untouched;
   delete that folder by hand if wanted).
+- **8 Nov 2026** – First version: five colour-clustered styles, `pack.py` prompt packs for the Gemini app,
+  `inbox.py` sorter, `gem-instructions.md`. Undo: `git revert 08cbcf8` (superseded by the 13 Nov rebuild).
