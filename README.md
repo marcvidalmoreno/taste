@@ -5,10 +5,10 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
 Google's Nano Banana (Gemini app, prompt packs).
 
 ## What's here
-- [`taste/styles/`](taste/styles/): fourteen styles found in about 1,000 wallpapers I've saved over the years,
+- [`taste/styles/`](taste/styles/): fifteen styles (fourteen found in about 1,000 wallpapers I've saved over the years,
   each with a palette, light, composition, medium, mood, an **avoid** list, starter subjects and the uses it suits
   (Teams background, desktop, phone, post). Rebuilt on 13 Nov 2026: every image tagged by eye on contact sheets
-  (subject, medium, mood, light), grouped into styles I approved one by one; palettes measured from the images.
+  (subject, medium, mood, light), grouped into styles I approved one by one; palettes measured from the images; plus "Fractal worlds", added 14 Nov 2026).
 - [`taste/gem-instructions.md`](taste/gem-instructions.md): instructions for a Gemini Gem that uses the styles.
 - [`taste/taste.json`](taste/taste.json): one short prompt block per style, generated from the style files by
   `scripts/build_taste.py`. Never edited by hand.
@@ -72,6 +72,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - **14 Nov 2026** – Web app: Gallery, Taste and About pages (read-only; images still come from the git-ignored
   `generated/codex/`, nothing uploaded). New `GET /api/gallery`; `GET /api/styles` now returns whole style files.
   About text is a draft for my review. Undo: `git revert e6192df`.
+- **14 Nov 2026** – Fractal exploration, computed route: `scripts/fractal.py` renders real Mandelbrot, Julia and
+  Burning Ship fractals coloured with a style's palette (numpy + Pillow, no Codex allowance); samples in
+  `generated/fractals/`. New style `fractal-worlds` (the 15th), built on the Psychedelic dreams palette; avoid list
+  is just "busy noise" and "text and logos". Undo: delete `scripts/fractal.py`, `generated/fractals/` and
+  `taste/styles/fractal-worlds.json`, then `build_taste.py .` Four Codex test images (git-ignored) in `generated/codex/2026-11-14-fractal-worlds`: five-hour 14→18 %, weekly 44→45 %.
 - **13 Nov 2026** – Web app, after the first real variations run (3 images, all made): a new batch shows the seed
   and placeholders before its first image, and each tile re-reads its style once `runs.csv` has the row.
   Undo: `git revert c38b518` and this README commit.

@@ -51,6 +51,16 @@
     "a comet over line-drawn mountains"
    ]
   },
+  "fractal-worlds": {
+   "name": "Fractal worlds",
+   "prompt": "Fractal structure as the subject: spiral coastlines, glowing filigree, recursive architecture. Light: self-luminous edges on a dark ground, thin-film colour on the rims. Composition: one central spiral or bay with deep zoom detail, generous dark space. Medium: detailed digital render, high contrast, fine linework. Mood: calm, deep, hypnotic. Detail: self-similar detail at every scale. Palette: #0d0c0e, #373438, #4f6579, #a3674a, #b8aea5, #ad6035, #2a6592. Avoid: busy noise; text and logos. No text, no logos, no watermark.",
+   "subjects": [
+    "a Julia spiral glowing on black",
+    "a seahorse-valley coastline",
+    "a cathedral of recursive arches",
+    "a soap-bubble orb whose surface is a fractal"
+   ]
+  },
   "iridescent-abstract": {
    "name": "Iridescent abstract",
    "prompt": "No subject: glass and soap-bubble orbs, liquid 3D gradients, rainbow light leaks, smooth colour fields. Light: studio light on glossy surfaces, thin-film rainbow reflections. Composition: one central form on a dark or soft background, generous negative space. Medium: 3D render or macro photograph. Mood: smooth, modern, calm or playful. Detail: glass, liquid metal, thin-film interference, soft blur. Palette: #0d0a0e, #413640, #5d788f, #c25f49, #ccbeae, #2e6ba4, #c2553d. Avoid: busy patterns; recognisable objects; harsh noise; text and logos. No text, no logos, no watermark.",

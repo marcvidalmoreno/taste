@@ -1,0 +1,32 @@
+{
+  "name": "Fractal worlds",
+  "description": "Fractal structure as the subject: spiral coastlines, glowing filigree, recursive architecture.",
+  "palette": [
+    "#0d0c0e",
+    "#373438",
+    "#4f6579",
+    "#a3674a",
+    "#b8aea5",
+    "#ad6035",
+    "#2a6592"
+  ],
+  "light": "self-luminous edges on a dark ground, thin-film colour on the rims",
+  "composition": "one central spiral or bay with deep zoom detail, generous dark space",
+  "camera_or_medium": "detailed digital render, high contrast, fine linework",
+  "mood": "calm, deep, hypnotic",
+  "texture_detail": "self-similar detail at every scale",
+  "avoid": [
+    "busy noise",
+    "text and logos"
+  ],
+  "subjects": [
+    "a Julia spiral glowing on black",
+    "a seahorse-valley coastline",
+    "a cathedral of recursive arches",
+    "a soap-bubble orb whose surface is a fractal"
+  ],
+  "use": [
+    "phone",
+    "desktop"
+  ]
+}
