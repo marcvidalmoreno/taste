@@ -65,6 +65,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **14 Nov 2026** – Variations can add or remove one thing in every image: `variations.py --note "..."` and a new
+  "In every variation" field in the Make variations dialog (e.g. "no planet in the sky"); the note goes in each
+  prompt above the style notes. Local `.claude/launch.json` (not in git) gains `taste-app-real` (port 8791, spends allowance).
+  Undo: revert this commit.
 - **14 Nov 2026** – Web app: Gallery, Taste and About pages (read-only; images still come from the git-ignored
   `generated/codex/`, nothing uploaded). New `GET /api/gallery`; `GET /api/styles` now returns whole style files.
   About text is a draft for my review. Undo: `git revert e6192df`.

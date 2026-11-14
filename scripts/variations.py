@@ -2,7 +2,7 @@
 
 Usage (from the project root):
   .venv/Scripts/python -I scripts/variations.py <seed image> [--style <style>] [--subject "<new subject>"] [--n 3|4]
-        [--slug <name>] [--dry-run]
+        [--note "<instruction for every image>"] [--slug <name>] [--dry-run]
 
 - Style: give --style (Claude looks at the seed once, or Marc names it). Without it the script prints the
   top-3 guesses from scripts/nearest.py and stops: the guess alone is right only about a third of the time.
@@ -28,6 +28,7 @@ ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDe
 ap.add_argument('seed')
 ap.add_argument('--style', default='')
 ap.add_argument('--subject', default='')
+ap.add_argument('--note', default='', help='one instruction for every image, e.g. "no planet in the sky"')
 ap.add_argument('--n', type=int, default=3, choices=[3, 4])
 ap.add_argument('--slug', default='')
 ap.add_argument('--dry-run', action='store_true')
@@ -60,12 +61,15 @@ print(f'batch: {batch}')
 if a.dry_run:
     for change, text in jobs:
         print(f'- {change}: {text}')
+    if a.note:
+        print(f'- every image: {a.note}')
     sys.exit(0)
 batch.mkdir(parents=True, exist_ok=True)
 shutil.copy2(seed, batch / f'seed{seed.suffix.lower()}')
 failed = 0
 for i, (change, text) in enumerate(jobs, 1):
-    prompt = f'Wide 16:9 desktop wallpaper. {text} Style notes (follow them where the change leaves room): {s["prompt"]}'
+    must = f' In every image, and above the style notes: {a.note.rstrip(".")}.' if a.note else ''
+    prompt = f'Wide 16:9 desktop wallpaper. {text}{must} Style notes (follow them where the change leaves room): {s["prompt"]}'
     r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', str(batch),
                         '--name', f'{i}-{change}', '--prompt', prompt, '--ref', str(seed), '--style', style,
                         '--mode', 'variations', '--change', change])

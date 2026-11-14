@@ -197,12 +197,14 @@ def free_slug(stem):
     return slug, f'{day}-{slug}'
 
 
-def start_job(src, style, subject, n):
+def start_job(src, style, subject, n, note=''):
     import subprocess, time
     slug, batch = free_slug(src.stem if src.stem != 'seed' else src.parent.name[11:] + '-seed')
     cmd = [PY, '-I', str(ROOT / 'scripts' / 'variations.py'), str(src), '--style', style, '--n', str(n), '--slug', slug]
     if subject:
         cmd += ['--subject', subject]
+    if note:
+        cmd += ['--note', note]
     if DRY_RUN:
         cmd.append('--dry-run')
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -418,12 +420,13 @@ class Handler(BaseHTTPRequestHandler):
         return guess_styles(source_image(str(body.get('batch', '')), str(body.get('file', ''))))
 
     def post_variations(self):
-        """Start variations.py on one image: {batch, file, style, subject, n}. Spends Codex allowance
+        """Start variations.py on one image: {batch, file, style, subject, note, n}. Spends Codex allowance
         (unless --dry-run), so the page only calls this after Marc confirmed the style and the cost."""
         body = self.read_body()
         src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
         style, n = str(body.get('style', '')), body.get('n', 3)
         subject = ' '.join(str(body.get('subject') or '').split())[:200]
+        note = ' '.join(str(body.get('note') or '').split())[:200]
         if not (ROOT / 'taste' / 'styles' / f'{style}.json').exists():
             raise ApiError(400, f'unknown style "{style}"')
         if n not in (3, 4):
@@ -431,7 +434,7 @@ class Handler(BaseHTTPRequestHandler):
         with LOCK:
             if JOB.get('running'):
                 raise ApiError(409, 'a variation job is already running: one at a time')
-            start_job(src, style, subject, n)
+            start_job(src, style, subject, n, note)
         return job_state()
 
     def get_job(self):

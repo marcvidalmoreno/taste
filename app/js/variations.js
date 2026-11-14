@@ -12,7 +12,7 @@ const MADE = ['palette', 'subject', 'composition', 'mood'];
 // src: {batch, file, label, style}  (label like "#3" or "the seed")
 export async function openVariations(src) {
   const all = await styles();
-  const state = { style: null, n: 3, subject: '', guess: null, allowance: null };
+  const state = { style: null, n: 3, subject: '', note: '', guess: null, allowance: null };
   const dlg = h('dialog', { class: 'variations' });
   const body = h('div');
   const startBtn = h('button', { onClick: start });
@@ -78,7 +78,10 @@ export async function openVariations(src) {
         onClick: () => { state.n = n; draw('.count [aria-pressed=true]'); } }, `${n}: ${MADE.slice(0, n).join(', ')}`))),
       h('label', { class: 'small' }, 'New subject for the "subject" variation (optional)',
         h('input', { type: 'text', value: state.subject, maxlength: 200,
-          placeholder: 'empty: one from the style\'s subjects', onInput: (e) => { state.subject = e.target.value; } })));
+          placeholder: 'empty: one from the style\'s subjects', onInput: (e) => { state.subject = e.target.value; } })),
+      h('label', { class: 'small' }, 'In every variation (optional): add or remove something',
+        h('input', { type: 'text', value: state.note, maxlength: 200,
+          placeholder: 'e.g. no planet in the sky', onInput: (e) => { state.note = e.target.value; } })));
   }
 
   function costSection() {
@@ -106,7 +109,7 @@ export async function openVariations(src) {
     startBtn.setAttribute('aria-busy', 'true');
     startBtn.disabled = true;
     try {
-      await startJob({ batch: src.batch, file: src.file, style: state.style, n: state.n, subject: state.subject });
+      await startJob({ batch: src.batch, file: src.file, style: state.style, n: state.n, subject: state.subject, note: state.note });
       dlg.close();
     } catch (err) {
       startBtn.removeAttribute('aria-busy');
