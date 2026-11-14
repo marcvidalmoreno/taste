@@ -67,7 +67,7 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 ## Changelog
 - **14 Nov 2026** – Web app: Gallery, Taste and About pages (read-only; images still come from the git-ignored
   `generated/codex/`, nothing uploaded). New `GET /api/gallery`; `GET /api/styles` now returns whole style files.
-  About text is a draft for my review. Undo: `git revert <this commit>`.
+  About text is a draft for my review. Undo: `git revert e6192df`.
 - **13 Nov 2026** – Web app, after the first real variations run (3 images, all made): a new batch shows the seed
   and placeholders before its first image, and each tile re-reads its style once `runs.csv` has the row.
   Undo: `git revert c38b518` and this README commit.
