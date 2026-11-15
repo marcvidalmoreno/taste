@@ -23,6 +23,8 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
   history, how it works, decisions, how we work).
 - [`docs/how-it-works.md`](docs/how-it-works.md): how a folder of images becomes a style (thumbnails,
   numbers, clusters, tagging by eye, palettes, exemplars) and what Claude did and didn't see.
+- [`docs/progress.html`](docs/progress.html): the progress so far, by week and day, as a read-only page in an
+  email layout (copy or open in a mail app), plus where it's going and the idea behind it.
 - [`generated/`](generated/): images **I** generated with these styles, with the prompts used.
 
 ## What's not here, on purpose
@@ -104,6 +106,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – New [`docs/progress.html`](docs/progress.html): progress from 8 to 15 Nov by week and day
+  (from git history and this changelog), ideas for where it's going, and the idea behind it. Email layout with
+  "Open in my mail app" and "Copy text"; counts only, no private data. Undo: `git revert` this commit.
 - **15 Nov 2026** – Batch large view: on a narrow or zoomed-in window (≤ 900 px CSS width) the panel slid up
   over the image and the image spilled past its box (Pico centres dialog children; `max-height: 100%` didn't
   resolve). Same fix as the gallery's large view: the image fills the space above the panel, whole, and the
