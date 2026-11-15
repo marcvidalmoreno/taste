@@ -93,7 +93,7 @@
   },
   "goyon": {
    "name": "Goyon visionary comics",
-   "prompt": "Visionary hand-drawn comics: dense, symmetrical, saturated coloured-pencil worlds of masks, feathered figures, totems, flames and patterned rays, like pages from an illuminated sketchbook. Light: inner glow, colour itself as light, hot centres fading to dark edges. Composition: symmetrical or radiating from a central mask or eye, every part filled, often a double-page spread. Medium: coloured pencil and felt pen on paper, sketchbook spreads and comic covers. Mood: visionary, ecstatic, mythic, intense. Detail: dense pencil strokes, stacked rainbow bands, fine repeating ornaments, paper texture. Palette: #3b2938, #9e4833, #617693, #c88f56, #cbc7c1, #b55e30, #3861a6. Avoid: photorealism; 3D render; empty space; readable text; named artists. No text, no logos, no watermark.",
+   "prompt": "Visionary hand-drawn comics: dense, symmetrical, saturated coloured-pencil worlds of masks, feathered figures, totems, flames and patterned rays, like pages from an illuminated sketchbook. Light: inner glow, colour itself as light, hot centres fading to dark edges. Composition: symmetrical or radiating from a central mask or eye, every part filled, often a double-page spread. Medium: coloured pencil and felt pen on paper, sketchbook spreads and comic covers. Mood: visionary, ecstatic, mythic, intense. Detail: dense pencil strokes, stacked rainbow bands, fine repeating ornaments, paper texture. Palette: #3c2834, #a04b33, #607491, #c5925e, #d1cec9, #b45e2f, #3761a6. Avoid: photorealism; 3D render; empty space; readable text; named artists. No text, no logos, no watermark.",
    "subjects": [
     "a feathered mask radiating rainbow rays",
     "a procession of totem figures in flames",
@@ -203,7 +203,7 @@
   },
   "robots": {
    "name": "Robots",
-   "prompt": "Friendly retro robots and astronauts in flat illustration: boxy bodies with screen faces, in pastel deserts, rooms and pink skies, often alongside people. Light: flat, warm sunset or bright midday, no harsh shadows. Composition: simple, one to four robots as clear silhouettes, lots of flat sky or wall. Medium: flat vector-like illustration with a subtle grain, risograph feel. Mood: gentle, curious, nostalgic, warm. Detail: flat colour, light grain, simple line accents. Palette: #4d466d, #5b8bbf, #c4737c, #de762a, #ddd1bb, #3575b7, #d76b42. Avoid: menacing killer robots; gritty 3D; chrome photorealism; named characters or brands. No text, no logos, no watermark.",
+   "prompt": "Friendly retro robots and astronauts in flat illustration: boxy bodies with screen faces, in pastel deserts, rooms and pink skies, often alongside people. Light: flat, warm sunset or bright midday, no harsh shadows. Composition: simple, one to four robots as clear silhouettes, lots of flat sky or wall. Medium: flat vector-like illustration with a subtle grain, risograph feel. Mood: gentle, curious, nostalgic, warm. Detail: flat colour, light grain, simple line accents. Palette: #4e466c, #5c8dc0, #dc752c, #c67c80, #e6ddcc, #3575b7, #d76b42. Avoid: menacing killer robots; gritty 3D; chrome photorealism; named characters or brands. No text, no logos, no watermark.",
    "subjects": [
     "a small robot holding a flower",
     "three robots watching a pink sunset",

@@ -90,6 +90,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – DP-GOYONweb is Goyon too: its 10 artworks join `goyon` (99 images) and its robot sculpture
+  joins `robots` (20); logos and press photos stay out. Both palettes re-measured. Undo: `git revert` this commit,
+  then `build_taste.py .`
 - **15 Nov 2026** – Eight styles from the ART collection, tagged by eye on 17 sheets (798 images, about 60 left out:
   photos of people and exhibitions, screenshots; Asterix and DP-GOYONweb excluded): `art-brut`, `goyon`,
   `japanese-landscape`, `science-fiction` (clear-line comics), `microscope-rocks`, `erotic` (suggestive, not
