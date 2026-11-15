@@ -104,6 +104,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Batch large view: on a narrow or zoomed-in window (≤ 900 px CSS width) the panel slid up
+  over the image and the image spilled past its box (Pico centres dialog children; `max-height: 100%` didn't
+  resolve). Same fix as the gallery's large view: the image fills the space above the panel, whole, and the
+  panel scrolls on its own (max 45 % of the height). Wide layout unchanged. Undo: `git revert` this commit.
 - **15 Nov 2026** – `erotic`: one woman alone, sensual through pose, gesture and glance (new "Lean towards"),
   long draped fabric instead of bare skin (Avoid gains "large areas of bare skin"), 4 new solo subjects.
   The old slip-dress subject was blocked twice by the image filter; the chaise-longue and terrace prompts passed.
