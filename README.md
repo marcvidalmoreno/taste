@@ -104,6 +104,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Gallery large view: on a narrow or zoomed-in window (≤ 900 px CSS width, image above the
+  bar) the image was cropped behind the bar because Pico centres dialog children, so the image row never got a
+  height. Now the image fills the space above the bar, whole, and the facts panel scrolls on its own (max 40 % of
+  the height). Wide layout unchanged. Undo: `git revert` this commit.
 - **15 Nov 2026** – Feed a style: `inbox.py` rewritten. One inbox folder per style (created by `--setup`), images
   join the style of their folder, loose ones go to a numbered sheet, duplicates are caught against everything
   ingested; images move to `taste/data/added/` and are recorded as the `inbox` collection. Inbox path settable in

@@ -357,8 +357,14 @@ dialog.glarge[open] { display: grid; grid-template-columns: minmax(0, 1fr) 22rem
 .glarge dd { margin: 0; }
 .glarge .prompt { font-size: .85rem; color: var(--pico-muted-color); white-space: pre-wrap; }
 @media (max-width: 900px) {
-  dialog.glarge[open] { grid-template-columns: 1fr; grid-template-rows: 60vh auto; overflow-y: auto; }
-  .glarge-img, .glarge-side { height: auto; }
+  /* Narrow or zoomed-in: image fills the space above the bar, whole; the bar and facts scroll on their own. */
+  dialog.glarge[open] { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto;
+                        height: 100vh; height: 100dvh; overflow: hidden;
+                        align-items: stretch; }  /* Pico centres dialog children, which unsized the image row */
+  .glarge-img { display: block; position: relative; height: auto; min-height: 0; }
+  .glarge-img img { position: absolute; inset: .75rem; width: calc(100% - 1.5rem); height: calc(100% - 1.5rem);
+                    max-width: none; max-height: none; }
+  .glarge-side { height: auto; max-height: 40vh; }
 }
 
 .style-index { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin-bottom: 1.5rem; font-size: .9rem; }
