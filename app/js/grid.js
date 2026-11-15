@@ -1,7 +1,7 @@
 // One batch: thumbnails with filters. The large view (viewer.js) opens on top of it.
 import { api, styles } from './api.js';
 import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './store.js';
-import { toggleMark, ignoreWithUndo } from './marks.js';
+import { toggleMark, ignoreWithUndo, markButtons } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { renderSaveBar } from './save.js';
 import { job } from './job.js';
@@ -115,7 +115,9 @@ function tile(im) {
         h('span', { class: 'num' }, im.number),
         h('span', { class: 'style' }, styleName(im.style)),
         h('span', { class: 'kind' }, kindOf(im))),
-      why && h('div', { class: 'why' }, why)));
+      why && h('div', { class: 'why' }, why)),
+    // Mark without opening the image. Saved ratings are read-only, ignored images can't be marked.
+    !im.saved && im.status !== 'ignored' && markButtons(im, { inGrid: true }));
 }
 
 // Redraw one tile (or remove it if it no longer fits the filter) instead of the whole grid:

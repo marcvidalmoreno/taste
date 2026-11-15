@@ -104,6 +104,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Batch grid: Keep / Almost / No buttons under each tile, the same as in the large view
+  (one shared `markButtons()` in `app/js/marks.js`), so an image can be marked without opening it. Hidden on
+  saved and ignored images; kept out of the Tab order because K / A / N already mark the focused tile.
+  Undo: `git revert` this commit.
 - **15 Nov 2026** – Gallery large view: on a narrow or zoomed-in window (≤ 900 px CSS width, image above the
   bar) the image was cropped behind the bar because Pico centres dialog children, so the image row never got a
   height. Now the image fills the space above the bar, whole, and the facts panel scrolls on its own (max 40 % of

@@ -199,6 +199,10 @@ dialog.viewer[open] { display: grid; grid-template-columns: minmax(0, 1fr) 380px
 .mark-btn.almost[aria-pressed=true] { background: var(--almost); border-color: var(--almost); }
 .mark-btn.no[aria-pressed=true] { background: var(--no); border-color: var(--no); }
 .mark-box input.why { margin-bottom: .4rem; }
+/* Under a grid tile: same buttons, smaller, so the image stays the main thing. */
+.tile-marks { margin: .5rem 0 0; gap: .3rem; }
+.tile-marks .mark-btn { padding: .3rem .2rem; font-size: .82rem; }
+.tile-marks .mark-btn kbd { font-size: .66rem; }
 .mark-box .status { margin: 0; }
 .saved-note { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
 .saved-note .mark { position: static; }

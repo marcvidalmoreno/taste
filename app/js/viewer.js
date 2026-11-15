@@ -1,7 +1,7 @@
 // Large view: one image at full size, its details, and the marks. A modal <dialog>, so focus stays
 // inside it, the page behind is inert, and Esc closes it.
 import { store, item, styleName, kindOf, onChange, visible } from './store.js';
-import { toggleMark, setWhy, flushWhy, ignoreWithUndo } from './marks.js';
+import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons } from './marks.js';
 import { openVariations } from './variations.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATINGS, markBadge, isTyping, toast } from './ui.js';
 
@@ -139,11 +139,7 @@ function markSection(im) {
   const status = im.status === 'ignored' ? 'Ignored: hidden from the grid and left out of ratings.'
     : r ? 'Draft: kept on this computer until you save the batch.' : 'Not marked yet.';
   return h('section', { class: 'mark-box' },
-    h('div', { role: 'group', class: 'marks', 'aria-label': 'Mark' },
-      Object.entries(RATINGS).map(([key, m]) => h('button', {
-        class: `mark-btn ${key}`, 'aria-pressed': String(r === key), disabled: im.status === 'ignored',
-        onClick: () => toggleMark(im.name, key),
-      }, h('kbd', {}, m.key.toUpperCase()), m.label))),
+    markButtons(im),
     h('input', {
       type: 'text', class: 'why', value: im.draft?.why || '', maxlength: 300, 'aria-label': 'Why',
       placeholder: 'Why? a few words (optional)', disabled: im.status === 'ignored',
