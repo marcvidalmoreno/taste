@@ -11,6 +11,16 @@
     "a portrait covered in scribbled marks"
    ]
   },
+  "botanical-fresco": {
+   "name": "Botanical fresco",
+   "prompt": "Faded Renaissance fresco and tropical wallpaper: hibiscus, monstera, pineapples and palms, with mischievous animals and classical figures in cracked plaster scenes. Light: soft, warm, faded daylight, low contrast. Composition: all-over botanical pattern, or a mural scene in panels with a few animals and figures. Medium: aged fresco on plaster and hand-printed botanical wallpaper. Mood: lush, decadent, ironic, sunlit. Detail: cracked plaster, chalky muted colour, fine botanical line, gold leaf hints. Palette: #272220, #5b4a3c, #8b745e, #b5a086, #e5dac7, #ae7340, #7d482f. Avoid: neon; photorealism; modern people or logos; readable titles; copies of a series title sequence. No text, no logos, no watermark.",
+   "subjects": [
+    "a monkey stealing fruit among hibiscus",
+    "a tiger lounging in a palm garden fresco",
+    "pineapples and leaves as a repeating wallpaper",
+    "a classical party scene with swans and lilies"
+   ]
+  },
   "calm-surreal-pastel": {
    "name": "Calm surreal pastel",
    "prompt": "Soft-render or flat-colour surreal scenes: a lone figure, a giant object, pastel gradient sky, lots of space. Light: soft even light, pastel gradient sky from peach to sky blue. Composition: a tiny lone figure and one oversized object, low horizon, most of the frame empty sky. Medium: soft 3D render or flat colour illustration. Mood: gentle, wry, dreamy. Detail: smooth surfaces, minimal detail, a little film grain. Palette: #342b2b, #74737e, #468cd0, #db8a51, #d9d1c2, #d57838, #3b87cc. Avoid: dark tones; clutter; many figures; text and logos. No text, no logos, no watermark.",
@@ -19,6 +29,26 @@
     "a tiny astronaut on a pastel dune",
     "a chair floating above calm water",
     "a person walking toward a huge door in a desert"
+   ]
+  },
+  "cave-painting": {
+   "name": "Cave painting",
+   "prompt": "Prehistoric rock art: bison, horses, deer, hunters and hand stencils in ochre, red and charcoal on cave walls and rock shelters. Light: warm flickering firelight or soft shade under a rock overhang. Composition: animals spread across the natural bumps of the rock, overlapping, no ground line; or a wide rock shelter in landscape. Medium: mineral pigment and charcoal on limestone, photographed close. Mood: ancient, primal, warm, mysterious. Detail: rough stone, cracks and mineral stains, blown-pigment edges, faded layers. Palette: #211411, #5e3e31, #94684b, #b5997b, #d0cdc1, #904a27, #c98a44. Avoid: modern objects; clean digital lines; cartoon look; text. No text, no logos, no watermark.",
+   "subjects": [
+    "a herd of horses running across a cave wall",
+    "hand stencils around a red bison",
+    "hunters with spears chasing deer",
+    "a rock shelter at dusk with painted figures"
+   ]
+  },
+  "cubist-machine": {
+   "name": "Cubist machine",
+   "prompt": "Modernist cubism of the machine age: bold black outlines, flat primary colours, tubes, cylinders, discs and stylised figures locked into a geometric grid. Light: no light source, flat colour, at most simple tubular shading. Composition: tight geometric grid, overlapping planes, a figure or still life broken into cylinders and discs. Medium: oil or gouache poster in flat colour; mosaic and stained-glass variants. Mood: confident, rhythmic, optimistic, industrial. Detail: thick black contours, flat red, yellow and blue, cream paper, slight print texture. Palette: #2d2628, #61686b, #b36437, #b9a68b, #ebe5d5, #be6d32, #236b98. Avoid: photorealism; soft gradients; copies of famous works; named artists. No text, no logos, no watermark.",
+   "subjects": [
+    "a cyclist built of tubes and discs",
+    "a still life of jugs and gears",
+    "a worker on a scaffold in a geometric city",
+    "faces in a stained-glass mosaic"
    ]
   },
   "dark-painted-epics": {
@@ -159,6 +189,16 @@
     "a hovercar crossing between megatowers in fog",
     "a lone figure on a rooftop over a neon skyline",
     "a synthwave sun over a purple grid horizon"
+   ]
+  },
+  "pastel-retro-sci-fi": {
+   "name": "Pastel retro sci-fi",
+   "prompt": "Flat retro-futurist illustration: astronauts, hover-ships, brutalist towers and small figures under pink, orange and teal skies, a big sun or moon. Light: flat warm sunset or bright midday, colour blocks instead of shading. Composition: simple and graphic, one figure or vehicle against large flat sky, strong horizon, lots of negative space. Medium: flat digital illustration with risograph grain, 70s and 80s anime and paperback feel. Mood: dreamy, nostalgic, calm, a little lonely. Detail: flat colour fields, fine grain, thin line accents, no gradients except the sky. Palette: #503d53, #3a84b4, #cf6482, #e57927, #d4bcb0, #df6455, #2980b1. Avoid: photorealism; gritty 3D; busy detail; named characters or studios. No text, no logos, no watermark.",
+   "subjects": [
+    "an astronaut sitting on a pink dune at sunset",
+    "a yellow hover-train between brutalist towers",
+    "a girl with headphones on a rooftop under a big moon",
+    "friends in matching jackets watching a ship land"
    ]
   },
   "people-and-tech": {

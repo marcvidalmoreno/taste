@@ -1,0 +1,34 @@
+{
+  "name": "Cubist machine",
+  "description": "Modernist cubism of the machine age: bold black outlines, flat primary colours, tubes, cylinders, discs and stylised figures locked into a geometric grid.",
+  "palette": [
+    "#2d2628",
+    "#61686b",
+    "#b36437",
+    "#b9a68b",
+    "#ebe5d5",
+    "#be6d32",
+    "#236b98"
+  ],
+  "light": "no light source, flat colour, at most simple tubular shading",
+  "composition": "tight geometric grid, overlapping planes, a figure or still life broken into cylinders and discs",
+  "camera_or_medium": "oil or gouache poster in flat colour; mosaic and stained-glass variants",
+  "mood": "confident, rhythmic, optimistic, industrial",
+  "texture_detail": "thick black contours, flat red, yellow and blue, cream paper, slight print texture",
+  "avoid": [
+    "photorealism",
+    "soft gradients",
+    "copies of famous works",
+    "named artists"
+  ],
+  "subjects": [
+    "a cyclist built of tubes and discs",
+    "a still life of jugs and gears",
+    "a worker on a scaffold in a geometric city",
+    "faces in a stained-glass mosaic"
+  ],
+  "use": [
+    "post",
+    "desktop"
+  ]
+}

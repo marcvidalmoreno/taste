@@ -1,0 +1,34 @@
+{
+  "name": "Cave painting",
+  "description": "Prehistoric rock art: bison, horses, deer, hunters and hand stencils in ochre, red and charcoal on cave walls and rock shelters.",
+  "palette": [
+    "#211411",
+    "#5e3e31",
+    "#94684b",
+    "#b5997b",
+    "#d0cdc1",
+    "#904a27",
+    "#c98a44"
+  ],
+  "light": "warm flickering firelight or soft shade under a rock overhang",
+  "composition": "animals spread across the natural bumps of the rock, overlapping, no ground line; or a wide rock shelter in landscape",
+  "camera_or_medium": "mineral pigment and charcoal on limestone, photographed close",
+  "mood": "ancient, primal, warm, mysterious",
+  "texture_detail": "rough stone, cracks and mineral stains, blown-pigment edges, faded layers",
+  "avoid": [
+    "modern objects",
+    "clean digital lines",
+    "cartoon look",
+    "text"
+  ],
+  "subjects": [
+    "a herd of horses running across a cave wall",
+    "hand stencils around a red bison",
+    "hunters with spears chasing deer",
+    "a rock shelter at dusk with painted figures"
+  ],
+  "use": [
+    "desktop",
+    "post"
+  ]
+}

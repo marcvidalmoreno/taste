@@ -92,6 +92,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Four more styles from ART, palettes measured: `pastel-retro-sci-fi` (110 images),
+  `cubist-machine` (27), `cave-painting` (40), `botanical-fresco` (26). 27 styles. Undo: `git revert` this commit,
+  then `build_taste.py .`
 - **15 Nov 2026** – New [`docs/how-it-works.md`](docs/how-it-works.md): the pipeline from a folder to styles, the
   8 Nov colour clusters and their limit, the 13 Nov tagging by eye, the ART triage, and an honest note on what
   Claude saw (150 px thumbnails, folder names, its own knowledge; no web search). Undo: `git revert` the

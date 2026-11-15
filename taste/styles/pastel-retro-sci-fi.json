@@ -1,0 +1,35 @@
+{
+  "name": "Pastel retro sci-fi",
+  "description": "Flat retro-futurist illustration: astronauts, hover-ships, brutalist towers and small figures under pink, orange and teal skies, a big sun or moon.",
+  "palette": [
+    "#503d53",
+    "#3a84b4",
+    "#cf6482",
+    "#e57927",
+    "#d4bcb0",
+    "#df6455",
+    "#2980b1"
+  ],
+  "light": "flat warm sunset or bright midday, colour blocks instead of shading",
+  "composition": "simple and graphic, one figure or vehicle against large flat sky, strong horizon, lots of negative space",
+  "camera_or_medium": "flat digital illustration with risograph grain, 70s and 80s anime and paperback feel",
+  "mood": "dreamy, nostalgic, calm, a little lonely",
+  "texture_detail": "flat colour fields, fine grain, thin line accents, no gradients except the sky",
+  "avoid": [
+    "photorealism",
+    "gritty 3D",
+    "busy detail",
+    "named characters or studios"
+  ],
+  "subjects": [
+    "an astronaut sitting on a pink dune at sunset",
+    "a yellow hover-train between brutalist towers",
+    "a girl with headphones on a rooftop under a big moon",
+    "friends in matching jackets watching a ship land"
+  ],
+  "use": [
+    "desktop",
+    "phone",
+    "post"
+  ]
+}

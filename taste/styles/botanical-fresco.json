@@ -1,0 +1,36 @@
+{
+  "name": "Botanical fresco",
+  "description": "Faded Renaissance fresco and tropical wallpaper: hibiscus, monstera, pineapples and palms, with mischievous animals and classical figures in cracked plaster scenes.",
+  "palette": [
+    "#272220",
+    "#5b4a3c",
+    "#8b745e",
+    "#b5a086",
+    "#e5dac7",
+    "#ae7340",
+    "#7d482f"
+  ],
+  "light": "soft, warm, faded daylight, low contrast",
+  "composition": "all-over botanical pattern, or a mural scene in panels with a few animals and figures",
+  "camera_or_medium": "aged fresco on plaster and hand-printed botanical wallpaper",
+  "mood": "lush, decadent, ironic, sunlit",
+  "texture_detail": "cracked plaster, chalky muted colour, fine botanical line, gold leaf hints",
+  "avoid": [
+    "neon",
+    "photorealism",
+    "modern people or logos",
+    "readable titles",
+    "copies of a series title sequence"
+  ],
+  "subjects": [
+    "a monkey stealing fruit among hibiscus",
+    "a tiger lounging in a palm garden fresco",
+    "pineapples and leaves as a repeating wallpaper",
+    "a classical party scene with swans and lilies"
+  ],
+  "use": [
+    "desktop",
+    "post",
+    "phone"
+  ]
+}
