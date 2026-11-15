@@ -11,8 +11,8 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
 - [`taste/gem-instructions.md`](taste/gem-instructions.md): instructions for a Gemini Gem that uses the styles.
 - [`taste/taste.json`](taste/taste.json): one short prompt block per style, generated from the style files by
   `scripts/build_taste.py`. Never edited by hand.
-- [`scripts/`](scripts/): `pack.py` builds a prompt pack for a post, `inbox.py` sorts newly liked images into
-  a style (top-3 guess, confirmed by eye), `ingest.py` adds a whole folder of images (see "Add a collection"), `build/` is how the styles were found (`restyle.py`: tags to style
+- [`scripts/`](scripts/): `pack.py` builds a prompt pack for a post, `inbox.py` feeds a few newly liked images into
+  their styles (see "Feed a style"), `ingest.py` adds a whole folder of images (see "Add a collection"), `build/` is how the styles were found (`restyle.py`: tags to style
   members, measured palettes, exemplars; the older scripts did the 8 Nov colour clustering).
   Codex route: `codex_run.py`, `variations.py`, `sheet.py`, `rate.py`, `distil.py`, `nearest.py` (below).
 - [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to look at the Codex
@@ -34,8 +34,20 @@ The wallpapers themselves and every reference image belong to their creators. Th
    `scripts/pack.py`, which writes `generated/<date>-<slug>/PROMPTS.md` plus three style references per style.
 2. I paste each prompt into the Gemini app with its references (free with my Google AI plan; the Gemini API has
    no free tier for image models) and save the result next to the prompts.
-3. Images I like later go into `inbox/`; `scripts/inbox.py` files them under the closest style and the style
-   descriptions get updated.
+3. Images I like later go into the inbox, in the folder of their style (see "Feed a style").
+
+## Feed a style (a few new images)
+For a handful of pictures now and then; a whole folder goes through "Add a collection" instead.
+- The inbox has one folder per style, kept up to date by `scripts/inbox.py --setup` (a new style gets its folder
+  on the next run). Drop an image in its style's folder: it joins that style as is, no guessing. Not sure? Leave
+  it loose. A folder with another name = a candidate new style.
+- Then: `.venv/Scripts/python -I scripts/inbox.py` (or tell Claude Code "process my inbox"). Each image is checked
+  against everything ingested before, then moved (never deleted) to `taste/data/added/` and recorded in the
+  `inbox` collection. Loose images land on one numbered sheet for tagging by eye.
+- `scripts/build/remeasure.py <style>` re-measures a palette from all of a style's images (wallpapers, ART,
+  inbox) and prints old vs new; `--write` only after my OK, then `build_taste.py`.
+- The inbox can live anywhere, e.g. a synced cloud folder so I can save pictures from my phone or browser:
+  `taste/data/local.json` → `{"inbox": "<path>"}` (local, git-ignored). Default: `inbox/` in the project.
 
 ## Add a collection (a folder of images I like)
 The same five steps every time, for any folder: more wallpapers, an art folder, a Pinterest export.
@@ -92,6 +104,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Feed a style: `inbox.py` rewritten. One inbox folder per style (created by `--setup`), images
+  join the style of their folder, loose ones go to a numbered sheet, duplicates are caught against everything
+  ingested; images move to `taste/data/added/` and are recorded as the `inbox` collection. Inbox path settable in
+  `taste/data/local.json`. New `scripts/build/remeasure.py` (palette from all sources), `features.palette()`,
+  `ingest.known_hashes()`. Undo: `git revert` this commit; the old inbox.py is in `22955be`.
 - **15 Nov 2026** – Four more styles from ART, palettes measured: `pastel-retro-sci-fi` (110 images),
   `cubist-machine` (27), `cave-painting` (40), `botanical-fresco` (26). 27 styles. Undo: `git revert` this commit,
   then `build_taste.py .`

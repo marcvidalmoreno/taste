@@ -31,3 +31,16 @@ def features(a64, w, h):
     ar = w / h
     return np.r_[V.mean(), V.std(), S.mean(), S.std(), hist * 1.5, g * 0.7, edge * 5,
                  min(ar, 2.5) * 0.5, (S < 0.12).mean()]
+
+
+def palette(thumbs):
+    """Measured palette for a list of 64x64 RGB arrays: 5 base colours (k-means, dark to light) + up to 2 accents
+    (k-means on saturated, bright pixels only). Same recipe as build/restyle.py and build/collection_styles.py."""
+    from sklearn.cluster import KMeans
+    px = np.concatenate([t[::4, ::4].reshape(-1, 3) for t in thumbs]).astype(float)
+    lum = lambda c: c @ [0.299, 0.587, 0.114]
+    base = sorted(KMeans(5, n_init=4, random_state=0).fit(px).cluster_centers_, key=lum)
+    sat = (px.max(1) - px.min(1)) / (px.max(1) + 1e-6)
+    vivid = px[(sat > 0.55) & (px.max(1) > 110)]
+    acc = KMeans(2, n_init=4, random_state=0).fit(vivid).cluster_centers_ if len(vivid) > 50 else []
+    return ['#%02x%02x%02x' % tuple(int(v) for v in c) for c in list(base) + list(acc)]

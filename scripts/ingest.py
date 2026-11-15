@@ -84,17 +84,23 @@ def inventory(src, out):
     return rows
 
 
-def dedupe(rows, name):
-    """Mark duplicates: first against earlier collections, then inside this one (keep the biggest copy)."""
+def known_hashes(exclude=None):
+    """[(source, phash)] of every image ingested so far: the original wallpapers and every collection."""
     seen = []
     inv = os.path.join(ROOT, 'taste', 'data', 'inventory.json')
     if os.path.exists(inv):
         seen += [('wallpapers', r['phash']) for r in json.load(open(inv)) if r.get('phash')]
     cdir = os.path.join(ROOT, 'taste', 'data', 'collections')
-    for c in sorted(os.listdir(cdir)):
+    for c in sorted(os.listdir(cdir)) if os.path.isdir(cdir) else []:
         f = os.path.join(cdir, c, 'inventory.json')
-        if c != name and os.path.exists(f):
+        if c != exclude and os.path.exists(f):
             seen += [(c, r['phash']) for r in json.load(open(f)) if r.get('phash') and 'dup_of' not in r]
+    return seen
+
+
+def dedupe(rows, name):
+    """Mark duplicates: first against earlier collections, then inside this one (keep the biggest copy)."""
+    seen = known_hashes(exclude=name)
     ok = sorted((r for r in rows if r['status'] == 'ok'), key=lambda r: -r['w'] * r['h'])
     kept = []
     for r in ok:
