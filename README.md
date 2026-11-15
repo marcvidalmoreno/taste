@@ -21,6 +21,8 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
   Also read-only pages: **Gallery** (every image in justified rows, filters by style, rating and batch),
   **Taste** (the styles with my kept and rejected images as examples) and **About** (`app/about.html`: why,
   history, how it works, decisions, how we work).
+- [`docs/how-it-works.md`](docs/how-it-works.md): how a folder of images becomes a style (thumbnails,
+  numbers, clusters, tagging by eye, palettes, exemplars) and what Claude did and didn't see.
 - [`generated/`](generated/): images **I** generated with these styles, with the prompts used.
 
 ## What's not here, on purpose
@@ -90,6 +92,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – New [`docs/how-it-works.md`](docs/how-it-works.md): the pipeline from a folder to styles, the
+  8 Nov colour clusters and their limit, the 13 Nov tagging by eye, the ART triage, and an honest note on what
+  Claude saw (150 px thumbnails, folder names, its own knowledge; no web search). Undo: `git revert` the
+  "docs: how it works" commit.
 - **15 Nov 2026** – DP-GOYONweb is Goyon too: its 10 artworks join `goyon` (99 images) and its robot sculpture
   joins `robots` (20); logos and press photos stay out. Both palettes re-measured. Undo: `git revert` this commit,
   then `build_taste.py .`
