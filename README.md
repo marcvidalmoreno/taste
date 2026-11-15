@@ -104,6 +104,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – `erotic`: one woman alone, sensual through pose, gesture and glance (new "Lean towards"),
+  long draped fabric instead of bare skin (Avoid gains "large areas of bare skin"), 4 new solo subjects.
+  The old slip-dress subject was blocked twice by the image filter; the chaise-longue and terrace prompts passed.
+  Undo: `git revert` this commit, then `build_taste.py .`
 - **15 Nov 2026** – Looks for the other 24 styles (one OK for the set): 4 lights, compositions and moods each,
   look 0 word for word today's text, palettes = today's plus the 2 measured colour families furthest from it
   (`fractal-worlds` keeps its one palette: no source images). Default prompts unchanged except
