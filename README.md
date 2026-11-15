@@ -1,8 +1,7 @@
 # taste
 
 My visual taste, written so an image model can use it. I'm Marc, a UX designer, and I use it to make
-images for my posts and wallpapers, with ChatGPT's image generation through Codex CLI (since 13 Nov 2026) or
-Google's Nano Banana (Gemini app, prompt packs).
+images for my posts and wallpapers, with ChatGPT's image generation through Codex CLI or Google's Nano Banana (Gemini app, prompt packs).
 
 ## What's here
 - [`taste/styles/`](taste/styles/): fifteen styles (fourteen found in about 1,000 wallpapers I've saved over the years,
@@ -50,8 +49,10 @@ The same five steps every time, for any folder: more wallpapers, an art folder, 
    the existing styles, tagging the "new" sheets may be enough; for a folder of a different kind (ART, 14 Nov:
    Dubuffet, Escher and Léger landed under "japanese-print" by colour) every sheet needs tagging, with the
    sub-folders (artists) as the better hint.
-4. **Propose styles**: new styles and edits to existing ones, one by one, for my OK; then palettes and exemplars
-   are measured and `scripts/build_taste.py` rebuilds `taste/taste.json`.
+4. **Propose styles**: new styles and edits to existing ones, one by one, for my OK. The tags go in
+   `taste/data/collections/<name>/tags.json` (`{style: [image numbers]}`), then
+   `scripts/build/collection_styles.py <name>` measures palettes and copies 8 exemplars per style, the style files
+   are written, and `scripts/build_taste.py` rebuilds `taste/taste.json`.
 5. **Test**: 2–3 Codex images per new style, rated in the web app; distil after ~20 ratings.
 
 ### Make your own taste
@@ -89,6 +90,12 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Eight styles from the ART collection, tagged by eye on 17 sheets (798 images, about 60 left out:
+  photos of people and exhibitions, screenshots; Asterix and DP-GOYONweb excluded): `art-brut`, `goyon`,
+  `japanese-landscape`, `science-fiction` (clear-line comics), `microscope-rocks`, `erotic` (suggestive, not
+  explicit), `robots`, `escher`. Palettes measured from the images. New `scripts/build/collection_styles.py`
+  (tags → palettes, exemplars, members); `ingest.py` writes `meta.json` with the source folder. 23 styles.
+  Undo: `git revert` the "ART styles" commit, then `build_taste.py .`
 - **14 Nov 2026** – Add a collection: `scripts/ingest.py <folder> --name <c>` (inventory, dedupe against everything
   ingested, triage into "fits <style>" and "new" contact sheets, `REVIEW.md` with counts and groups), all output in
   the git-ignored `taste/data/collections/`. `nearest.py` exposes `score()` for thumbnail arrays. README: "Add a

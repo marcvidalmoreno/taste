@@ -171,6 +171,7 @@ def main():
         rs.sort(key=lambda r: (r['group'], r['idx']))
         sheet_files[s] = sheets(rs, out, 'new' if s == '_new' else f'fits-{s}')
     json.dump(rows, open(os.path.join(out, 'inventory.json'), 'w'), indent=1)
+    json.dump({'src': src, 'ingested': datetime.date.today().isoformat()}, open(os.path.join(out, 'meta.json'), 'w'))
 
     status = collections.Counter(r['status'].split(':')[0] for r in rows)
     skipped = collections.Counter(r['ext'] for r in rows if r['status'] == 'non-image')

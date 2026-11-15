@@ -1,6 +1,16 @@
 {
  "generated_from": "taste/styles/*.json by scripts/build_taste.py; do not edit",
  "styles": {
+  "art-brut": {
+   "name": "Art brut",
+   "prompt": "Raw, untrained-looking art: thick black outlines enclosing cell-like shapes, crowded figures and faces, graffiti marks and naive patterns that fill the whole surface. Light: no light source, flat colour on paper or canvas. Composition: all-over and crowded, interlocking cells and figures to the edges, or one big naive figure on plain paper. Medium: marker, gouache and oil stick on paper or raw canvas; childlike, confident lines. Mood: raw, playful, obsessive, joyful. Detail: wobbly hand-drawn outlines, hatching in red and blue, visible brush and crayon, paper grain. Palette: #2c2426, #666667, #ac6240, #a99f97, #e3ddd5, #226e9c, #b15e34. Avoid: polished digital rendering; smooth gradients; photorealism; copies of famous works; named artists. No text, no logos, no watermark.",
+   "subjects": [
+    "a city made of interlocking cells",
+    "a crowd of grinning naive figures",
+    "a cat built from patterned shapes",
+    "a portrait covered in scribbled marks"
+   ]
+  },
   "calm-surreal-pastel": {
    "name": "Calm surreal pastel",
    "prompt": "Soft-render or flat-colour surreal scenes: a lone figure, a giant object, pastel gradient sky, lots of space. Light: soft even light, pastel gradient sky from peach to sky blue. Composition: a tiny lone figure and one oversized object, low horizon, most of the frame empty sky. Medium: soft 3D render or flat colour illustration. Mood: gentle, wry, dreamy. Detail: smooth surfaces, minimal detail, a little film grain. Palette: #342b2b, #74737e, #468cd0, #db8a51, #d9d1c2, #d57838, #3b87cc. Avoid: dark tones; clutter; many figures; text and logos. No text, no logos, no watermark.",
@@ -51,6 +61,26 @@
     "a comet over line-drawn mountains"
    ]
   },
+  "erotic": {
+   "name": "Erotic line",
+   "prompt": "Sensual figure drawing in the European comics tradition: elegant, long-limbed adult women in relaxed poses, suggestion rather than explicitness. Light: soft daylight, warm skin tones, delicate shadows. Composition: a single figure with generous white paper around it, or a figure at a window or by the sea. Medium: fine ink line with loose watercolour washes on white paper. Mood: sensual, elegant, playful, intimate. Detail: fine confident contour lines, light hatching, transparent washes, paper white. Palette: #2a221f, #7c6256, #b69983, #e2ccb9, #fbf9f6, #a65833, #e7a055. Avoid: explicit nudity; youthful faces; photorealism; vulgar poses; named artists or characters. No text, no logos, no watermark.",
+   "subjects": [
+    "a woman in a slip dress by a sunny window",
+    "a figure resting on a beach towel",
+    "a woman in a hat leaning on a balcony",
+    "a reader on a sofa in the afternoon"
+   ]
+  },
+  "escher": {
+   "name": "Escher-like impossible worlds",
+   "prompt": "Black-and-white graphic puzzles: tessellations of birds, fish and lizards that morph into each other, impossible staircases and buildings, spheres and reflections. Light: even graphic light, strong black and white contrast, mid greys from hatching. Composition: tessellated patterns morphing across the frame, or impossible architecture with several vanishing points. Medium: woodcut and lithograph, fine engraving lines, limited earthy colour at most. Mood: intellectual, playful, mysterious. Detail: crisp engraved hatching, precise interlocking shapes, paper grain. Palette: #2d2723, #64564e, #93887c, #c2b9ad, #ebe8e1, #913c25, #b36e47. Avoid: colourful gradients; 3D render look; copies of famous prints; named artists. No text, no logos, no watermark.",
+   "subjects": [
+    "birds turning into fish across a grid",
+    "a staircase that loops forever",
+    "a city that folds into a tessellation",
+    "a hand drawing itself"
+   ]
+  },
   "fractal-worlds": {
    "name": "Fractal worlds",
    "prompt": "Fractal structure as the subject: spiral coastlines, glowing filigree, recursive architecture. Light: self-luminous edges on a dark ground, thin-film colour on the rims. Composition: one central spiral or bay with deep zoom detail, generous dark space. Medium: detailed digital render, high contrast, fine linework. Mood: calm, deep, hypnotic. Detail: self-similar detail at every scale. Palette: #0d0c0e, #373438, #4f6579, #a3674a, #b8aea5, #ad6035, #2a6592. Avoid: busy noise; text and logos. No text, no logos, no watermark.",
@@ -61,6 +91,16 @@
     "a soap-bubble orb whose surface is a fractal"
    ]
   },
+  "goyon": {
+   "name": "Goyon visionary comics",
+   "prompt": "Visionary hand-drawn comics: dense, symmetrical, saturated coloured-pencil worlds of masks, feathered figures, totems, flames and patterned rays, like pages from an illuminated sketchbook. Light: inner glow, colour itself as light, hot centres fading to dark edges. Composition: symmetrical or radiating from a central mask or eye, every part filled, often a double-page spread. Medium: coloured pencil and felt pen on paper, sketchbook spreads and comic covers. Mood: visionary, ecstatic, mythic, intense. Detail: dense pencil strokes, stacked rainbow bands, fine repeating ornaments, paper texture. Palette: #3b2938, #9e4833, #617693, #c88f56, #cbc7c1, #b55e30, #3861a6. Avoid: photorealism; 3D render; empty space; readable text; named artists. No text, no logos, no watermark.",
+   "subjects": [
+    "a feathered mask radiating rainbow rays",
+    "a procession of totem figures in flames",
+    "a sketchbook spread with a giant eye",
+    "a mythic bird over a patterned city"
+   ]
+  },
   "iridescent-abstract": {
    "name": "Iridescent abstract",
    "prompt": "No subject: glass and soap-bubble orbs, liquid 3D gradients, rainbow light leaks, smooth colour fields. Light: studio light on glossy surfaces, thin-film rainbow reflections. Composition: one central form on a dark or soft background, generous negative space. Medium: 3D render or macro photograph. Mood: smooth, modern, calm or playful. Detail: glass, liquid metal, thin-film interference, soft blur. Palette: #0d0a0e, #413640, #5d788f, #c25f49, #ccbeae, #2e6ba4, #c2553d. Avoid: busy patterns; recognisable objects; harsh noise; text and logos. No text, no logos, no watermark.",
@@ -69,6 +109,16 @@
     "a liquid ribbon of rainbow gradient",
     "a glass ring with thin-film colours",
     "a soft colour field with a light leak"
+   ]
+  },
+  "japanese-landscape": {
+   "name": "Japanese landscape",
+   "prompt": "Classic Japanese woodblock landscapes: a distant sacred mountain, bays, bridges, pines and tiny travellers, Prussian blue skies fading to cream. Light: flat even daylight, sky graded from deep blue at the top to pale cream. Composition: wide horizontal, layered planes (foreground pine or wave, middle water, far mountain), small human figures for scale. Medium: ukiyo-e woodblock print on aged paper. Mood: calm, contemplative, travelling. Detail: bokashi colour gradients, crisp keyblock outlines, woodgrain and paper fibre. Palette: #1f2a38, #556262, #909282, #c6bda1, #efe7d3, #ba753f, #285e89. Avoid: modern 3D; neon; readable text or seals; copies of famous prints; anime characters. No text, no logos, no watermark.",
+   "subjects": [
+    "a snow-capped mountain over a quiet bay",
+    "travellers crossing a wooden bridge",
+    "pines along a beach at dawn",
+    "fishing boats under a tall wave"
    ]
   },
   "japanese-print-and-anime": {
@@ -89,6 +139,16 @@
     "an engawa veranda in rain",
     "a tea room at dusk with one paper lamp",
     "a ryokan corridor with sliding doors"
+   ]
+  },
+  "microscope-rocks": {
+   "name": "Microscope rocks",
+   "prompt": "Thin sections of rock under a polarising microscope: shattered mosaics of crystals in electric interference colours, cracks and grain boundaries. Light: transmitted polarised light, glowing colours against black extinction. Composition: all-over, edge to edge, no horizon; a mosaic of grains, sometimes one large crystal as focus. Medium: photomicrograph of a petrographic thin section, crossed polarisers. Mood: hidden, vivid, scientific, abstract. Detail: sharp crystal edges, fine cleavage lines, rainbow interference bands, dark cracks. Palette: #1d191b, #514a4c, #a46e40, #458ba0, #bbb895, #aa6436, #2c7ea2. Avoid: labels and scale bars; blur; 3D render look. No text, no logos, no watermark.",
+   "subjects": [
+    "a mosaic of blue and orange crystals",
+    "one large zoned crystal in a dark field",
+    "fractured green and violet grains",
+    "fan-shaped needles of colour"
    ]
   },
   "neon-night-cities": {
@@ -139,6 +199,26 @@
     "a cluttered workshop with CRT screens and a rainy city view",
     "a sleeping pod with a porthole to the stars",
     "a cockpit at night above clouds"
+   ]
+  },
+  "robots": {
+   "name": "Robots",
+   "prompt": "Friendly retro robots and astronauts in flat illustration: boxy bodies with screen faces, in pastel deserts, rooms and pink skies, often alongside people. Light: flat, warm sunset or bright midday, no harsh shadows. Composition: simple, one to four robots as clear silhouettes, lots of flat sky or wall. Medium: flat vector-like illustration with a subtle grain, risograph feel. Mood: gentle, curious, nostalgic, warm. Detail: flat colour, light grain, simple line accents. Palette: #4d466d, #5b8bbf, #c4737c, #de762a, #ddd1bb, #3575b7, #d76b42. Avoid: menacing killer robots; gritty 3D; chrome photorealism; named characters or brands. No text, no logos, no watermark.",
+   "subjects": [
+    "a small robot holding a flower",
+    "three robots watching a pink sunset",
+    "a robot and a girl on a bench",
+    "a robot repairing a radio"
+   ]
+  },
+  "science-fiction": {
+   "name": "Science fiction, clear line",
+   "prompt": "Clear-line science fiction comics: lone travellers, crystal towers and strange creatures across vast pastel deserts and alien skies. Light: bright, clear desert light, soft pastel skies, two suns or a big moon. Composition: wide, a tiny figure in a vast landscape, tall rock or crystal spires, lots of sky. Medium: fine ink clear-line drawing with flat watercolour and pastel colouring. Mood: dreamlike, serene, epic, lonely. Detail: thin even ink lines, hatching in shadows, flat washes, airy colour. Palette: #1b1820, #5b535e, #7a96b7, #be8e60, #d6d6cd, #c38039, #3d71b1. Avoid: photorealism; gritty 3D; dark heavy shading; copies of famous panels; named artists or characters. No text, no logos, no watermark.",
+   "subjects": [
+    "a lone rider crossing a pastel desert",
+    "a crystal tower under two suns",
+    "a flying creature over pink canyons",
+    "travellers at the edge of a floating city"
    ]
   },
   "vintage-sci-fi-paperback": {

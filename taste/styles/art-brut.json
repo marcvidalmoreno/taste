@@ -1,0 +1,35 @@
+{
+  "name": "Art brut",
+  "description": "Raw, untrained-looking art: thick black outlines enclosing cell-like shapes, crowded figures and faces, graffiti marks and naive patterns that fill the whole surface.",
+  "palette": [
+    "#2c2426",
+    "#666667",
+    "#ac6240",
+    "#a99f97",
+    "#e3ddd5",
+    "#226e9c",
+    "#b15e34"
+  ],
+  "light": "no light source, flat colour on paper or canvas",
+  "composition": "all-over and crowded, interlocking cells and figures to the edges, or one big naive figure on plain paper",
+  "camera_or_medium": "marker, gouache and oil stick on paper or raw canvas; childlike, confident lines",
+  "mood": "raw, playful, obsessive, joyful",
+  "texture_detail": "wobbly hand-drawn outlines, hatching in red and blue, visible brush and crayon, paper grain",
+  "avoid": [
+    "polished digital rendering",
+    "smooth gradients",
+    "photorealism",
+    "copies of famous works",
+    "named artists"
+  ],
+  "subjects": [
+    "a city made of interlocking cells",
+    "a crowd of grinning naive figures",
+    "a cat built from patterned shapes",
+    "a portrait covered in scribbled marks"
+  ],
+  "use": [
+    "post",
+    "desktop"
+  ]
+}

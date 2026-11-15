@@ -1,0 +1,35 @@
+{
+  "name": "Robots",
+  "description": "Friendly retro robots and astronauts in flat illustration: boxy bodies with screen faces, in pastel deserts, rooms and pink skies, often alongside people.",
+  "palette": [
+    "#4d466d",
+    "#5b8bbf",
+    "#c4737c",
+    "#de762a",
+    "#ddd1bb",
+    "#3575b7",
+    "#d76b42"
+  ],
+  "light": "flat, warm sunset or bright midday, no harsh shadows",
+  "composition": "simple, one to four robots as clear silhouettes, lots of flat sky or wall",
+  "camera_or_medium": "flat vector-like illustration with a subtle grain, risograph feel",
+  "mood": "gentle, curious, nostalgic, warm",
+  "texture_detail": "flat colour, light grain, simple line accents",
+  "avoid": [
+    "menacing killer robots",
+    "gritty 3D",
+    "chrome photorealism",
+    "named characters or brands"
+  ],
+  "subjects": [
+    "a small robot holding a flower",
+    "three robots watching a pink sunset",
+    "a robot and a girl on a bench",
+    "a robot repairing a radio"
+  ],
+  "use": [
+    "desktop",
+    "post",
+    "phone"
+  ]
+}

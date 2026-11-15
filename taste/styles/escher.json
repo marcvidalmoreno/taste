@@ -1,0 +1,34 @@
+{
+  "name": "Escher-like impossible worlds",
+  "description": "Black-and-white graphic puzzles: tessellations of birds, fish and lizards that morph into each other, impossible staircases and buildings, spheres and reflections.",
+  "palette": [
+    "#2d2723",
+    "#64564e",
+    "#93887c",
+    "#c2b9ad",
+    "#ebe8e1",
+    "#913c25",
+    "#b36e47"
+  ],
+  "light": "even graphic light, strong black and white contrast, mid greys from hatching",
+  "composition": "tessellated patterns morphing across the frame, or impossible architecture with several vanishing points",
+  "camera_or_medium": "woodcut and lithograph, fine engraving lines, limited earthy colour at most",
+  "mood": "intellectual, playful, mysterious",
+  "texture_detail": "crisp engraved hatching, precise interlocking shapes, paper grain",
+  "avoid": [
+    "colourful gradients",
+    "3D render look",
+    "copies of famous prints",
+    "named artists"
+  ],
+  "subjects": [
+    "birds turning into fish across a grid",
+    "a staircase that loops forever",
+    "a city that folds into a tessellation",
+    "a hand drawing itself"
+  ],
+  "use": [
+    "desktop",
+    "post"
+  ]
+}

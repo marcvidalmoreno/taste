@@ -1,0 +1,34 @@
+{
+  "name": "Microscope rocks",
+  "description": "Thin sections of rock under a polarising microscope: shattered mosaics of crystals in electric interference colours, cracks and grain boundaries.",
+  "palette": [
+    "#1d191b",
+    "#514a4c",
+    "#a46e40",
+    "#458ba0",
+    "#bbb895",
+    "#aa6436",
+    "#2c7ea2"
+  ],
+  "light": "transmitted polarised light, glowing colours against black extinction",
+  "composition": "all-over, edge to edge, no horizon; a mosaic of grains, sometimes one large crystal as focus",
+  "camera_or_medium": "photomicrograph of a petrographic thin section, crossed polarisers",
+  "mood": "hidden, vivid, scientific, abstract",
+  "texture_detail": "sharp crystal edges, fine cleavage lines, rainbow interference bands, dark cracks",
+  "avoid": [
+    "labels and scale bars",
+    "blur",
+    "3D render look"
+  ],
+  "subjects": [
+    "a mosaic of blue and orange crystals",
+    "one large zoned crystal in a dark field",
+    "fractured green and violet grains",
+    "fan-shaped needles of colour"
+  ],
+  "use": [
+    "desktop",
+    "phone",
+    "post"
+  ]
+}

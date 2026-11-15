@@ -1,0 +1,35 @@
+{
+  "name": "Japanese landscape",
+  "description": "Classic Japanese woodblock landscapes: a distant sacred mountain, bays, bridges, pines and tiny travellers, Prussian blue skies fading to cream.",
+  "palette": [
+    "#1f2a38",
+    "#556262",
+    "#909282",
+    "#c6bda1",
+    "#efe7d3",
+    "#ba753f",
+    "#285e89"
+  ],
+  "light": "flat even daylight, sky graded from deep blue at the top to pale cream",
+  "composition": "wide horizontal, layered planes (foreground pine or wave, middle water, far mountain), small human figures for scale",
+  "camera_or_medium": "ukiyo-e woodblock print on aged paper",
+  "mood": "calm, contemplative, travelling",
+  "texture_detail": "bokashi colour gradients, crisp keyblock outlines, woodgrain and paper fibre",
+  "avoid": [
+    "modern 3D",
+    "neon",
+    "readable text or seals",
+    "copies of famous prints",
+    "anime characters"
+  ],
+  "subjects": [
+    "a snow-capped mountain over a quiet bay",
+    "travellers crossing a wooden bridge",
+    "pines along a beach at dawn",
+    "fishing boats under a tall wave"
+  ],
+  "use": [
+    "desktop",
+    "post"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Erotic line",
+  "description": "Sensual figure drawing in the European comics tradition: elegant, long-limbed adult women in relaxed poses, suggestion rather than explicitness.",
+  "palette": [
+    "#2a221f",
+    "#7c6256",
+    "#b69983",
+    "#e2ccb9",
+    "#fbf9f6",
+    "#a65833",
+    "#e7a055"
+  ],
+  "light": "soft daylight, warm skin tones, delicate shadows",
+  "composition": "a single figure with generous white paper around it, or a figure at a window or by the sea",
+  "camera_or_medium": "fine ink line with loose watercolour washes on white paper",
+  "mood": "sensual, elegant, playful, intimate",
+  "texture_detail": "fine confident contour lines, light hatching, transparent washes, paper white",
+  "avoid": [
+    "explicit nudity",
+    "youthful faces",
+    "photorealism",
+    "vulgar poses",
+    "named artists or characters"
+  ],
+  "subjects": [
+    "a woman in a slip dress by a sunny window",
+    "a figure resting on a beach towel",
+    "a woman in a hat leaning on a balcony",
+    "a reader on a sofa in the afternoon"
+  ],
+  "use": [
+    "post"
+  ]
+}

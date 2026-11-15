@@ -1,0 +1,35 @@
+{
+  "name": "Science fiction, clear line",
+  "description": "Clear-line science fiction comics: lone travellers, crystal towers and strange creatures across vast pastel deserts and alien skies.",
+  "palette": [
+    "#1b1820",
+    "#5b535e",
+    "#7a96b7",
+    "#be8e60",
+    "#d6d6cd",
+    "#c38039",
+    "#3d71b1"
+  ],
+  "light": "bright, clear desert light, soft pastel skies, two suns or a big moon",
+  "composition": "wide, a tiny figure in a vast landscape, tall rock or crystal spires, lots of sky",
+  "camera_or_medium": "fine ink clear-line drawing with flat watercolour and pastel colouring",
+  "mood": "dreamlike, serene, epic, lonely",
+  "texture_detail": "thin even ink lines, hatching in shadows, flat washes, airy colour",
+  "avoid": [
+    "photorealism",
+    "gritty 3D",
+    "dark heavy shading",
+    "copies of famous panels",
+    "named artists or characters"
+  ],
+  "subjects": [
+    "a lone rider crossing a pastel desert",
+    "a crystal tower under two suns",
+    "a flying creature over pink canyons",
+    "travellers at the edge of a floating city"
+  ],
+  "use": [
+    "desktop",
+    "post"
+  ]
+}
