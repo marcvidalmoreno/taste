@@ -106,6 +106,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – `erotic` subjects: the two boundary-ladder prompts that passed the Codex filter (robe off one
+  shoulder; bare back at a mirror), the first replacing the plainer chaise-longue subject. Ladder result: bath,
+  sheets, open shirt, lingerie and nude back were all blocked (shirt and lingerie already at the prompt).
+  Undo: `git revert` this commit, then `build_taste.py .`
 - **15 Nov 2026** – New [`docs/progress.html`](docs/progress.html): progress from 8 to 15 Nov by week and day
   (from git history and this changelog), ideas for where it's going, and the idea behind it. Email layout with
   "Open in my mail app" and "Copy text"; counts only, no private data. Undo: `git revert` this commit.
