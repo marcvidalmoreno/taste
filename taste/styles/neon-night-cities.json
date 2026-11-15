@@ -10,10 +10,25 @@
     "#306097",
     "#b94557"
   ],
-  "light": "neon magenta and cyan signs, wet reflections, haze; a low orange sun disc in the synthwave variant",
-  "composition": "street-level one-point perspective or a skyline band, one small figure or car, deep haze in the distance",
+  "light": [
+    "neon magenta and cyan signs, wet reflections, haze",
+    "a low orange synthwave sun disc over the horizon, magenta sky",
+    "blue pre-dawn light, signs fading, one warm window still lit",
+    "dense fog lit from within by coloured signs"
+  ],
+  "composition": [
+    "street-level one-point perspective, one small figure or car, deep haze in the distance",
+    "skyline band across the frame seen from water or a rooftop",
+    "looking up between towers, strong verticals, a train or hovercar crossing",
+    "from inside, through a rain-streaked window onto the street below"
+  ],
   "camera_or_medium": "cinematic film still, or flat vector synthwave illustration",
-  "mood": "lonely, nocturnal, nostalgic",
+  "mood": [
+    "lonely, nocturnal",
+    "nostalgic, dreamy",
+    "quiet, the city waking",
+    "mysterious, cinematic"
+  ],
   "texture_detail": "rain, mist, subtle light bloom, film grain in stills",
   "avoid": [
     "readable text on signs",
@@ -32,5 +47,34 @@
   "use": [
     "desktop",
     "phone"
+  ],
+  "palettes": [
+    [
+      "#161824",
+      "#383b4b",
+      "#4c6b86",
+      "#a1625f",
+      "#b4afb0",
+      "#2e678d",
+      "#b14d4b"
+    ],
+    [
+      "#1f1b26",
+      "#514661",
+      "#c95177",
+      "#6a7cad",
+      "#cbbec9",
+      "#3e59b3",
+      "#c7406a"
+    ],
+    [
+      "#080709",
+      "#1e212a",
+      "#2c4c5b",
+      "#714330",
+      "#8c8988",
+      "#215087",
+      "#9f4530"
+    ]
   ]
 }

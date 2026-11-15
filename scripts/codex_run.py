@@ -4,7 +4,7 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --prompt "<text>"
         [--ref <seed image>] [--style <style>] [--mode variations|text|test] [--change "<what this one changes>"]
   .venv/Scripts/python -I scripts/codex_run.py gen --out ... --name ... --style <style> --subject "<scene>"
-        [--ratio wide|square|portrait]      # prompt built from taste/taste.json (image for a text)
+        [--ratio wide|square|portrait] [--look N]   # prompt from taste/taste.json; N picks one of the style's looks
   .venv/Scripts/python -I scripts/codex_run.py read      # usage now, from the newest Codex session log
 
 One fresh `codex exec` per image. Codex only generates and copies the PNG into --out; it never views the
@@ -69,7 +69,10 @@ def compose(a):
     taste = json.load(open(ROOT / 'taste' / 'taste.json', encoding='utf-8'))['styles']
     if a.style not in taste:
         sys.exit(f'unknown style "{a.style}"; pick one of: {", ".join(taste)}')
-    return f"{RATIOS[a.ratio]} Subject: {a.subject}. {taste[a.style]['prompt']}"
+    st = taste[a.style]
+    looks = st.get('looks') or [st['prompt']]
+    block = looks[a.look % len(looks)] if a.look is not None else st['prompt']
+    return f"{RATIOS[a.ratio]} Subject: {a.subject}. {block}"
 
 
 def gen(a):
@@ -142,6 +145,7 @@ if __name__ == '__main__':
     g.add_argument('--prompt', default='')
     g.add_argument('--subject', default='')
     g.add_argument('--ratio', default='wide', choices=['wide', 'square', 'portrait'])
+    g.add_argument('--look', type=int, help='which look of the style (light, framing, mood, palette); 0 = default')
     g.add_argument('--ref', default='')
     g.add_argument('--style', default='')
     g.add_argument('--mode', default='test')

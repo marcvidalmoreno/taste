@@ -10,10 +10,25 @@
     "#81592d",
     "#c5924b"
   ],
-  "light": "soft side light through paper screens or an open veranda, warm interior shadow, bright green garden outside",
-  "composition": "symmetrical or one-point view through the room to the garden, low camera height, strong horizontal beams",
+  "light": [
+    "soft side light through paper screens, bright green garden outside",
+    "warm low lamp light at dusk, paper lanterns glowing, deep shadow",
+    "bright, soft snow light reflected into the room",
+    "late golden sun slanting across tatami, long shadows"
+  ],
+  "composition": [
+    "symmetrical one-point view through the room to the garden, low camera, strong horizontal beams",
+    "low seated view toward a tokonoma alcove, the garden opening at one side",
+    "a long corridor of sliding doors receding in perspective",
+    "a corner view with openings on two sides onto the garden"
+  ],
   "camera_or_medium": "interior photography or careful photoreal render, natural lens",
-  "mood": "warm, still, contemplative, a little dim",
+  "mood": [
+    "warm, still, contemplative",
+    "intimate, evening, a little dim",
+    "crisp, quiet, wintry",
+    "unhurried, sunlit, lived-in"
+  ],
   "texture_detail": "tatami weave, paper grain, polished wood, moss and maple outside",
   "avoid": [
     "people",
@@ -32,5 +47,34 @@
   "use": [
     "teams",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#17120d",
+      "#3f3422",
+      "#6d603e",
+      "#aa9e6e",
+      "#e4e0cb",
+      "#a8a543",
+      "#7c6029"
+    ],
+    [
+      "#2f1c12",
+      "#6a4d35",
+      "#9b7d59",
+      "#cab086",
+      "#ece7d5",
+      "#875431",
+      "#d3954c"
+    ],
+    [
+      "#694b47",
+      "#956b58",
+      "#b58f74",
+      "#d5b596",
+      "#e1dfda",
+      "#d08751",
+      "#915536"
+    ]
   ]
 }

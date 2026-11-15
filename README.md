@@ -104,6 +104,33 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **15 Nov 2026** – Looks: more variety inside a style. A style's `light`, `composition` and `mood` may now be
+  lists, plus `palettes` (several measured palettes); the core (description, medium, detail, avoid) stays fixed.
+  `build_taste.py` writes one full prompt per look into `taste.json` (`looks`; `prompt` is still look 0, so
+  styles without lists build exactly as before), `codex_run.py --look N` picks one, and
+  `build/remeasure.py --groups N` splits a style's liked images into N colour families with a palette each.
+  Trial on 3 styles that came out too alike (quiet-landscapes, neon-night-cities, japanese-rooms): 4 looks
+  each, 3 measured palettes; quiet-landscapes' description no longer names the Milky Way and stars are "only at
+  night". 12 test images reuse the subjects of the `-more` batches, in `generated/codex/2026-11-15-<style>-looks/`.
+  Undo: `git revert` this commit, then `build_taste.py .`
+- **15 Nov 2026** – Rule in `CLAUDE.md`: style edits need one OK per set of edits, not one per edit.
+  Undo: restore the old line ("Each style edit needs Marc's OK").
+- **15 Nov 2026** – Four more images for each of the 27 styles (108, Codex), each changing one thing against the
+  style's own subjects: a new subject, a composition, a mood or time of day, or the format (square / portrait).
+  One batch folder per style, `generated/codex/2026-11-15-<style>-more/`; the plan and runner sit in the hidden
+  `generated/codex/.plans/` (local only; rerunning the runner skips finished images and stops at the first
+  failure or at 95 % of the five-hour allowance). An image rejected by OpenAI's safety filter
+  (`moderation_blocked`, checked on the output, not the prompt) is skipped and listed in `.plans/blocked.txt`
+  instead of stopping the run: the first one was a lemon tree with a fox, sent unchanged. Result: 106 of 108
+  made in ~1h45, both blocks in `botanical-fresco` (likely its "classical figures"); five-hour 19→80 %, weekly
+  48→58 %. Square and portrait come out at their own sizes (e.g. 1254 × 1254). Undo: delete those folders and
+  this line.
+- **15 Nov 2026** – Copy check report for `japanese-landscape-1`: the image traced from style file to PNG via
+  Codex's session log (prompt reached `image_gen` unchanged) and compared with the 884 ART sources (pHash,
+  outlines, layout; no near-copy). One self-contained HTML in the batch folder (`generated/codex/`, local only:
+  it embeds source scans). New `report-static` entry in the git-ignored `.claude/launch.json` serves
+  `generated/codex/` on 127.0.0.1:8792 for the preview pane. Undo: delete `report.html` in the batch folder,
+  the launch entry and this line.
 - **15 Nov 2026** – Batch grid: Keep / Almost / No buttons under each tile, the same as in the large view
   (one shared `markButtons()` in `app/js/marks.js`), so an image can be marked without opening it. Hidden on
   saved and ignored images; kept out of the Tab order because K / A / N already mark the focused tile.

@@ -8,8 +8,8 @@ Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, n
   `taste/data/`, `generated/codex/`, ratings, names, paths to personal folders). Never force-push.
 
 ## Who owns what
-- Claude Code owns the taste: `taste/styles/*.json`, reading ratings, proposing edits. Each style edit needs
-  Marc's OK; then rerun `scripts/build_taste.py` (never hand-edit `taste/taste.json`).
+- Claude Code owns the taste: `taste/styles/*.json`, reading ratings, proposing edits. Style edits need
+  Marc's OK once per set: propose all of them together, one OK applies the whole set (Marc, 15 Nov 2026); then rerun `scripts/build_taste.py` (never hand-edit `taste/taste.json`).
 - Codex CLI only generates images (`scripts/codex_run.py`, one fresh `codex exec` per image) and never edits taste files.
 - Files are the hand-off: images, `generated/codex/runs.csv`, `generated/codex/ratings.csv` (all git-ignored).
 
