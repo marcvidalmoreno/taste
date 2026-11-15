@@ -10,10 +10,25 @@
     "#9e5823",
     "#2f709b"
   ],
-  "light": "warm lamp and screen glow inside against cool blue light outside the window",
-  "composition": "room seen from the back, the window as the focal frame, a chair or bed facing it",
+  "light": [
+    "warm lamp and screen glow inside against cool blue light outside the window",
+    "bright morning light from the window, plants and coffee",
+    "dim red-orange night light, a planet glowing outside",
+    "soft grey light of rain or clouds outside"
+  ],
+  "composition": [
+    "room seen from the back, the window as the focal frame, a chair or bed facing it",
+    "a curved corridor or spiral stair with portholes",
+    "a kitchen or workshop counter in the foreground, the window behind",
+    "a small sleeping pod or cockpit seen close"
+  ],
   "camera_or_medium": "photoreal render or 1970s film photograph, slight warm grain",
-  "mood": "cosy, curious, solitary",
+  "mood": [
+    "cosy, curious, solitary",
+    "fresh, domestic, morning",
+    "dreamy, late night",
+    "rainy, inward, calm"
+  ],
   "texture_detail": "analog switches, CRT screens, cables, books, plants, worn fabric",
   "avoid": [
     "sterile white spaceship corridors",
@@ -32,5 +47,34 @@
     "teams",
     "desktop",
     "phone"
+  ],
+  "palettes": [
+    [
+      "#1b1613",
+      "#44413c",
+      "#905f36",
+      "#7b8888",
+      "#cecdc3",
+      "#9e5823",
+      "#2f709b"
+    ],
+    [
+      "#151312",
+      "#3a312a",
+      "#335568",
+      "#7e583c",
+      "#8f9e9c",
+      "#954d24",
+      "#247094"
+    ],
+    [
+      "#231c18",
+      "#5f5145",
+      "#6c86ad",
+      "#9d8f6b",
+      "#d5d4cd",
+      "#3d679b",
+      "#9e622e"
+    ]
   ]
 }

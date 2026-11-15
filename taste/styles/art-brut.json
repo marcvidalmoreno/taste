@@ -10,10 +10,25 @@
     "#226e9c",
     "#b15e34"
   ],
-  "light": "no light source, flat colour on paper or canvas",
-  "composition": "all-over and crowded, interlocking cells and figures to the edges, or one big naive figure on plain paper",
+  "light": [
+    "no light source, flat colour on paper or canvas",
+    "flat bright colour on raw brown canvas",
+    "chalky bright colours on a black ground",
+    "only red, blue and black on cream paper"
+  ],
+  "composition": [
+    "all-over and crowded, interlocking cells and figures to the edges, or one big naive figure on plain paper",
+    "one big naive figure on plain paper with a few marks around it",
+    "a horizontal frieze of figures marching in a row",
+    "a grid of boxes like a comic page, a face or creature in each"
+  ],
   "camera_or_medium": "marker, gouache and oil stick on paper or raw canvas; childlike, confident lines",
-  "mood": "raw, playful, obsessive, joyful",
+  "mood": [
+    "raw, playful, obsessive, joyful",
+    "tender, funny, a little odd",
+    "noisy, festive, carnival",
+    "quiet, intimate, doodled"
+  ],
   "texture_detail": "wobbly hand-drawn outlines, hatching in red and blue, visible brush and crayon, paper grain",
   "avoid": [
     "polished digital rendering",
@@ -31,5 +46,34 @@
   "use": [
     "post",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#2c2426",
+      "#666667",
+      "#ac6240",
+      "#a99f97",
+      "#e3ddd5",
+      "#226e9c",
+      "#b15e34"
+    ],
+    [
+      "#1c181b",
+      "#564945",
+      "#797f81",
+      "#b87444",
+      "#ccc2b3",
+      "#1d709d",
+      "#b36732"
+    ],
+    [
+      "#544747",
+      "#877a75",
+      "#aea199",
+      "#d1c7bc",
+      "#f1f0eb",
+      "#2d7193",
+      "#b6603c"
+    ]
   ]
 }

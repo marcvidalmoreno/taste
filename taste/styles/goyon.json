@@ -10,10 +10,25 @@
     "#b45e2f",
     "#3761a6"
   ],
-  "light": "inner glow, colour itself as light, hot centres fading to dark edges",
-  "composition": "symmetrical or radiating from a central mask or eye, every part filled, often a double-page spread",
+  "light": [
+    "inner glow, colour itself as light, hot centres fading to dark edges",
+    "night palette: deep blues and violets with a few hot sparks",
+    "daylight palette: pale paper showing between bright strokes",
+    "fire light: oranges and reds dominating, black outlines"
+  ],
+  "composition": [
+    "symmetrical or radiating from a central mask or eye, every part filled, often a double-page spread",
+    "a horizontal procession of figures across the spread",
+    "one tall figure or totem in the centre, patterns around it",
+    "a landscape or city seen from above, filled with patterns"
+  ],
   "camera_or_medium": "coloured pencil and felt pen on paper, sketchbook spreads and comic covers",
-  "mood": "visionary, ecstatic, mythic, intense",
+  "mood": [
+    "visionary, ecstatic, mythic, intense",
+    "nocturnal, shamanic, hushed",
+    "joyful, festive, carnival",
+    "solemn, ceremonial"
+  ],
   "texture_detail": "dense pencil strokes, stacked rainbow bands, fine repeating ornaments, paper texture",
   "avoid": [
     "photorealism",
@@ -31,5 +46,34 @@
   "use": [
     "post",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#3c2834",
+      "#a04b33",
+      "#607491",
+      "#c5925e",
+      "#d1cec9",
+      "#b45e2f",
+      "#3761a6"
+    ],
+    [
+      "#27161f",
+      "#533a45",
+      "#af5637",
+      "#676f7c",
+      "#baa8a7",
+      "#375989",
+      "#aa4d2f"
+    ],
+    [
+      "#4d2f3c",
+      "#3971b9",
+      "#a87558",
+      "#a4aeb6",
+      "#e4e7e4",
+      "#2e6abc",
+      "#ae5a35"
+    ]
   ]
 }

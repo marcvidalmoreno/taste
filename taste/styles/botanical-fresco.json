@@ -10,17 +10,33 @@
     "#ae7340",
     "#7d482f"
   ],
-  "light": "soft, warm, faded daylight, low contrast",
-  "composition": "all-over botanical pattern, or a mural scene in panels with a few animals and figures",
+  "light": [
+    "soft, warm, faded daylight, low contrast",
+    "cool morning light, pale blue-green plaster",
+    "dusk glow, deep green shadows, gold leaf catching light",
+    "bright noon, sun-bleached colours"
+  ],
+  "composition": [
+    "all-over botanical pattern, or a mural scene in panels with a few animals and figures",
+    "one arched niche framing a single plant and animal",
+    "a long frieze of leaves with animals running through it",
+    "a repeating wallpaper tile of fruit, leaves and birds"
+  ],
   "camera_or_medium": "aged fresco on plaster and hand-printed botanical wallpaper",
-  "mood": "lush, decadent, ironic, sunlit",
+  "mood": [
+    "lush, decadent, ironic, sunlit",
+    "serene, cloistered, quiet",
+    "mysterious, overgrown, dusky",
+    "cheerful, abundant, playful"
+  ],
   "texture_detail": "cracked plaster, chalky muted colour, fine botanical line, gold leaf hints",
   "avoid": [
     "neon",
     "photorealism",
     "modern people or logos",
     "readable titles",
-    "copies of a series title sequence"
+    "copies of a series title sequence",
+    "nude figures"
   ],
   "subjects": [
     "a monkey stealing fruit among hibiscus",
@@ -32,5 +48,32 @@
     "desktop",
     "post",
     "phone"
+  ],
+  "palettes": [
+    [
+      "#272220",
+      "#5b4a3c",
+      "#8b745e",
+      "#b5a086",
+      "#e5dac7",
+      "#ae7340",
+      "#7d482f"
+    ],
+    [
+      "#1b1919",
+      "#3f352e",
+      "#645245",
+      "#8a7d6d",
+      "#b3b7ae",
+      "#834326",
+      "#295a86"
+    ],
+    [
+      "#504b3d",
+      "#8b6e5a",
+      "#b2987d",
+      "#dbc4a8",
+      "#f1eee2"
+    ]
   ]
 }

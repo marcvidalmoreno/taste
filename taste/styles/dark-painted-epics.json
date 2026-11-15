@@ -10,10 +10,25 @@
     "#c87c38",
     "#7c5036"
   ],
-  "light": "low dusty sunlight or a single distant glow through haze",
-  "composition": "huge structure filling the frame, tiny human figure at the base, deep atmospheric perspective",
+  "light": [
+    "low dusty sunlight or a single distant glow through haze",
+    "cold pale dawn with mist in the valleys",
+    "warm lantern and fire light in a dim interior",
+    "storm light, a break in dark clouds lighting one spot"
+  ],
+  "composition": [
+    "huge structure filling the frame, tiny human figure at the base, deep atmospheric perspective",
+    "looking up a colossal vertical structure from its foot",
+    "a wide panorama of ruins seen from a high ledge",
+    "inside a vast hall or cavern, light falling from above"
+  ],
   "camera_or_medium": "oil or digital painting with visible brushwork",
-  "mood": "awe with a touch of dread, silent",
+  "mood": [
+    "awe with a touch of dread, silent",
+    "melancholy, abandoned, still",
+    "hopeful, a path through ruins",
+    "eerie, dreamlike, unexplained"
+  ],
   "texture_detail": "weathered stone, dust, organic growth on architecture",
   "avoid": [
     "gore and horror creatures",
@@ -31,5 +46,34 @@
   "use": [
     "desktop",
     "phone"
+  ],
+  "palettes": [
+    [
+      "#1b1917",
+      "#493e36",
+      "#6f7777",
+      "#a36b3d",
+      "#c5bea9",
+      "#c87c38",
+      "#7c5036"
+    ],
+    [
+      "#121415",
+      "#343431",
+      "#575955",
+      "#88857c",
+      "#c0c2b9",
+      "#916534",
+      "#2c6e91"
+    ],
+    [
+      "#1f1814",
+      "#483226",
+      "#745c43",
+      "#b24f2e",
+      "#cf9544",
+      "#d27b34",
+      "#8f4a2c"
+    ]
   ]
 }

@@ -10,10 +10,25 @@
     "#904a27",
     "#c98a44"
   ],
-  "light": "warm flickering firelight or soft shade under a rock overhang",
-  "composition": "animals spread across the natural bumps of the rock, overlapping, no ground line; or a wide rock shelter in landscape",
+  "light": [
+    "warm flickering firelight or soft shade under a rock overhang",
+    "cool grey daylight entering from a cave mouth",
+    "a single torch beam on one part of the wall, deep darkness around",
+    "warm low sun on an open rock shelter"
+  ],
+  "composition": [
+    "animals spread across the natural bumps of the rock, overlapping, no ground line; or a wide rock shelter in landscape",
+    "one large animal filling the wall, close and detailed",
+    "a long frieze of animals moving in one direction",
+    "a wide view of a rock shelter in the landscape, paintings small on the wall"
+  ],
   "camera_or_medium": "mineral pigment and charcoal on limestone, photographed close",
-  "mood": "ancient, primal, warm, mysterious",
+  "mood": [
+    "ancient, primal, warm, mysterious",
+    "solemn, ritual, sacred",
+    "lively, running, hunting",
+    "weathered, faded, timeless"
+  ],
   "texture_detail": "rough stone, cracks and mineral stains, blown-pigment edges, faded layers",
   "avoid": [
     "modern objects",
@@ -30,5 +45,34 @@
   "use": [
     "desktop",
     "post"
+  ],
+  "palettes": [
+    [
+      "#211411",
+      "#5e3e31",
+      "#94684b",
+      "#b5997b",
+      "#d0cdc1",
+      "#904a27",
+      "#c98a44"
+    ],
+    [
+      "#100908",
+      "#472318",
+      "#4c4b54",
+      "#96512d",
+      "#afa089",
+      "#8b3214",
+      "#b56535"
+    ],
+    [
+      "#4b2c20",
+      "#8f5d40",
+      "#cc9351",
+      "#af9b89",
+      "#d7d3c6",
+      "#985029",
+      "#d69546"
+    ]
   ]
 }

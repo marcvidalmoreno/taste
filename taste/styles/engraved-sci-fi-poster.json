@@ -10,10 +10,25 @@
     "#284f91",
     "#a34e25"
   ],
-  "light": "one vertical beam or a sun disc on the horizon, lines catching orange, red and teal",
-  "composition": "portrait format, horizon in the lower third, symmetric beam or disc, big black sky",
+  "light": [
+    "one vertical beam or a sun disc on the horizon, lines catching orange, red and teal",
+    "a cold blue aurora drawn in lines across the sky",
+    "a huge rising planet lighting the cloud layers from below",
+    "starlight only, lines picked out in pale teal and white"
+  ],
+  "composition": [
+    "portrait format, horizon in the lower third, symmetric beam or disc, big black sky",
+    "wide horizon, layered waves or dunes in the foreground, the light source off-centre",
+    "looking down a deep canyon of contour layers",
+    "a ring or arch framing the light at the centre"
+  ],
   "camera_or_medium": "engraving-like vector linework, every form built from parallel contour lines",
-  "mood": "mysterious, meditative, cosmic",
+  "mood": [
+    "mysterious, meditative, cosmic",
+    "cold, still, remote",
+    "grand, ceremonial",
+    "quiet, nocturnal, minimal"
+  ],
   "texture_detail": "thin even lines, no gradients, no photographic texture",
   "avoid": [
     "filled flat colour areas",
@@ -30,5 +45,34 @@
   "use": [
     "phone",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#090808",
+      "#332725",
+      "#53555d",
+      "#944523",
+      "#af9d86",
+      "#284f91",
+      "#a34e25"
+    ],
+    [
+      "#050405",
+      "#2b1610",
+      "#2c3c3f",
+      "#743019",
+      "#b87438",
+      "#c96d20",
+      "#883317"
+    ],
+    [
+      "#0e0b0b",
+      "#3a3333",
+      "#7b4d35",
+      "#777783",
+      "#cdb088",
+      "#2c4193",
+      "#a8592d"
+    ]
   ]
 }

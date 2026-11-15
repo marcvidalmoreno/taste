@@ -10,10 +10,25 @@
     "#913c25",
     "#b36e47"
   ],
-  "light": "even graphic light, strong black and white contrast, mid greys from hatching",
-  "composition": "tessellated patterns morphing across the frame, or impossible architecture with several vanishing points",
+  "light": [
+    "even graphic light, strong black and white contrast, mid greys from hatching",
+    "sepia and cream, softer contrast",
+    "a single light source with long cast shadows",
+    "night version: white lines on a black ground"
+  ],
+  "composition": [
+    "tessellated patterns morphing across the frame, or impossible architecture with several vanishing points",
+    "a reflective sphere or curved mirror at the centre",
+    "a tall vertical tower of looping stairs",
+    "a band of tiles turning into creatures from one side to the other"
+  ],
   "camera_or_medium": "woodcut and lithograph, fine engraving lines, limited earthy colour at most",
-  "mood": "intellectual, playful, mysterious",
+  "mood": [
+    "intellectual, playful, mysterious",
+    "calm, ordered, meditative",
+    "dizzying, uncanny",
+    "witty, surprising"
+  ],
   "texture_detail": "crisp engraved hatching, precise interlocking shapes, paper grain",
   "avoid": [
     "colourful gradients",
@@ -30,5 +45,30 @@
   "use": [
     "desktop",
     "post"
+  ],
+  "palettes": [
+    [
+      "#2d2723",
+      "#64564e",
+      "#93887c",
+      "#c2b9ad",
+      "#ebe8e1",
+      "#913c25",
+      "#b36e47"
+    ],
+    [
+      "#23221f",
+      "#504c44",
+      "#7c6a56",
+      "#a89175",
+      "#e2c29a"
+    ],
+    [
+      "#46403e",
+      "#716f6f",
+      "#9c9691",
+      "#c7c3be",
+      "#eeebe6"
+    ]
   ]
 }

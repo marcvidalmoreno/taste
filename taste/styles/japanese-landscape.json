@@ -10,10 +10,25 @@
     "#ba753f",
     "#285e89"
   ],
-  "light": "flat even daylight, sky graded from deep blue at the top to pale cream",
-  "composition": "wide horizontal, layered planes (foreground pine or wave, middle water, far mountain), small human figures for scale",
+  "light": [
+    "flat even daylight, sky graded from deep blue at the top to pale cream",
+    "snow light, white ground and grey sky",
+    "evening, indigo sky with a pale moon",
+    "rain drawn as fine slanting lines, grey-green light"
+  ],
+  "composition": [
+    "wide horizontal, layered planes (foreground pine or wave, middle water, far mountain), small human figures for scale",
+    "the mountain framed through a bridge, gate or branch",
+    "a tall vertical view climbing from water to peak",
+    "a close foreground (wave, tree, roof) cutting the frame, the mountain small behind"
+  ],
   "camera_or_medium": "ukiyo-e woodblock print on aged paper",
-  "mood": "calm, contemplative, travelling",
+  "mood": [
+    "calm, contemplative, travelling",
+    "cold, quiet, wintry",
+    "nocturnal, still",
+    "busy, everyday, travellers at work"
+  ],
   "texture_detail": "bokashi colour gradients, crisp keyblock outlines, woodgrain and paper fibre",
   "avoid": [
     "modern 3D",
@@ -31,5 +46,34 @@
   "use": [
     "desktop",
     "post"
+  ],
+  "palettes": [
+    [
+      "#1f2a38",
+      "#556262",
+      "#909282",
+      "#c6bda1",
+      "#efe7d3",
+      "#ba753f",
+      "#285e89"
+    ],
+    [
+      "#343f4d",
+      "#6f7978",
+      "#abad9c",
+      "#dcd7c6",
+      "#fafafa",
+      "#af633c",
+      "#305b97"
+    ],
+    [
+      "#18181b",
+      "#3d525c",
+      "#865944",
+      "#999988",
+      "#d8cbaf",
+      "#265c89",
+      "#a85433"
+    ]
   ]
 }

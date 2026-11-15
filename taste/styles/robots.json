@@ -10,10 +10,25 @@
     "#3575b7",
     "#d76b42"
   ],
-  "light": "flat, warm sunset or bright midday, no harsh shadows",
-  "composition": "simple, one to four robots as clear silhouettes, lots of flat sky or wall",
+  "light": [
+    "flat, warm sunset or bright midday, no harsh shadows",
+    "night: violet sky, stars, a warm window light",
+    "pale morning: mint and cream",
+    "bright noon with a blue sky"
+  ],
+  "composition": [
+    "simple, one to four robots as clear silhouettes, lots of flat sky or wall",
+    "a close-up of one robot face and a small detail (bird, flower)",
+    "a robot and a person side by side, seen from behind",
+    "a small robot in a wide landscape or room"
+  ],
   "camera_or_medium": "flat vector-like illustration with a subtle grain, risograph feel",
-  "mood": "gentle, curious, nostalgic, warm",
+  "mood": [
+    "gentle, curious, nostalgic, warm",
+    "quiet, nocturnal, tender",
+    "fresh, playful, morning",
+    "lonely, small in a big world"
+  ],
   "texture_detail": "flat colour, light grain, simple line accents",
   "avoid": [
     "menacing killer robots",
@@ -31,5 +46,32 @@
     "desktop",
     "post",
     "phone"
+  ],
+  "palettes": [
+    [
+      "#4e466c",
+      "#5c8dc0",
+      "#dc752c",
+      "#c67c80",
+      "#e6ddcc",
+      "#3575b7",
+      "#d76b42"
+    ],
+    [
+      "#483832",
+      "#a08368",
+      "#8ab9c2",
+      "#e9d4b8",
+      "#f8f6f3"
+    ],
+    [
+      "#4b3651",
+      "#5d5891",
+      "#b54f48",
+      "#d8878b",
+      "#f39b32",
+      "#df6d43",
+      "#714580"
+    ]
   ]
 }

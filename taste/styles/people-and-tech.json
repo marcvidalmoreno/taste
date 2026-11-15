@@ -10,10 +10,25 @@
     "#296b9b",
     "#b35329"
   ],
-  "light": "cool screen glow on a face, one warm accent, dark background",
-  "composition": "one person or one hand in focus, interface light as the second element, simple background",
+  "light": [
+    "cool screen glow on a face, one warm accent, dark background",
+    "bright natural daylight in a calm room with plants",
+    "warm desk lamp at night, cool screen as second light",
+    "soft window light, muted greys and blues"
+  ],
+  "composition": [
+    "one person or one hand in focus, interface light as the second element, simple background",
+    "two people working together, one interface between them",
+    "a close-up of hands and an object or interface",
+    "a person seen from behind facing a large screen or window"
+  ],
   "camera_or_medium": "editorial photography or photoreal render, shallow depth of field",
-  "mood": "thoughtful, human, curious rather than scary",
+  "mood": [
+    "thoughtful, human, curious rather than scary",
+    "calm, confident, everyday",
+    "focused, late, concentrated",
+    "collaborative, warm, hopeful"
+  ],
   "texture_detail": "real skin and fabric, subtle interface glow, no noise",
   "avoid": [
     "robot-takeover cliches",
@@ -31,5 +46,34 @@
   ],
   "use": [
     "post"
+  ],
+  "palettes": [
+    [
+      "#0f121b",
+      "#2a3849",
+      "#8d553f",
+      "#5f7e8f",
+      "#b5bbb9",
+      "#296b9b",
+      "#b35329"
+    ],
+    [
+      "#080a12",
+      "#182338",
+      "#1f5a7f",
+      "#5e524f",
+      "#7ca8b5",
+      "#1e6695",
+      "#a95b30"
+    ],
+    [
+      "#27292c",
+      "#6a5e5a",
+      "#4278a2",
+      "#8f9590",
+      "#bdc6c8",
+      "#3574a4",
+      "#ae5b41"
+    ]
   ]
 }

@@ -10,10 +10,25 @@
     "#af5a36",
     "#367596"
   ],
-  "light": "flat even light, or soft painted daylight in the anime variant",
-  "composition": "asymmetric, one branch or wave as the main line, empty paper space; anime: wide landscape with a small house or figure",
+  "light": [
+    "flat even light, or soft painted daylight in the anime variant",
+    "summer midday with tall bright clouds",
+    "evening rain, lanterns glowing",
+    "snow under a pale grey sky"
+  ],
+  "composition": [
+    "asymmetric, one branch or wave as the main line, empty paper space; anime: wide landscape with a small house or figure",
+    "a branch hanging from the top edge, a bird on it, empty paper below",
+    "a wide anime landscape with a train, road or river leading into it",
+    "looking down a village street or along a river"
+  ],
   "camera_or_medium": "woodblock print or sumi ink on aged paper; hand-painted anime background",
-  "mood": "quiet, poetic, seasonal",
+  "mood": [
+    "quiet, poetic, seasonal",
+    "nostalgic, summer, open",
+    "wet, intimate, evening",
+    "hushed, cold, still"
+  ],
   "texture_detail": "paper fibre, woodgrain in flat colour, soft brush edges",
   "avoid": [
     "modern 3D",
@@ -31,5 +46,32 @@
   "use": [
     "post",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#151619",
+      "#59524d",
+      "#6c8a8b",
+      "#bc9d7b",
+      "#dcd8be",
+      "#af5a36",
+      "#367596"
+    ],
+    [
+      "#504941",
+      "#ad9878",
+      "#c4cecc",
+      "#e8d29d",
+      "#f1eee1"
+    ],
+    [
+      "#0c0c0d",
+      "#2a4155",
+      "#7c5340",
+      "#6c857e",
+      "#aabbb6",
+      "#bb482e",
+      "#245e8c"
+    ]
   ]
 }

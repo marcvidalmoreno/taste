@@ -10,10 +10,25 @@
     "#be6d32",
     "#236b98"
   ],
-  "light": "no light source, flat colour, at most simple tubular shading",
-  "composition": "tight geometric grid, overlapping planes, a figure or still life broken into cylinders and discs",
+  "light": [
+    "no light source, flat colour, at most simple tubular shading",
+    "flat colour with a black night ground and yellow lights",
+    "pale pastel version of the primaries on cream",
+    "stained-glass light, colours glowing between black leading"
+  ],
+  "composition": [
+    "tight geometric grid, overlapping planes, a figure or still life broken into cylinders and discs",
+    "one large figure or face filling the frame, built from cones and plates",
+    "a city or factory panorama of stacked geometric blocks",
+    "a still life on a table, seen from several angles at once"
+  ],
   "camera_or_medium": "oil or gouache poster in flat colour; mosaic and stained-glass variants",
-  "mood": "confident, rhythmic, optimistic, industrial",
+  "mood": [
+    "confident, rhythmic, optimistic, industrial",
+    "musical, swinging, lively",
+    "calm, balanced, architectural",
+    "nocturnal, humming, mechanical"
+  ],
   "texture_detail": "thick black contours, flat red, yellow and blue, cream paper, slight print texture",
   "avoid": [
     "photorealism",
@@ -30,5 +45,32 @@
   "use": [
     "post",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#2d2628",
+      "#61686b",
+      "#b36437",
+      "#b9a68b",
+      "#ebe5d5",
+      "#be6d32",
+      "#236b98"
+    ],
+    [
+      "#2f2b32",
+      "#9c645d",
+      "#b4a899",
+      "#e9dfb8",
+      "#f5f5f1"
+    ],
+    [
+      "#2f3742",
+      "#846b64",
+      "#a8a296",
+      "#d8a74c",
+      "#e6ddd3",
+      "#ce8b3d",
+      "#25749b"
+    ]
   ]
 }

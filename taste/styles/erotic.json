@@ -10,10 +10,25 @@
     "#a65833",
     "#e7a055"
   ],
-  "light": "soft daylight, warm skin tones, delicate shadows",
-  "composition": "a single figure with generous white paper around it, or a figure at a window or by the sea",
+  "light": [
+    "soft daylight, warm skin tones, delicate shadows",
+    "morning light through thin curtains, pale and cool",
+    "warm evening lamp light, deeper shadows",
+    "dappled shade under trees or a parasol"
+  ],
+  "composition": [
+    "a single figure with generous white paper around it, or a figure at a window or by the sea",
+    "a close crop of shoulders and hands, lots of white paper",
+    "a full figure in a small room or terrace, the setting sketched loosely",
+    "a figure seen from behind looking out at the sea or a city"
+  ],
   "camera_or_medium": "fine ink line with loose watercolour washes on white paper",
-  "mood": "sensual, elegant, playful, intimate",
+  "mood": [
+    "sensual, elegant, playful, intimate",
+    "languid, lazy, summer",
+    "quiet, private, evening",
+    "dreamy, wistful"
+  ],
   "texture_detail": "fine confident contour lines, light hatching, transparent washes, paper white",
   "avoid": [
     "explicit nudity",
@@ -30,5 +45,32 @@
   ],
   "use": [
     "post"
+  ],
+  "palettes": [
+    [
+      "#2a221f",
+      "#7c6256",
+      "#b69983",
+      "#e2ccb9",
+      "#fbf9f6",
+      "#a65833",
+      "#e7a055"
+    ],
+    [
+      "#130e0c",
+      "#523527",
+      "#995e40",
+      "#c09269",
+      "#d9d6c8",
+      "#944b29",
+      "#c07b40"
+    ],
+    [
+      "#625757",
+      "#a99486",
+      "#e0c4a2",
+      "#e7dad0",
+      "#fcfbf9"
+    ]
   ]
 }

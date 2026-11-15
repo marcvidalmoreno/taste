@@ -10,10 +10,25 @@
     "#2e6ba4",
     "#c2553d"
   ],
-  "light": "studio light on glossy surfaces, thin-film rainbow reflections",
-  "composition": "one central form on a dark or soft background, generous negative space",
+  "light": [
+    "studio light on glossy surfaces, thin-film rainbow reflections",
+    "warm gold and coral light, soft glow",
+    "cool blue and violet light on deep navy",
+    "bright pale background, soft pastel reflections"
+  ],
+  "composition": [
+    "one central form on a dark or soft background, generous negative space",
+    "flowing ribbons or waves across the whole frame",
+    "a cluster of small forms floating at different depths",
+    "a close macro view, the surface filling the frame"
+  ],
   "camera_or_medium": "3D render or macro photograph",
-  "mood": "smooth, modern, calm or playful",
+  "mood": [
+    "smooth, modern, calm or playful",
+    "warm, soft, luxurious",
+    "cool, deep, quiet",
+    "light, fresh, airy"
+  ],
   "texture_detail": "glass, liquid metal, thin-film interference, soft blur",
   "avoid": [
     "busy patterns",
@@ -31,5 +46,34 @@
     "post",
     "desktop",
     "phone"
+  ],
+  "palettes": [
+    [
+      "#0d0a0e",
+      "#413640",
+      "#5d788f",
+      "#c25f49",
+      "#ccbeae",
+      "#2e6ba4",
+      "#c2553d"
+    ],
+    [
+      "#040305",
+      "#2c1e2a",
+      "#445775",
+      "#c66b22",
+      "#a2b4a6",
+      "#c0611f",
+      "#3557a0"
+    ],
+    [
+      "#353539",
+      "#467391",
+      "#9f676e",
+      "#b59e9f",
+      "#e1dcc8",
+      "#2c6d9e",
+      "#c25466"
+    ]
   ]
 }

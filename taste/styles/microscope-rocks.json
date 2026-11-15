@@ -10,10 +10,25 @@
     "#aa6436",
     "#2c7ea2"
   ],
-  "light": "transmitted polarised light, glowing colours against black extinction",
-  "composition": "all-over, edge to edge, no horizon; a mosaic of grains, sometimes one large crystal as focus",
+  "light": [
+    "transmitted polarised light, glowing colours against black extinction",
+    "plane-polarised light: soft pastel browns and greens, no black",
+    "a tilted stage: colours shifting to blue and gold",
+    "high magnification, one grain glowing, the rest dark"
+  ],
+  "composition": [
+    "all-over, edge to edge, no horizon; a mosaic of grains, sometimes one large crystal as focus",
+    "a circular field of view on black",
+    "banded layers crossing the frame diagonally",
+    "a single vein or crack cutting through the mosaic"
+  ],
   "camera_or_medium": "photomicrograph of a petrographic thin section, crossed polarisers",
-  "mood": "hidden, vivid, scientific, abstract",
+  "mood": [
+    "hidden, vivid, scientific, abstract",
+    "soft, earthy, quiet",
+    "electric, festive",
+    "minimal, dramatic"
+  ],
   "texture_detail": "sharp crystal edges, fine cleavage lines, rainbow interference bands, dark cracks",
   "avoid": [
     "labels and scale bars",
@@ -30,5 +45,34 @@
     "desktop",
     "phone",
     "post"
+  ],
+  "palettes": [
+    [
+      "#1d191b",
+      "#514a4c",
+      "#a46e40",
+      "#458ba0",
+      "#bbb895",
+      "#aa6436",
+      "#2c7ea2"
+    ],
+    [
+      "#1d181a",
+      "#3f4d53",
+      "#84552f",
+      "#237fc2",
+      "#96a38d",
+      "#266dac",
+      "#935a2e"
+    ],
+    [
+      "#242128",
+      "#5b5a71",
+      "#ac623f",
+      "#46a3c0",
+      "#c1b79d",
+      "#ae5941",
+      "#3385b4"
+    ]
   ]
 }

@@ -10,10 +10,25 @@
     "#bd6136",
     "#1d5598"
   ],
-  "light": "bright flat daylight or a big glowing planet, clear sky gradients",
-  "composition": "poster-like, one huge celestial body or tower, small people for scale, strong diagonal or central axis",
+  "light": [
+    "bright flat daylight or a big glowing planet, clear sky gradients",
+    "night: campfire or lamp light under two moons",
+    "sunset: orange and magenta, long shadows",
+    "cool blue twilight with glowing windows"
+  ],
+  "composition": [
+    "poster-like, one huge celestial body or tower, small people for scale, strong diagonal or central axis",
+    "an aerial view of a city or base",
+    "people close in the foreground, the big planet behind",
+    "a vehicle or rocket at an angle, cutting across the frame"
+  ],
   "camera_or_medium": "gouache or airbrush illustration with a printed-paper feel; sometimes photo collage",
-  "mood": "sunny, hopeful, slightly ironic",
+  "mood": [
+    "sunny, hopeful, slightly ironic",
+    "cosy, adventurous, nocturnal",
+    "dramatic, epic",
+    "calm, cool, futurist"
+  ],
   "texture_detail": "visible print grain, smooth airbrush gradients, clean ink outlines",
   "avoid": [
     "modern glossy 3D",
@@ -32,5 +47,34 @@
     "post",
     "phone",
     "desktop"
+  ],
+  "palettes": [
+    [
+      "#1f1f21",
+      "#2b588b",
+      "#5f4f44",
+      "#a08672",
+      "#c7cac3",
+      "#bd6136",
+      "#1d5598"
+    ],
+    [
+      "#333230",
+      "#696866",
+      "#8d989d",
+      "#c99473",
+      "#d2d7d4",
+      "#b97447",
+      "#176095"
+    ],
+    [
+      "#191b1f",
+      "#424243",
+      "#225692",
+      "#926c56",
+      "#a6b0b7",
+      "#b04c2d",
+      "#1c5498"
+    ]
   ]
 }
