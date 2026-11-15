@@ -126,7 +126,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   (`fractal-worlds` keeps its one palette: no source images). Default prompts unchanged except
   `botanical-fresco` (Avoid gains "nude figures", the likely cause of its 2 safety blocks) and
   `neon-night-cities` (description: the synthwave sunset is one variant, not the default).
-  Undo: `git revert` this commit, then `build_taste.py .`
+  Test (76 images, looks 1–3 on the subjects of the `-more` batches, `generated/codex/2026-11-15-<style>-looks/`):
+  all made, no safety blocks (the 2 botanical-fresco subjects blocked before now pass); one Codex stall
+  (15-minute timeout) recovered on the one retry. Clear variety in most styles; least change in art-brut,
+  cubist-machine, retro-future-rooms and microscope-rocks. Neon's sun now shows only in its sunset look.
+  Weekly 59→66 %. Undo: `git revert` this commit, then `build_taste.py .`
 - **15 Nov 2026** – Looks: more variety inside a style. A style's `light`, `composition` and `mood` may now be
   lists, plus `palettes` (several measured palettes); the core (description, medium, detail, avoid) stays fixed.
   `build_taste.py` writes one full prompt per look into `taste.json` (`looks`; `prompt` is still look 0, so
