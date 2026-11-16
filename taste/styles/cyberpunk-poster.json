@@ -1,0 +1,73 @@
+{
+  "name": "Cyberpunk poster",
+  "description": "Screen-printed posters and flat digital art of a neon dystopian future: bold flat colour, silhouettes, double-exposure figures framed by a city, holographic shine and dense ink linework, often symmetrical down a central street.",
+  "palette": [
+    "#070709",
+    "#373a45",
+    "#4e89a2",
+    "#b9726f",
+    "#d4dfe3",
+    "#bc5642",
+    "#2788a3"
+  ],
+  "light": [
+    "neon night: cyan and coral rim light on black",
+    "violet dusk, pink and electric blue haze",
+    "a giant red or pink sun or moon behind towers",
+    "holographic iridescent sheen on flat black"
+  ],
+  "composition": [
+    "strict symmetry down a central street, a vanishing point behind a lone silhouette",
+    "double exposure: a city skyline inside a large silhouette on black",
+    "a tall poster stuffed edge to edge with buildings, machines and debris",
+    "a small figure seen from behind facing a huge glowing skyline"
+  ],
+  "camera_or_medium": "limited-colour screen print and flat vector illustration with bold ink outlines; some painterly digital brushwork",
+  "mood": [
+    "cool, defiant, electric",
+    "lonely, nocturnal, wistful",
+    "chaotic, explosive, apocalyptic",
+    "dreamy, nostalgic, dusk"
+  ],
+  "texture_detail": "halftone grain, flat colour separations, crisp ink linework, holographic foil sheen, slight print misregistration",
+  "avoid": [
+    "photorealism",
+    "3D render",
+    "soft muddy shading",
+    "pastel calm",
+    "readable text or logos",
+    "recognisable characters or franchises",
+    "named artists or films"
+  ],
+  "subjects": [
+    "a lone rider silhouette at the end of a neon street",
+    "a city skyline inside the silhouette of a head",
+    "a towering poster of collapsing buildings and machines",
+    "two silhouettes on a rooftop watching a red sun over the city"
+  ],
+  "use": [
+    "post",
+    "desktop",
+    "phone"
+  ],
+  "palettes": [
+    [
+      "#070709",
+      "#373a45",
+      "#4e89a2",
+      "#b9726f",
+      "#d4dfe3",
+      "#bc5642",
+      "#2788a3"
+    ],
+    [
+      "#2c2b48",
+      "#5d6b98",
+      "#4d80c4",
+      "#c36e7f",
+      "#55c5f5",
+      "#5179ba",
+      "#45bef4"
+    ]
+  ]
+}

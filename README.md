@@ -106,6 +106,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **16 Nov 2026** – Two new styles from 18 anime/cyberpunk images Marc shared (local only, `taste/data/added/`):
+  `anime-megacity` (hand-painted anime film backgrounds: aerial megacities, sign-filled streets, cyborg labs; cold
+  night and warm glow palettes) and `cyberpunk-poster` (screen-print and flat digital posters: silhouettes,
+  double exposure, symmetry, neon; ink-and-neon and violet-dusk palettes). Palettes measured from the images;
+  no text, logos or recognisable characters. 24 styles. Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – Drop `botanical-fresco`. 22 styles. Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – `art-brut` and `dubuffet` are now purely abstract: no faces, people, eyes, creatures or hidden
   objects (description, composition, subjects and avoid list). Palettes unchanged. Undo: `git revert` this commit,
