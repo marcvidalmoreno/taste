@@ -11,14 +11,14 @@
     "#2788a3"
   ],
   "light": [
-    "neon night: cyan and coral rim light on black",
-    "violet dusk, pink and electric blue haze",
-    "a giant red or pink sun or moon behind towers",
-    "holographic iridescent sheen on flat black"
+    "neon night: cyan and coral rim light on black, no sun",
+    "violet dusk, pink and electric blue haze, no sun",
+    "a giant red or pink sun or moon behind towers (this look only)",
+    "holographic iridescent sheen on flat black, no sun"
   ],
   "composition": [
     "strict symmetry down a central street, a vanishing point behind a lone silhouette",
-    "double exposure: a city skyline inside a large silhouette on black",
+    "double exposure: a city skyline inside a large silhouette on black (the only look with a big face)",
     "a tall poster stuffed edge to edge with buildings, machines and debris",
     "a small figure seen from behind facing a huge glowing skyline"
   ],
@@ -37,7 +37,8 @@
     "pastel calm",
     "readable text or logos",
     "recognisable characters or franchises",
-    "named artists or films"
+    "named artists or films",
+    "giant faces or heads in the sky unless the composition asks for one"
   ],
   "subjects": [
     "a lone rider silhouette at the end of a neon street",

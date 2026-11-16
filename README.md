@@ -106,6 +106,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **16 Nov 2026** – From the first test sheets: `dubuffet` no longer reads as a jigsaw (irregular organic cells,
+  uneven hand hatching; avoid puzzle tabs, regular tiles, even stripes); `cyberpunk-poster` keeps the big sun to
+  one look and the big face to the double-exposure look. Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – Two new styles from 18 anime/cyberpunk images Marc shared (local only, `taste/data/added/`):
   `anime-megacity` (hand-painted anime film backgrounds: aerial megacities, sign-filled streets, cyborg labs; cold
   night and warm glow palettes) and `cyberpunk-poster` (screen-print and flat digital posters: silhouettes,
