@@ -106,6 +106,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **16 Nov 2026** – `dubuffet` closer to the real paintings: cells with straight edges and rounded corners, nested
+  like a floor plan, many small around a few large; fills of straight parallel stripes, brushy white or small solid
+  patches; red dashed line inside the black outlines; avoid bubbles, scribbled, cross- and zigzag hatching, same-size
+  cells (replaces the "even stripes" ban). Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – From the first test sheets: `dubuffet` no longer reads as a jigsaw (irregular organic cells,
   uneven hand hatching; avoid puzzle tabs, regular tiles, even stripes); `cyberpunk-poster` keeps the big sun to
   one look and the big face to the double-exposure look. Undo: `git revert` this commit, then `build_taste.py .`

@@ -1,6 +1,6 @@
 {
   "name": "Dubuffet cells",
-  "description": "Abstract cell drawings: a whole surface broken into irregular, organic, blobby cells of uneven size with thick wobbly black outlines, filled with white, red and blue hand hatching. Purely abstract, no faces, figures or objects.",
+  "description": "Abstract cell drawings like a hand-drawn floor plan: the whole surface broken into cells with mostly straight edges and rounded corners, nested two or three levels inside one another, thick black outlines. Each cell is straight parallel red or blue stripes, plain brushy white, or a small solid colour patch. Purely abstract, no faces, figures or objects.",
   "palette": [
     "#191518",
     "#5f464a",
@@ -17,7 +17,7 @@
     "bright red, blue and black hatching on pure white"
   ],
   "composition": [
-    "all-over, irregular cells of very different sizes to every edge, no ground or horizon",
+    "all-over cells to every edge, nested 2-3 levels deep, many small cells packed around a few large ones, no ground or horizon",
     "one big irregular cluster of cells, isolated on plain ground",
     "a dense maze of cells in loose bands, like a map of an imaginary city seen from above",
     "loose looping lines over a dark ground, cells half formed"
@@ -29,7 +29,7 @@
     "busy, urban, carnival",
     "calm, quiet, earthy"
   ],
-  "texture_detail": "thick uneven black outlines, uneven hand hatching in red and blue (some stripes thin, some thick, some cells half filled), flat white fills, visible hand wobble",
+  "texture_detail": "straight parallel hand-drawn stripes with wide gaps and white showing between them, one direction per cell, in red or blue; thick black outlines, often with a thin red dashed line running inside them; white fills show brush strokes; fills roughly 40% striped, 40% white, 20% small solid patches (red, blue, pale blue, grey, black); slight hand wobble",
   "avoid": [
     "photorealism",
     "3D render",
@@ -37,7 +37,12 @@
     "readable text",
     "jigsaw puzzle pieces, tabs and sockets",
     "regular repeating tiles",
-    "even mechanical stripes",
+    "scribbled hatching",
+    "cross-hatching",
+    "zigzag hatching",
+    "ruler-perfect stripes",
+    "round blobs, bubbles, clouds, pebbles",
+    "cells all the same size",
     "faces",
     "people or figures",
     "eyes",
@@ -47,7 +52,7 @@
     "named artists"
   ],
   "subjects": [
-    "an endless maze of irregular organic cells",
+    "an endless hand-drawn floor plan of nested striped and white cells",
     "a single floating cluster of lumpy cells",
     "bands of red and blue hatched cells like a striped map",
     "looping black contours half closing into cells on a dark ground"
