@@ -1,6 +1,6 @@
 {
   "name": "Art brut",
-  "description": "Raw, untrained-looking art: crowded naive figures and faces, graffiti marks, and tangled webs of coloured scribbles that fill the whole surface.",
+  "description": "Raw, untrained-looking abstract art: graffiti marks, naive patterns and tangled webs of coloured scribbles that fill the whole surface. Purely abstract, no faces or figures.",
   "palette": [
     "#312b2a",
     "#676967",
@@ -17,15 +17,15 @@
     "soft coloured pencil on white paper, tangled lines in many hues"
   ],
   "composition": [
-    "all-over and crowded, figures, faces and marks packed to the edges",
-    "one big naive figure on plain paper with a few marks around it",
-    "a horizontal frieze of figures marching in a row",
+    "all-over and crowded, marks, patterns and scribbles packed to the edges",
+    "one big knot of raw marks on plain paper with a few loose strokes around it",
+    "a horizontal frieze of repeated naive patterns in a row",
     "a web of tangled coloured lines spreading over a pale sheet"
   ],
   "camera_or_medium": "marker, gouache and oil stick on paper or raw canvas; childlike, confident lines",
   "mood": [
     "raw, playful, obsessive, joyful",
-    "tender, funny, a little odd",
+    "tender, wobbly, a little odd",
     "noisy, festive, carnival",
     "quiet, intimate, doodled"
   ],
@@ -34,14 +34,19 @@
     "polished digital rendering",
     "smooth gradients",
     "photorealism",
+    "faces",
+    "people or figures",
+    "eyes",
+    "animals or creatures",
+    "hidden figures or objects",
     "copies of famous works",
     "named artists"
   ],
   "subjects": [
-    "a crowd of grinning naive figures",
-    "a wall of graffiti faces and crowns",
+    "a wall of graffiti marks, crowns and arrows as pure pattern",
     "a tangle of coloured pencil lines like a nest",
-    "a portrait covered in scribbled marks"
+    "a crowded field of naive dots, zigzags and spirals",
+    "thick oil-stick strokes crossing raw canvas"
   ],
   "use": [
     "post",

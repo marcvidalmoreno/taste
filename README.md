@@ -106,6 +106,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **16 Nov 2026** – `art-brut` and `dubuffet` are now purely abstract: no faces, people, eyes, creatures or hidden
+  objects (description, composition, subjects and avoid list). Palettes unchanged. Undo: `git revert` this commit,
+  then `build_taste.py .`
 - **16 Nov 2026** – Drop five styles: `cubist-machine`, `psychedelic-dreams`, `escher`, `goyon`, `cave-painting`.
   New `dubuffet` (Dubuffet cells): the 42 DUBUFFET images split out of `art-brut` plus 7 untagged ones (49);
   `art-brut` keeps the other 35 (Basquiat, graffiti, coloured-pencil tangles), its text and palettes re-measured.
