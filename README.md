@@ -106,6 +106,12 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **16 Nov 2026** – Drop five styles: `cubist-machine`, `psychedelic-dreams`, `escher`, `goyon`, `cave-painting`.
+  New `dubuffet` (Dubuffet cells): the 42 DUBUFFET images split out of `art-brut` plus 7 untagged ones (49);
+  `art-brut` keeps the other 35 (Basquiat, graffiti, coloured-pencil tangles), its text and palettes re-measured.
+  Both have 3 palette families. `fractal.py` example now uses `fractal-worlds`. 23 styles. Local tags backup:
+  `taste/data/collections/art/tags.before-dubuffet.json`. Undo: `git revert` this commit, copy the backup over
+  `tags.json`, then `build_taste.py .`
 - **15 Nov 2026** – `erotic` subjects: the two boundary-ladder prompts that passed the Codex filter (robe off one
   shoulder; bare back at a mirror), the first replacing the plainer chaise-longue subject. Ladder result: bath,
   sheets, open shirt, lingerie and nude back were all blocked (shirt and lingerie already at the prompt).

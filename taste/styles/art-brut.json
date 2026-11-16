@@ -1,26 +1,26 @@
 {
   "name": "Art brut",
-  "description": "Raw, untrained-looking art: thick black outlines enclosing cell-like shapes, crowded figures and faces, graffiti marks and naive patterns that fill the whole surface.",
+  "description": "Raw, untrained-looking art: crowded naive figures and faces, graffiti marks, and tangled webs of coloured scribbles that fill the whole surface.",
   "palette": [
-    "#2c2426",
-    "#666667",
-    "#ac6240",
-    "#a99f97",
-    "#e3ddd5",
-    "#226e9c",
-    "#b15e34"
+    "#312b2a",
+    "#676967",
+    "#b47246",
+    "#a7a19a",
+    "#e1dfda",
+    "#207baa",
+    "#b46b39"
   ],
   "light": [
     "no light source, flat colour on paper or canvas",
     "flat bright colour on raw brown canvas",
     "chalky bright colours on a black ground",
-    "only red, blue and black on cream paper"
+    "soft coloured pencil on white paper, tangled lines in many hues"
   ],
   "composition": [
-    "all-over and crowded, interlocking cells and figures to the edges, or one big naive figure on plain paper",
+    "all-over and crowded, figures, faces and marks packed to the edges",
     "one big naive figure on plain paper with a few marks around it",
     "a horizontal frieze of figures marching in a row",
-    "a grid of boxes like a comic page, a face or creature in each"
+    "a web of tangled coloured lines spreading over a pale sheet"
   ],
   "camera_or_medium": "marker, gouache and oil stick on paper or raw canvas; childlike, confident lines",
   "mood": [
@@ -29,7 +29,7 @@
     "noisy, festive, carnival",
     "quiet, intimate, doodled"
   ],
-  "texture_detail": "wobbly hand-drawn outlines, hatching in red and blue, visible brush and crayon, paper grain",
+  "texture_detail": "wobbly hand-drawn lines, scribbled tangles in many colours, visible brush and crayon, paper grain",
   "avoid": [
     "polished digital rendering",
     "smooth gradients",
@@ -38,9 +38,9 @@
     "named artists"
   ],
   "subjects": [
-    "a city made of interlocking cells",
     "a crowd of grinning naive figures",
-    "a cat built from patterned shapes",
+    "a wall of graffiti faces and crowns",
+    "a tangle of coloured pencil lines like a nest",
     "a portrait covered in scribbled marks"
   ],
   "use": [
@@ -49,31 +49,31 @@
   ],
   "palettes": [
     [
-      "#2c2426",
-      "#666667",
-      "#ac6240",
-      "#a99f97",
-      "#e3ddd5",
-      "#226e9c",
-      "#b15e34"
+      "#65625d",
+      "#b78458",
+      "#90908d",
+      "#bdb8b3",
+      "#e5e6e5",
+      "#3780a4",
+      "#af7e43"
     ],
     [
-      "#1c181b",
-      "#564945",
-      "#797f81",
-      "#b87444",
-      "#ccc2b3",
-      "#1d709d",
-      "#b36732"
+      "#292626",
+      "#5d5851",
+      "#b4713e",
+      "#898883",
+      "#cac1ae",
+      "#815439",
+      "#ca793a"
     ],
     [
-      "#544747",
-      "#877a75",
-      "#aea199",
-      "#d1c7bc",
-      "#f1f0eb",
-      "#2d7193",
-      "#b6603c"
+      "#302727",
+      "#626c71",
+      "#b15e3d",
+      "#b4a79b",
+      "#ece8e1",
+      "#187db0",
+      "#bb5d35"
     ]
   ]
 }

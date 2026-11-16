@@ -1,0 +1,80 @@
+{
+  "name": "Dubuffet cells",
+  "description": "Jigsaw-like cell drawings: a whole surface broken into interlocking puzzle-piece shapes with thick black outlines, filled with white, red and blue hatching, figures and objects hidden in the maze.",
+  "palette": [
+    "#191518",
+    "#5f464a",
+    "#897a76",
+    "#baaca0",
+    "#e9e2d8",
+    "#23628e",
+    "#ad5131"
+  ],
+  "light": [
+    "no light source, flat colour on white",
+    "white cells and black outlines on a black ground",
+    "muted earth tones: pink, grey and ochre cells on beige paper",
+    "bright red, blue and black hatching on pure white"
+  ],
+  "composition": [
+    "all-over, interlocking cells to every edge, no ground or horizon",
+    "one big figure or object built of cells, isolated on plain ground",
+    "a crowded street or room where people, cars and furniture merge into one maze",
+    "loose looping lines over a dark ground, cells half formed"
+  ],
+  "camera_or_medium": "marker, felt pen and vinyl paint on paper or panel; flat, confident black contour",
+  "mood": [
+    "playful, obsessive, puzzle-like",
+    "comic, absurd, a little uncanny",
+    "busy, urban, carnival",
+    "calm, quiet, earthy"
+  ],
+  "texture_detail": "thick black outlines, parallel stripe hatching in red and blue, flat white fills, slight hand wobble",
+  "avoid": [
+    "photorealism",
+    "3D render",
+    "smooth gradients",
+    "readable text",
+    "copies of famous works",
+    "named artists"
+  ],
+  "subjects": [
+    "a bicycle made of interlocking cells",
+    "a seated figure dissolving into a maze",
+    "a city street where cars and people share one outline",
+    "a coffee pot and cup as puzzle pieces"
+  ],
+  "use": [
+    "post",
+    "desktop"
+  ],
+  "palettes": [
+    [
+      "#362e34",
+      "#a83536",
+      "#736d6f",
+      "#aaa09c",
+      "#e2dbd4",
+      "#ac3733",
+      "#26699c"
+    ],
+    [
+      "#090709",
+      "#44363a",
+      "#6a6b75",
+      "#aa6b48",
+      "#bfb09c",
+      "#225d87",
+      "#ae622e"
+    ],
+    [
+      "#443b3d",
+      "#7f6f6d",
+      "#ad9e95",
+      "#d5c8b8",
+      "#f4f0e9",
+      "#933d3f",
+      "#dd9b57"
+    ]
+  ]
+}

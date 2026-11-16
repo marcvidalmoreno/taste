@@ -1,7 +1,7 @@
 """Render a real fractal (Mandelbrot, Julia, Burning Ship) coloured with a taste style's palette. No Codex, no allowance.
 
 Usage (from the project root):
-  .venv/Scripts/python -I scripts/fractal.py --style psychedelic-dreams --kind mandelbrot --view seahorse --out generated/fractals/a.png
+  .venv/Scripts/python -I scripts/fractal.py --style fractal-worlds --kind mandelbrot --view seahorse --out generated/fractals/a.png
   --kind mandelbrot|julia|ship   --view <name> or cx,cy,zoom   --ratio wide|square|portrait   --iter 600
   --c -0.8,0.156 (julia constant)   --cycles 3 (colour bands)   --glow 0.6 (bloom on the edges)
 Views: mandelbrot: full, seahorse, spiral, elephant; julia: default; ship: full, bay.
