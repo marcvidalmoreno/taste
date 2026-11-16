@@ -106,6 +106,7 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **16 Nov 2026** – Drop `botanical-fresco`. 22 styles. Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – `art-brut` and `dubuffet` are now purely abstract: no faces, people, eyes, creatures or hidden
   objects (description, composition, subjects and avoid list). Palettes unchanged. Undo: `git revert` this commit,
   then `build_taste.py .`
