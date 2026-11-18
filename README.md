@@ -107,6 +107,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **18 Nov 2026** – `batch.py --start K`: begin at subject K, so a second batch uses a subjects file's later
+  subjects (image names K+1…). Undo: `git revert` this commit.
 - **18 Nov 2026** – More variation (the 18 Nov x4 run repeated 44 of 96 earlier prompts word for word): new
   `scripts/batch.py` runs a batch from a fresh `subjects.json` per run; `codex_run.py --mix SEED` picks light,
   framing, mood and palette each on its own (about 190 combinations per style instead of 4 fixed looks);

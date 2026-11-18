@@ -2,7 +2,8 @@
 
 Usage (from the project root):
   .venv/Scripts/python -I scripts/batch.py --out generated/codex/<batch> --subjects <subjects.json>
-        [--styles a,b] [--n 4] [--wildcards 1] [--seed S] [--dry-run]
+        [--styles a,b] [--n 4] [--start 0] [--wildcards 1] [--seed S] [--dry-run]
+  --start K: begin at subject K (image names K+1...), to use a subjects file's later subjects in a second batch
 
 <subjects.json> is {"<style>": ["subject", ...], ...}, written fresh by Claude Code for each batch (keep it in
 the batch folder, git-ignored). Styles default to the keys of that file. Per style, image i gets subject i
@@ -29,6 +30,7 @@ ap.add_argument('--out', required=True)
 ap.add_argument('--subjects', required=True)
 ap.add_argument('--styles', default='')
 ap.add_argument('--n', type=int, default=4)
+ap.add_argument('--start', type=int, default=0)
 ap.add_argument('--wildcards', type=int, default=1)
 ap.add_argument('--seed', default='')
 ap.add_argument('--dry-run', action='store_true')
@@ -44,12 +46,12 @@ seed = a.seed or Path(a.out).name
 rnd = random.Random(seed)
 fails = 0
 for style in styles:
-    for i in range(a.n):
+    for i in range(a.start, a.start + a.n):
         name = f'{style}-{i + 1}'
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', a.out, '--name', name,
                '--style', style, '--subject', subjects[style][i % len(subjects[style])],
                '--ratio', RATIOS[i % len(RATIOS)], '--mix', seed, '--mode', 'test']
-        if i >= a.n - a.wildcards:
+        if i >= a.start + a.n - a.wildcards:
             cmd += ['--extreme', rnd.choice(sorted(EXTREMES))]
         if a.dry_run:
             out = subprocess.run(cmd + ['--print'], capture_output=True, text=True, encoding='utf-8')
