@@ -106,6 +106,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **18 Nov 2026** – `dubuffet` round 2 (v3 rated: tidy ones almost, loose ones keep): irregular asymmetric cells
+  (bent corridors, L/U/branching shapes), thin stripes at a different angle per cell, many diagonal; dashed red
+  line on about a third of outlines; avoid symmetry, grid rows, boxy rectangles, only-horizontal/vertical or thick
+  candy stripes. Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – `erotic` subject 2: the bare-back mirror scene (blocked by the Codex filter twice today) becomes
   a side view at the mirror in a long silk evening dress. Undo: `git revert` this commit, then `build_taste.py .`
 - **16 Nov 2026** – `dubuffet` closer to the real paintings: cells with straight edges and rounded corners, nested
