@@ -35,20 +35,23 @@ export function shortDate(iso) {
 
 export const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
-// The three marks. Letter + word + colour, so the meaning never rests on colour alone.
+// The two marks (thumbs up / down since 18 Nov 2026). Stored values stay 'keep' and 'no', so older ratings
+// read the same. Glyph + word + colour, so the meaning never rests on colour alone. K and N still work.
 export const RATINGS = {
-  keep: { label: 'Keep', key: 'k' },
-  almost: { label: 'Almost', key: 'a' },
-  no: { label: 'No', key: 'n' },
+  keep: { label: 'Up', glyph: '👍', key: 'u', alt: 'k' },
+  no: { label: 'Down', glyph: '👎', key: 'd', alt: 'n' },
 };
+// For showing saved ratings: the two marks plus 'almost', which older ratings (before 18 Nov 2026) may have.
+export const RATING_LABELS = { ...RATINGS, almost: { label: 'Almost (old)', glyph: 'A' } };
+export const ratingForKey = (k) => Object.keys(RATINGS).find((r) => RATINGS[r].key === k || RATINGS[r].alt === k);
 
-// Small K / A / N badge. Dashed = draft, solid = saved (same shape, the fill says how final it is).
+// Small 👍 / 👎 badge. Dashed = draft, solid = saved (same shape, the fill says how final it is).
 export function markBadge(im) {
   const r = im.saved?.rating || im.draft?.rating;
   if (!r) return null;
   const saved = !!im.saved;
   return h('span', { class: `mark ${r}${saved ? ' saved' : ''}`,
-    title: `${RATINGS[r].label}${saved ? ' (saved)' : ' (draft, not saved yet)'}` }, RATINGS[r].key.toUpperCase());
+    title: `${RATING_LABELS[r].label}${saved ? ' (saved)' : ' (draft, not saved yet)'}` }, RATING_LABELS[r].glyph);
 }
 
 // A key press in a text field is typing, not a shortcut.

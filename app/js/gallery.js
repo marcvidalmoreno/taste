@@ -1,10 +1,10 @@
 // Gallery: every generated image in justified rows (like Flickr), filtered by style, rating and batch.
 // Read-only on purpose: marking stays in the batch view, so this page can be browsed without risk.
-//   #/gallery?style=<key>&rating=keep|almost|no|none&batch=<batch>
+//   #/gallery?style=<key>&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
 import { api, styles } from './api.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, showError, isTyping } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATING_LABELS, showError, isTyping } from './ui.js';
 
 const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
 let all = [];        // every image from the server
@@ -17,7 +17,7 @@ export const galleryHref = (q = {}) => {
   return '#/gallery' + (p.size ? '?' + p : '');
 };
 
-export const ratingLabel = (r) => (r ? RATINGS[r].label : 'Not rated');
+export const ratingLabel = (r) => (r ? RATING_LABELS[r].label : 'Not rated');
 
 export async function loadGallery() {
   const [g, st] = await Promise.all([api('gallery'), styles()]);
@@ -61,7 +61,7 @@ function filters(f) {
   const styleKeys = [...new Set(all.map((im) => im.style).filter(Boolean))]
     .sort((a, b) => (styleMap[a]?.name || a).localeCompare(styleMap[b]?.name || b));
   const batches = [...new Set(all.map((im) => im.batch))].sort().reverse();
-  const ratings = [['', 'All'], ['keep', 'Keep'], ['almost', 'Almost'], ['no', 'No'], ['none', 'Not rated']];
+  const ratings = [['', 'All'], ['keep', 'Up'], ['no', 'Down'], ['almost', 'Almost (old)'], ['none', 'Not rated']];
   return h('div', { class: 'gallery-filters' },
     h('div', { role: 'group', class: 'rseg', 'aria-label': 'Rating' },
       ratings.map(([v, label]) => h('button', {
@@ -89,7 +89,7 @@ function tile(im, i) {
     onClick: () => openLarge(i),
   },
   h('img', { src: thumbUrl(im.batch, im.file, im.mtime), alt: '', loading: 'lazy', decoding: 'async' }),
-  im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATINGS[im.rating].key.toUpperCase()));
+  im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph));
 }
 
 // ------------------------------------------------------------------ large view (read-only)
@@ -135,7 +135,7 @@ function draw() {
         h('button', { class: 'secondary outline', onClick: () => step(1), disabled: index === shown.length - 1, 'aria-label': 'Next image' }, '→'),
         h('button', { class: 'secondary outline close', onClick: () => dlg.close(), 'aria-label': 'Close' }, '✕')),
       h('p', {}, im.rating
-        ? h('span', { class: `rating-pill ${im.rating}` }, RATINGS[im.rating].label)
+        ? h('span', { class: `rating-pill ${im.rating}` }, RATING_LABELS[im.rating].label)
         : h('span', { class: 'rating-pill' }, 'Not rated'),
         im.why && h('span', { class: 'why' }, ' ', im.why)),
       h('dl', {},

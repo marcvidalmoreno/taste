@@ -1,8 +1,8 @@
 // Overview: what the saved ratings say per style, and when the next distil is due.
-// The chart is a stacked bar per style (keep / almost / no), one shared scale, so both the mix inside a
+// The chart is a stacked bar per style (up / down, plus "almost" from older ratings), one shared scale, so both the mix inside a
 // style and the amount of evidence behind it can be read at a glance. A table holds the same numbers.
 import { api, styles } from './api.js';
-import { h, batchHref, batchTitle, plural, RATINGS, showError } from './ui.js';
+import { h, batchHref, batchTitle, plural, RATING_LABELS, showError } from './ui.js';
 
 let scope = 'since';   // 'since' the last distil (what the distil will read) or 'all'
 
@@ -70,7 +70,8 @@ function chartCard(o, all, redraw) {
     .filter((r) => r.total > 0)
     .sort((a, b) => b.total - a.total || b.keep - a.keep);
   const max = Math.max(1, ...rows.map((r) => r.total));
-  const series = Object.keys(RATINGS);
+  // Up and down; 'almost' only while older ratings in this view still have it.
+  const series = ['keep', 'no', ...(rows.some((r) => r.almost) ? ['almost'] : [])];
   return h('article', { class: 'card chart-card' },
     h('div', { class: 'chart-head' },
       h('h2', {}, 'Per style'),
@@ -78,8 +79,8 @@ function chartCard(o, all, redraw) {
         [['since', 'Since last distil'], ['all', 'All ratings']].map(([k, label]) => h('a', {
           href: '#/overview', 'aria-current': scope === k ? 'page' : null,
           onClick: (e) => { e.preventDefault(); scope = k; redraw(); } }, label)))),
-    // Legend: always shown for the three series, in the same order as the segments.
-    h('ul', { class: 'legend' }, series.map((s) => h('li', {}, h('i', { class: `sw ${s}` }), RATINGS[s].label))),
+    // Legend: always shown for the series, in the same order as the segments.
+    h('ul', { class: 'legend' }, series.map((s) => h('li', {}, h('i', { class: `sw ${s}` }), RATING_LABELS[s].label))),
     rows.length ? h('div', { class: 'bars', role: 'img', 'aria-label': 'Ratings per style; the same numbers are in the table below' },
       rows.map((r) => h('div', { class: 'bar-row' },
         h('span', { class: 'label', title: r.key }, all[r.key]?.name || r.key,
@@ -88,14 +89,14 @@ function chartCard(o, all, redraw) {
           h('span', { class: 'stack', style: { width: (r.total / max) * 100 + '%' } },
             series.filter((s) => r[s]).map((s) => h('span', {
               class: `seg ${s}`, style: { flexGrow: r[s] },
-              title: `${all[r.key]?.name || r.key}: ${r[s]} ${RATINGS[s].label.toLowerCase()} of ${r.total}`,
+              title: `${all[r.key]?.name || r.key}: ${r[s]} ${RATING_LABELS[s].label.toLowerCase()} of ${r.total}`,
             }, r[s])))),
         h('span', { class: 'total' }, r.total))))
       : h('p', { class: 'muted' }, scope === 'since' ? 'No ratings since the last distil.' : 'No saved ratings yet.'),
     rows.length > 0 && h('details', { class: 'table-view' },
       h('summary', {}, 'As a table'),
       h('table', {},
-        h('thead', {}, h('tr', {}, h('th', {}, 'Style'), series.map((s) => h('th', {}, RATINGS[s].label)), h('th', {}, 'Total'))),
+        h('thead', {}, h('tr', {}, h('th', {}, 'Style'), series.map((s) => h('th', {}, RATING_LABELS[s].label)), h('th', {}, 'Total'))),
         h('tbody', {}, rows.map((r) => h('tr', {}, h('td', {}, all[r.key]?.name || r.key),
           series.map((s) => h('td', {}, r[s])), h('td', {}, r.total)))))));
 }

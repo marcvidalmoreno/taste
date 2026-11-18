@@ -3,7 +3,7 @@
 import { api } from './api.js';
 import { store, onChange, changed } from './store.js';
 import { flushWhy } from './marks.js';
-import { h, thumbUrl, plural, RATINGS, markBadge, toast, showError } from './ui.js';
+import { h, thumbUrl, plural, RATING_LABELS, markBadge, toast, showError } from './ui.js';
 
 const drafts = () => (store.data?.items || []).filter((im) => im.status === 'draft');
 
@@ -28,7 +28,7 @@ function review() {
       h('img', { src: thumbUrl(store.data.batch, im.file, im.mtime), alt: '' }),
       h('span', { class: 'num' }, im.number),
       markBadge(im),
-      h('span', {}, h('strong', {}, RATINGS[im.draft.rating].label),
+      h('span', {}, h('strong', {}, RATING_LABELS[im.draft.rating].label),
         im.draft.why ? ` – ${im.draft.why}` : h('span', { class: 'muted' }, ' – no reason given'))))),
     h('p', { class: 'muted small' },
       'Ignored images are left out. Once saved, a rating is read-only here, so distil.py can trust its place in the file.'),

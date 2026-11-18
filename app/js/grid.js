@@ -5,7 +5,7 @@ import { toggleMark, ignoreWithUndo, markButtons } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { renderSaveBar } from './save.js';
 import { job } from './job.js';
-import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, markBadge, isTyping, showError } from './ui.js';
+import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError } from './ui.js';
 
 let view;
 
@@ -170,7 +170,7 @@ function onGridKey(e) {
   }
   const key = e.key.toLowerCase();
   const name = el.dataset.name;
-  const rating = Object.keys(RATINGS).find((r) => RATINGS[r].key === key);
+  const rating = ratingForKey(key);
   if (rating) {
     e.preventDefault();
     toggleMark(name, rating);

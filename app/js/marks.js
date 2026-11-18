@@ -77,8 +77,8 @@ export function ignoreWithUndo(name) {
     { action: 'Undo', onAction: () => setIgnored(name, !ignoring) });
 }
 
-// Keep / Almost / No buttons, the same in the large view and under each grid tile.
-// In the grid they stay out of the Tab order (tabindex -1): the keyboard already marks the focused tile with K / A / N.
+// Up / Down buttons, the same in the large view and under each grid tile.
+// In the grid they stay out of the Tab order (tabindex -1): the keyboard already marks the focused tile with U / D.
 export function markButtons(im, { inGrid = false } = {}) {
   const r = im.draft?.rating;
   return h('div', { role: 'group', class: `marks${inGrid ? ' tile-marks' : ''}`,
@@ -87,5 +87,5 @@ export function markButtons(im, { inGrid = false } = {}) {
       type: 'button', class: `mark-btn ${key}`, 'aria-pressed': String(r === key),
       disabled: im.status === 'ignored', tabindex: inGrid ? '-1' : null,
       onClick: () => toggleMark(im.name, key),
-    }, h('kbd', {}, m.key.toUpperCase()), m.label)));
+    }, h('span', { 'aria-hidden': 'true' }, m.glyph), ' ', m.label, ' ', h('kbd', {}, m.key.toUpperCase()))));
 }

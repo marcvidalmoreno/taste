@@ -357,12 +357,12 @@ class Handler(BaseHTTPRequestHandler):
         return {**summary(batch, images), 'items': images}
 
     def put_draft(self):
-        """Set or clear one draft: {batch, name, rating: keep|almost|no|null, why}."""
+        """Set or clear one draft: {batch, name, rating: keep (up)|no (down)|null, why}."""
         body = self.read_body()
         batch, name = self.image_from(body)
         rating, why = body.get('rating'), ' '.join(str(body.get('why') or '').split())[:300]
         if rating not in (None, *rate.RATINGS_ALLOWED):
-            raise ApiError(400, 'rating must be keep, almost, no or null')
+            raise ApiError(400, 'rating must be keep (up), no (down) or null')
         with LOCK:
             drafts = read_json(DRAFTS, {})
             mine = drafts.setdefault(batch, {})
@@ -449,7 +449,7 @@ class Handler(BaseHTTPRequestHandler):
         per = collections.defaultdict(lambda: {'all': {'keep': 0, 'almost': 0, 'no': 0},
                                                'since': {'keep': 0, 'almost': 0, 'no': 0}})
         for i, r in enumerate(rows):
-            if r['rating'] in rate.RATINGS_ALLOWED:
+            if r['rating'] in rate.RATINGS_SEEN:
                 per[r['style'] or '(no style)']['all'][r['rating']] += 1
                 if i >= done:
                     per[r['style'] or '(no style)']['since'][r['rating']] += 1

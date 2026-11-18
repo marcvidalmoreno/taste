@@ -1,7 +1,7 @@
-"""Record Marc's ratings for one batch: keep / almost / no, optional word why.
+"""Record Marc's ratings for one batch: thumbs up / down, optional word why.
 
 Usage (from the project root):
-  .venv/Scripts/python -I scripts/rate.py <batch> 1=keep 2=almost:too-busy 3=no:dark
+  .venv/Scripts/python -I scripts/rate.py <batch> 1=up 2=down:too-busy 3=down:dark
   .venv/Scripts/python -I scripts/rate.py status
 Numbers are the contact-sheet numbers (1 = first generated image). Appends to generated/codex/ratings.csv
 (git-ignored), with style, mode, change and prompt copied from runs.csv so the distil step has them.
@@ -17,7 +17,11 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / 'generated' / 'codex'
 RATINGS, RUNS, STATE = BASE / 'ratings.csv', BASE / 'runs.csv', BASE / 'distil-state.json'
 HEADER = ['date', 'batch', 'number', 'name', 'style', 'mode', 'change', 'rating', 'why', 'prompt']
-RATINGS_ALLOWED = ('keep', 'almost', 'no')
+# Two marks since 18 Nov 2026. Stored as 'keep' / 'no' so older rows read the same; 'up' / 'down' are
+# what Marc types. Older rows may also hold 'almost' (RATINGS_SEEN, for reading and counting only).
+RATINGS_ALLOWED = ('keep', 'no')
+RATINGS_SEEN = ('keep', 'no', 'almost')
+ALIASES = {'up': 'keep', 'down': 'no', 'keep': 'keep', 'no': 'no', '+': 'keep', '-': 'no'}
 DUE = 20
 
 
@@ -49,7 +53,7 @@ def append_ratings(batch, marks):
     rows = []
     for name, rating, why in marks:
         if rating not in RATINGS_ALLOWED:
-            raise ValueError(f'bad rating "{rating}" for {name}: use keep, almost or no')
+            raise ValueError(f'bad rating "{rating}" for {name}: use up or down')
         if name not in names:
             raise ValueError(f'no image "{name}" in batch {batch}')
         run = runs.get(name, {})
@@ -76,19 +80,20 @@ def main():
         print(f'{n} ratings since the last distil' + ('  -> distil due (scripts/distil.py)' if n >= DUE else f' ({DUE - n} to go)'))
         return
 
-    # Command line: turn "2=almost:too-busy" into (name, rating, why), then use the shared writer.
+    # Command line: turn "2=down:too-busy" into (name, rating, why), then use the shared writer.
     batch = sys.argv[1]
     names = batch_images(batch)
     marks = []
     for item in sys.argv[2:]:
         num, _, rest = item.partition('=')
-        rating, _, why = rest.partition(':')
-        if rating not in RATINGS_ALLOWED or not num.isdigit() or not 1 <= int(num) <= len(names):
-            sys.exit(f'bad rating "{item}": use N=keep|almost|no[:why], N from 1 to {len(names)}')
+        word, _, why = rest.partition(':')
+        rating = ALIASES.get(word.lower())
+        if rating is None or not num.isdigit() or not 1 <= int(num) <= len(names):
+            sys.exit(f'bad rating "{item}": use N=up|down[:why], N from 1 to {len(names)}')
         marks.append((names[int(num) - 1], rating, why.replace('-', ' ')))
     rows = append_ratings(batch, marks)
     for r in rows:
-        print(f'{r[2]} {r[3]}: {r[7]}{" - " + r[8] if r[8] else ""}')
+        print(f'{r[2]} {r[3]}: {"up" if r[7] == "keep" else "down"}{" - " + r[8] if r[8] else ""}')
     n = len(since_last())
     print(f'{n} ratings since the last distil' + ('  -> distil due' if n >= DUE else ''))
 

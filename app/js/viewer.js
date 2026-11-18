@@ -3,7 +3,7 @@
 import { store, item, styleName, kindOf, onChange, visible } from './store.js';
 import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons } from './marks.js';
 import { openVariations } from './variations.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATINGS, markBadge, isTyping, toast } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
 const CHANGES = {
@@ -123,8 +123,8 @@ function drawPanel(im) {
     actions(im),
     details(im),
     h('footer', { class: 'keys muted small' },
-      h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'K'), h('kbd', {}, 'A'), h('kbd', {}, 'N'),
-      ' mark  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'V'), ' variations  ', h('kbd', {}, 'F'), ' 1:1  ',
+      h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),
+      ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'V'), ' variations  ', h('kbd', {}, 'F'), ' 1:1  ',
       h('kbd', {}, 'Esc'), ' close'));
 }
 
@@ -132,7 +132,7 @@ function markSection(im) {
   if (im.saved) {
     return h('section', { class: 'mark-box' },
       h('p', { class: 'saved-note' }, markBadge(im), ' ',
-        h('strong', {}, RATINGS[im.saved.rating].label), im.saved.why && ` – ${im.saved.why}`),
+        h('strong', {}, RATING_LABELS[im.saved.rating].label), im.saved.why && ` – ${im.saved.why}`),
       h('p', { class: 'muted small' }, `Saved on ${shortDate(im.saved.date)}. Saved ratings are read-only.`));
   }
   const r = im.draft?.rating;
@@ -222,7 +222,7 @@ function onKey(e) {
   }
   const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   const im = current();
-  const rating = Object.keys(RATINGS).find((r) => RATINGS[r].key === key);
+  const rating = ratingForKey(key);
   if (rating) toggleMark(im.name, rating);
   else if (key === 'ArrowRight') go(1);
   else if (key === 'ArrowLeft') go(-1);

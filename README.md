@@ -16,7 +16,7 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
   members, measured palettes, exemplars; the older scripts did the 8 Nov colour clustering).
   Codex route: `codex_run.py`, `variations.py`, `sheet.py`, `rate.py`, `distil.py`, `nearest.py` (below).
 - [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to look at the Codex
-  batches, mark keep / almost / no with a reason, ignore broken images, save ratings, start variations and see
+  batches, mark thumbs up / down with a reason, ignore broken images, save ratings, start variations and see
   ratings per style. Plain HTML, CSS (Pico.css, vendored) and JavaScript modules; Python standard library + Pillow.
   Also read-only pages: **Gallery** (every image in justified rows, filters by style, rating and batch),
   **Taste** (the styles with my kept and rejected images as examples) and **About** (`app/about.html`: why,
@@ -87,7 +87,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 | Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> --style S [--subject "..."]` (no `--style`: prints the top-3 guess) |
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
 | Contact sheet of a batch | `.venv/Scripts/python -I scripts/sheet.py generated/codex/<batch>` |
-| Rate (numbers from the sheet) | `.venv/Scripts/python -I scripts/rate.py <batch> 1=keep 2=almost:too-busy 3=no:dark` |
+| Rate (numbers from the sheet) | `.venv/Scripts/python -I scripts/rate.py <batch> 1=up 2=down:too-busy 3=down:dark` |
 | Ratings since the last distil | `.venv/Scripts/python -I scripts/rate.py status` |
 | Distil (every ~20 ratings) | `.venv/Scripts/python -I scripts/distil.py`, Claude proposes style edits, I approve, `build_taste.py`, then `distil.py --mark` |
 | Allowance now | `.venv/Scripts/python -I scripts/codex_run.py read` |
@@ -106,6 +106,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **18 Nov 2026** – Rating is now thumbs up / down (was keep / almost / no). Web app: Up / Down buttons, keys
+  U / D (K / N still work); `rate.py` takes `up` / `down`. Stored values stay `keep` / `no`, so older ratings read
+  the same; older `almost` ratings still show as "Almost (old)" in the overview, gallery, Taste page and distil.
+  Undo: `git revert` this commit.
 - **18 Nov 2026** – `dubuffet` round 2 (v3 rated: tidy ones almost, loose ones keep): irregular asymmetric cells
   (bent corridors, L/U/branching shapes), thin stripes at a different angle per cell, many diagonal; dashed red
   line on about a third of outlines; avoid symmetry, grid rows, boxy rectangles, only-horizontal/vertical or thick

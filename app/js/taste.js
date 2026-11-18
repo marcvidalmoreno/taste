@@ -2,7 +2,7 @@
 // Kept images next to rejected ones (with the reason): the contrast says more than the description.
 //   #/taste            all styles
 //   #/taste/<style>    the same page, scrolled to one style
-import { h, thumbUrl, plural, RATINGS, showError } from './ui.js';
+import { h, thumbUrl, plural, RATING_LABELS, showError } from './ui.js';
 import { loadGallery, openLarge, galleryHref } from './gallery.js';
 
 const FACTS = [['light', 'Light'], ['composition', 'Composition'], ['camera_or_medium', 'Medium'],
@@ -60,7 +60,7 @@ function styleCard(key, s, imgs) {
         s.use?.length && [h('dt', {}, 'Good for'), h('dd', {}, s.use.map((u) => USES[u] || u).join(' · '))]),
       h('div', { class: 'evidence' },
         imgs.length
-          ? [examples(keep, RATINGS.keep.label, 8), examples(almost, RATINGS.almost.label, 4), examples(no, RATINGS.no.label, 4),
+          ? [examples(keep, RATING_LABELS.keep.label, 8), examples(no, RATING_LABELS.no.label, 4), examples(almost, RATING_LABELS.almost.label, 4),
              h('p', { class: 'muted small' },
                unrated ? `${plural(unrated, 'image')} not rated yet. ` : '',
                h('a', { href: galleryHref({ style: key }) }, `All ${plural(imgs.length, 'image')} in the gallery`))]

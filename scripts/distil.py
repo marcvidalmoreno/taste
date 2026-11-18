@@ -3,7 +3,7 @@
 Usage (from the project root):
   .venv/Scripts/python -I scripts/distil.py          # print the summary, change nothing
   .venv/Scripts/python -I scripts/distil.py --mark   # after Marc approved (or declined) the proposal
-Prints per style: counts keep/almost/no, counts per change type, the "why" words, and the prompts of
+Prints per style: counts up (keep) / down (no), plus almost in older rows, counts per change type, the "why" words, and the prompts of
 kept images. Claude turns that into a short proposal (prefer/avoid entries, subjects, wording that worked)
 for taste/styles/<style>.json, applies only what Marc approves, reruns build_taste.py, then --mark.
 """
@@ -33,13 +33,13 @@ for r in rows:
 print(f'{len(rows)} ratings since the last distil\n')
 for style, rs in sorted(by.items()):
     c = collections.Counter(r['rating'] for r in rs)
-    print(f'## {style}: keep {c["keep"]}, almost {c["almost"]}, no {c["no"]}')
+    print(f'## {style}: up {c["keep"]}, down {c["no"]}' + (f', almost (old) {c["almost"]}' if c['almost'] else ''))
     ch = collections.defaultdict(collections.Counter)
     for r in rs:
         ch[r['change'] or '-'][r['rating']] += 1
     for k, v in sorted(ch.items()):
-        print(f'  change {k}: keep {v["keep"]}, almost {v["almost"]}, no {v["no"]}')
-    for rating in ('keep', 'almost', 'no'):
+        print(f'  change {k}: up {v["keep"]}, down {v["no"]}' + (f', almost (old) {v["almost"]}' if v['almost'] else ''))
+    for rating in ('keep', 'no', 'almost'):
         whys = [r['why'] for r in rs if r['rating'] == rating and r['why']]
         if whys:
             print(f'  why ({rating}): {"; ".join(whys)}')
