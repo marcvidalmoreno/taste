@@ -7,6 +7,8 @@ added only after Marc approves a distil proposal:
   "subjects": ["subjects that suit this style", ...]  (used by variations and, later, random)
   "light" / "composition" / "mood" as a list, and "palettes": [[...], [...]]  -> looks: taste.json gets
       "looks" (one full prompt per look); codex_run.py --look N picks one. "prompt" stays look 0.
+      taste.json also gets "template" (the prompt with {light} {composition} {mood} {palette} slots) and
+      "axes" (the options per slot), so codex_run.py --mix picks each axis on its own (18 Nov 2026).
 """
 import sys, os, json, glob
 
@@ -40,6 +42,8 @@ for path in sorted(glob.glob(os.path.join(root, 'taste', 'styles', '*.json'))):
     styles[key] = {'name': s['name'], 'prompt': render(0), 'subjects': s.get('subjects', [])}
     if looks > 1:
         styles[key]['looks'] = [render(i) for i in range(looks)]
+    styles[key]['template'] = ' '.join(parts)
+    styles[key]['axes'] = options
 
 out = os.path.join(root, 'taste', 'taste.json')
 json.dump({'generated_from': 'taste/styles/*.json by scripts/build_taste.py; do not edit', 'styles': styles},

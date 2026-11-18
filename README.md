@@ -86,6 +86,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 | **View, mark and save ratings in the browser** (also starts variations, shows the overview) | `.venv/Scripts/python -I scripts/app.py` → http://127.0.0.1:8777 (`--dry-run`: the variations button spends nothing) |
 | Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> --style S [--subject "..."]` (no `--style`: prints the top-3 guess) |
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
+| **Batch with fresh subjects, mixed looks and one wildcard per style** | Claude writes `generated/codex/<batch>/subjects.json` (`{style: [subjects]}`), then `.venv/Scripts/python -I scripts/batch.py --out generated/codex/<batch> --subjects generated/codex/<batch>/subjects.json [--styles a,b] [--dry-run]` |
 | Contact sheet of a batch | `.venv/Scripts/python -I scripts/sheet.py generated/codex/<batch>` |
 | Rate (numbers from the sheet) | `.venv/Scripts/python -I scripts/rate.py <batch> 1=up 2=down:too-busy 3=down:dark` |
 | Ratings since the last distil | `.venv/Scripts/python -I scripts/rate.py status` |
@@ -106,6 +107,13 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **18 Nov 2026** – More variation (the 18 Nov x4 run repeated 44 of 96 earlier prompts word for word): new
+  `scripts/batch.py` runs a batch from a fresh `subjects.json` per run; `codex_run.py --mix SEED` picks light,
+  framing, mood and palette each on its own (about 190 combinations per style instead of 4 fixed looks);
+  `--extreme light|framing|palette|scale|detail|mood` pushes one dimension to an extreme (the last image of each
+  style in a batch); `--print` shows the prompt without running Codex. What was picked goes in the `change`
+  column (e.g. `mix l2 c0 p1 x:mood0`), and `distil.py` counts up/down per picked part. `build_taste.py` also writes
+  `template` and `axes` per style to `taste.json`. Undo: `git revert` this commit, then `build_taste.py .`
 - **18 Nov 2026** – `dubuffet` round 3 (v4 overshot into pale worm mazes): mix of big blocky cells, medium cells
   and a few corridors of varying width; most large cells hold nested smaller ones; saturated red and blue stripes;
   dashed line hugs the inside edge, never down the middle; avoid road-marking centre lines, worm/snake corridors,

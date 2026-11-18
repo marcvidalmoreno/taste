@@ -5,6 +5,9 @@ Usage (from the project root):
         [--ref <seed image>] [--style <style>] [--mode variations|text|test] [--change "<what this one changes>"]
   .venv/Scripts/python -I scripts/codex_run.py gen --out ... --name ... --style <style> --subject "<scene>"
         [--ratio wide|square|portrait] [--look N]   # prompt from taste/taste.json; N picks one of the style's looks
+        [--mix SEED] [--extreme light|framing|palette|scale|detail|mood]
+        # --mix: light, framing, mood and palette each picked on their own (seeded, so repeatable);
+        # --extreme: push one dimension to an extreme, the rest of the style unchanged. Both go in "change".
   .venv/Scripts/python -I scripts/codex_run.py read      # usage now, from the newest Codex session log
 
 One fresh `codex exec` per image. Codex only generates and copies the PNG into --out; it never views the
@@ -14,7 +17,7 @@ one row to generated/codex/runs.csv (git-ignored). Numbers are never typed by ha
 One recovery only: if the PNG is not in --out, copy it from ~/.codex/generated_images/<session>/.
 Otherwise the run is logged as failed; stop and report, do not loop.
 """
-import argparse, csv, datetime, json, os, shutil, subprocess, sys, time
+import argparse, csv, datetime, json, os, random, shutil, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -64,14 +67,65 @@ RATIOS = {'wide': 'Wide 16:9 desktop wallpaper.', 'square': 'Square 1:1 image fo
           'portrait': 'Portrait 4:5 image for a LinkedIn post.'}
 
 
+# One dimension pushed to an extreme (a wildcard image). Several concrete options per dimension; the seed picks one.
+EXTREMES = {
+    'light': ['a single hard light from very low on one side, long deep shadows',
+              'deep night, the scene lit only by one small source',
+              'strong backlight, the main shapes almost in silhouette against the glow',
+              'blinding high-key light, everything pale and washed out'],
+    'framing': ['an extreme close-up, the main shape cropped by the edges',
+                'the main shape tiny, lost in a vast empty space',
+                "a steep bird's-eye view straight down",
+                "a low worm's-eye view looking up"],
+    'palette': ['only two colours of the palette plus black or white',
+                'near-monochrome: one hue of the palette in many shades',
+                'the palette at full saturation, every colour at its loudest',
+                'the palette faded almost to grey, one colour kept bright'],
+    'scale': ['something enormous next to something tiny',
+              'one element blown up to fill the whole frame',
+              'a crowd of very many small repeated elements'],
+    'detail': ['extremely dense and intricate, every part filled',
+               'stripped to the barest minimum, a few shapes on a plain ground'],
+    'mood': ['the mood pushed to its most intense version',
+             'the opposite mood to the usual one for this style, kept in the same medium'],
+}
+
+
+AXIS = {'light': 'light', 'framing': 'composition', 'palette': 'palette', 'mood': 'mood'}  # extreme -> template slot
+
+
 def compose(a):
-    """Short prompt: ratio + subject + one style block from the generated taste file."""
+    """Short prompt: ratio + subject + one style block from the generated taste file.
+    With --mix or --extreme, a.change records what was picked (e.g. "mix l2 c0 m3 p1 x:light1")."""
     taste = json.load(open(ROOT / 'taste' / 'taste.json', encoding='utf-8'))['styles']
     if a.style not in taste:
         sys.exit(f'unknown style "{a.style}"; pick one of: {", ".join(taste)}')
     st = taste[a.style]
-    looks = st.get('looks') or [st['prompt']]
-    block = looks[a.look % len(looks)] if a.look is not None else st['prompt']
+    rnd = random.Random(f'{a.mix}-{a.style}-{a.name}') if a.mix is not None else None
+    wild = ''
+    if a.extreme:
+        opts = EXTREMES[a.extreme]
+        i = (rnd or random.Random()).randrange(len(opts))
+        wild = f'Wildcard: push the {a.extreme} to an extreme: {opts[i]}. Keep everything else in this style.'
+    if st.get('axes') and (rnd or a.extreme):
+        pick = {k: (rnd.randrange(len(v)) if rnd else (a.look or 0) % len(v)) for k, v in st['axes'].items()}
+        fill = {k: st['axes'][k][i] for k, i in pick.items()}
+        slot = AXIS.get(a.extreme)
+        if slot:  # the wildcard replaces its own axis, so the prompt never asks for two lights at once
+            fill[slot], wild = wild, ''
+            pick.pop(slot)
+        block = st['template'].format(**fill)
+        tags = (['mix'] if rnd else []) + [f'{k[0]}{i}' for k, i in pick.items()]  # l(ight) c(omposition) m(ood) p(alette)
+    else:
+        looks = st.get('looks') or [st['prompt']]
+        block = looks[a.look % len(looks)] if a.look is not None else st['prompt']
+        tags = []
+    if wild:
+        block += ' ' + wild
+    if a.extreme:
+        tags.append(f'x:{a.extreme}{i}')
+    if tags:
+        a.change = ' '.join(tags + ([a.change] if a.change else []))
     return f"{RATIOS[a.ratio]} Subject: {a.subject}. {block}"
 
 
@@ -80,6 +134,9 @@ def gen(a):
         if not (a.style and a.subject):
             sys.exit('give --prompt, or --style and --subject')
         a.prompt = compose(a)
+    if a.print:
+        print(json.dumps({'name': a.name, 'change': a.change, 'prompt': a.prompt}, ensure_ascii=False))
+        return
     out = (ROOT / a.out).resolve() if not os.path.isabs(a.out) else Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     ref = Path(a.ref).resolve() if a.ref else None
@@ -146,6 +203,9 @@ if __name__ == '__main__':
     g.add_argument('--subject', default='')
     g.add_argument('--ratio', default='wide', choices=['wide', 'square', 'portrait'])
     g.add_argument('--look', type=int, help='which look of the style (light, framing, mood, palette); 0 = default')
+    g.add_argument('--mix', help='seed: pick light, framing, mood and palette each on their own')
+    g.add_argument('--extreme', choices=list(EXTREMES), help='wildcard: push one dimension to an extreme')
+    g.add_argument('--print', action='store_true', help='only print the prompt and change; no Codex run')
     g.add_argument('--ref', default='')
     g.add_argument('--style', default='')
     g.add_argument('--mode', default='test')

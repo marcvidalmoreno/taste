@@ -36,7 +36,10 @@ for style, rs in sorted(by.items()):
     print(f'## {style}: up {c["keep"]}, down {c["no"]}' + (f', almost (old) {c["almost"]}' if c['almost'] else ''))
     ch = collections.defaultdict(collections.Counter)
     for r in rs:
-        ch[r['change'] or '-'][r['rating']] += 1
+        chg = r['change'] or '-'
+        # mixed prompts ("mix l2 c0 m3 p1 x:light1"): count each picked part on its own, so up/down shows per option
+        for k in (chg.split()[1:] if chg.startswith('mix ') else [chg]):
+            ch[k][r['rating']] += 1
     for k, v in sorted(ch.items()):
         print(f'  change {k}: up {v["keep"]}, down {v["no"]}' + (f', almost (old) {v["almost"]}' if v['almost'] else ''))
     for rating in ('keep', 'no', 'almost'):
