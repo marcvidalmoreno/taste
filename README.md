@@ -106,6 +106,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **18 Nov 2026** – `dubuffet` round 3 (v4 overshot into pale worm mazes): mix of big blocky cells, medium cells
+  and a few corridors of varying width; most large cells hold nested smaller ones; saturated red and blue stripes;
+  dashed line hugs the inside edge, never down the middle; avoid road-marking centre lines, worm/snake corridors,
+  snaking mazes, pastel stripes. Undo: `git revert` this commit, then `build_taste.py .`
 - **18 Nov 2026** – Rating is now thumbs up / down (was keep / almost / no). Web app: Up / Down buttons, keys
   U / D (K / N still work); `rate.py` takes `up` / `down`. Stored values stay `keep` / `no`, so older ratings read
   the same; older `almost` ratings still show as "Almost (old)" in the overview, gallery, Taste page and distil.

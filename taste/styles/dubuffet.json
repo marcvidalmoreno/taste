@@ -1,6 +1,6 @@
 {
   "name": "Dubuffet cells",
-  "description": "Abstract cell drawings like a wild hand-drawn floor plan: the whole surface broken into irregular, asymmetric cells: long bent corridors, L, U and branching shapes, odd notches and bulges, straight runs meeting rounded corners, nested two or three levels inside one another, thick black outlines. Each cell is thin parallel red or blue stripes at its own angle, plain brushy white, or a small solid colour patch. Purely abstract, no faces, figures or objects.",
+  "description": "Abstract cell drawings like a wild hand-drawn floor plan: the whole surface broken into irregular, asymmetric cells: a mix of big blocky cells, medium cells and a few long bent corridors of varying width, with L, U and branching shapes, odd notches and bulges, straight runs meeting rounded corners. Most large cells hold smaller cells inside them, nested two or three levels deep; thick black outlines. Each cell is thin parallel red or blue stripes at its own angle, plain brushy white, or a small solid colour patch. Purely abstract, no faces, figures or objects.",
   "palette": [
     "#191518",
     "#5f464a",
@@ -17,7 +17,7 @@
     "bright red, blue and black hatching on pure white"
   ],
   "composition": [
-    "all-over cells to every edge, nested 2-3 levels deep, many small cells packed around a few large ones, asymmetric and off-grid, cells lean and tilt, no ground or horizon",
+    "all-over cells to every edge, big blocky cells with smaller cells nested inside, many small cells packed around them, a few corridors; asymmetric and off-grid, cells lean and tilt, no ground or horizon",
     "one big irregular cluster of cells, isolated on plain ground",
     "a dense maze of cells in loose bands, like a map of an imaginary city seen from above",
     "loose looping lines over a dark ground, cells half formed"
@@ -29,7 +29,7 @@
     "busy, urban, carnival",
     "calm, quiet, earthy"
   ],
-  "texture_detail": "thin straight hand-drawn stripes with gaps two to three times the line width and lots of white between them; each cell has its own stripe angle, many diagonal (30, 45, 60 degrees), some horizontal or vertical; red or blue; thick black outlines of uneven weight, a thin red dashed line inside only some of them (about a third); white fills show brush strokes; fills roughly 40% striped, 40% white, 20% small solid patches (red, blue, pale blue, grey, black); visible hand wobble",
+  "texture_detail": "thin straight hand-drawn stripes with gaps two to three times the line width and lots of white between them; each cell has its own stripe angle, many diagonal (30, 45, 60 degrees), some horizontal or vertical; saturated, bold red or blue; thick black outlines of uneven weight, a thin red dashed line hugging the inside edge of only some of them (about a third), never down the middle of a shape; white fills show brush strokes; fills roughly 40% striped, 40% white, 20% small solid patches (red, blue, pale blue, grey, black); visible hand wobble",
   "avoid": [
     "photorealism",
     "3D render",
@@ -49,6 +49,10 @@
     "stripes only horizontal and vertical",
     "thick, dense candy stripes",
     "dashed line along every outline",
+    "dashed centre lines like road markings",
+    "uniform-width corridors, worm or snake shapes",
+    "a maze of snaking paths",
+    "pale pastel stripes",
     "faces",
     "people or figures",
     "eyes",
