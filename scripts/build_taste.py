@@ -5,7 +5,7 @@ Each style becomes one short prompt block for the image model. Optional keys in 
 added only after Marc approves a distil proposal:
   "prefer": ["things that rated well", ...]   -> "Lean towards: ..."
   "subjects": ["subjects that suit this style", ...]  (used by variations and, later, random)
-  "light" / "composition" / "mood" as a list, and "palettes": [[...], [...]]  -> looks: taste.json gets
+  "light" / "composition" / "mood" / "texture_detail" as a list, and "palettes": [[...], [...]]  -> looks: taste.json gets
       "looks" (one full prompt per look); codex_run.py --look N picks one. "prompt" stays look 0.
       taste.json also gets "template" (the prompt with {light} {composition} {mood} {palette} slots) and
       "axes" (the options per slot), so codex_run.py --mix picks each axis on its own (18 Nov 2026).
@@ -25,8 +25,10 @@ for path in sorted(glob.glob(os.path.join(root, 'taste', 'styles', '*.json'))):
                'composition': [f"Composition: {v}." for v in as_list(s['composition'])],
                'mood': [f"Mood: {v}." for v in as_list(s['mood'])],
                'palette': [f"Palette: {', '.join(p)}." for p in (s.get('palettes') or [s['palette']])]}
+    if isinstance(s['texture_detail'], list):  # optional fifth axis: line and stripe treatment (19 Nov 2026)
+        options['detail'] = [f"Detail: {v}." for v in s['texture_detail']]
     parts = [s['description'], '{light}', '{composition}', f"Medium: {s['camera_or_medium']}.", '{mood}',
-             f"Detail: {s['texture_detail']}.", '{palette}']
+             '{detail}' if 'detail' in options else f"Detail: {s['texture_detail']}.", '{palette}']
     if s.get('prefer'):
         parts.append(f"Lean towards: {'; '.join(s['prefer'])}.")
     parts.append(f"Avoid: {'; '.join(s['avoid'])}. No text, no logos, no watermark.")

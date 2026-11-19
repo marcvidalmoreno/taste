@@ -107,6 +107,12 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **19 Nov 2026** – `dubuffet` as a family of combinations (Marc: each Dubuffet work combines the traits
+  differently): small fixed core (many nested cells, thin stripes, white main fill, red and blue lead) plus axes
+  for ground/fills (4), structure (5), line and stripe treatment (4, new), mood (4) and palette (6); use `--mix`.
+  `build_taste.py`: `texture_detail` may be a list, which becomes a fifth `detail` axis. First mix overshot (giant
+  patches, zebra stripes); re-tweak avoids thick zebra stripes, black-and-white dominance, pink/teal/yellow pop
+  accents. Undo: `git revert` this commit, then `build_taste.py .`
 - **19 Nov 2026** – New collection `new-2026-11-19` (308 files, 282 after duplicates; local only), tagged by eye.
   Five new styles: `vintage-city-postcards` (38 old Brussels postcards; day and night palette families),
   `art-nouveau-interiors` (10), `minoan-fresco` (10), `digital-rain` (14) and `sci-fi-interface-panels` (15, kept
