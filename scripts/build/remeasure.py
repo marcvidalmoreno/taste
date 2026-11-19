@@ -6,7 +6,7 @@ With --write (after Marc's OK) it updates "palette" in taste/styles/<style>.json
 --groups N splits the images into N colour families and measures one palette per family; with --write it
 stores them as "palettes" (options a batch rotates through), leaving "palette" as it was.
 Sources: taste/data/style_members.json + thumbs64.npy (wallpapers, 13 Nov), and taste/data/collections/<c>/tags.json
-(keys "<style>" or "_extra:<style>") + that collection's thumbs64.npy.
+(keys "<style>", "_extra:<style>" or "_join:<style>" = images joining an existing style) + that collection's thumbs64.npy.
 """
 import glob, json, os, sys
 import numpy as np
@@ -24,7 +24,7 @@ if os.path.exists(os.path.join(DATA, 'style_members.json')):
     sources.append(('wallpapers', json.load(open(os.path.join(DATA, 'style_members.json'))), os.path.join(DATA, 'thumbs64.npy')))
 for f in sorted(glob.glob(os.path.join(DATA, 'collections', '*', 'tags.json'))):
     c = os.path.dirname(f)
-    tags = {k.split(':')[-1]: v for k, v in json.load(open(f)).items() if not k.startswith('_') or k.startswith('_extra:')}
+    tags = {k.split(':')[-1]: v for k, v in json.load(open(f)).items() if not k.startswith('_') or k.startswith(('_extra:', '_join:'))}
     sources.append((os.path.basename(c), tags, os.path.join(c, 'thumbs64.npy')))
 
 for name in names:

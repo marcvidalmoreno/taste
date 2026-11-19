@@ -2,12 +2,12 @@
   "name": "Microscope rocks",
   "description": "Thin sections of rock under a polarising microscope: shattered mosaics of crystals in electric interference colours, cracks and grain boundaries.",
   "palette": [
-    "#1d191b",
-    "#514a4c",
-    "#a46e40",
-    "#458ba0",
-    "#bbb895",
-    "#aa6436",
+    "#1b181a",
+    "#51494b",
+    "#45899e",
+    "#a36e41",
+    "#bab896",
+    "#a96436",
     "#2c7ea2"
   ],
   "light": [

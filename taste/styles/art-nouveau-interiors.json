@@ -1,0 +1,52 @@
+{
+  "name": "Art Nouveau interiors",
+  "description": "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate.",
+  "palette": [
+    "#3a281e",
+    "#70523c",
+    "#967d69",
+    "#b8a997",
+    "#dbdcd9",
+    "#88542f",
+    "#c78a43"
+  ],
+  "light": [
+    "soft daylight falling through a stained-glass skylight",
+    "warm amber lamplight in the evening",
+    "cool side light from tall windows, long reflections on polished floors",
+    "coloured light spots from stained glass on the walls"
+  ],
+  "composition": [
+    "looking up a curving stair to a glass ceiling",
+    "a symmetrical hall or gallery seen from the doorway",
+    "a close view of one window, railing or doorway",
+    "a room seen from a corner, layers of arches and openings"
+  ],
+  "camera_or_medium": "architectural photography, wide lens, natural light, rich detail",
+  "mood": [
+    "hushed, warm, luxurious",
+    "airy, light, elegant",
+    "mysterious, dim, amber",
+    "calm, empty, timeless"
+  ],
+  "texture_detail": "whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth",
+  "avoid": [
+    "people",
+    "modern furniture",
+    "clutter",
+    "fisheye distortion",
+    "named real buildings",
+    "readable text"
+  ],
+  "subjects": [
+    "a spiral staircase under a stained-glass dome",
+    "an empty winter garden with iron columns like plant stems",
+    "a dining room with a curved bay window of coloured glass",
+    "a mosaic-floored entrance hall with a sweeping stair"
+  ],
+  "use": [
+    "desktop",
+    "post",
+    "phone"
+  ]
+}

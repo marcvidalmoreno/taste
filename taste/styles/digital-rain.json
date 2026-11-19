@@ -1,0 +1,48 @@
+{
+  "name": "Digital rain",
+  "description": "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel.",
+  "palette": [
+    "#030907",
+    "#0c252a",
+    "#0a3984",
+    "#2b523a",
+    "#6a9f7f",
+    "#115ac6",
+    "#093c8c"
+  ],
+  "light": [
+    "the glyphs are the only light, on pure black",
+    "a soft glow and bloom around the brightest streams",
+    "a faint fog of light deep in the background"
+  ],
+  "composition": [
+    "all-over streams top to bottom, random lengths and speeds",
+    "a few streams in the dark, lots of black",
+    "streams bending into a spiral, wave or tunnel in depth",
+    "streams thick in the foreground, tiny in the distance"
+  ],
+  "camera_or_medium": "digital render, crisp glyphs, shallow depth of field on the nearest streams",
+  "mood": [
+    "calm, hypnotic",
+    "tense, cinematic",
+    "deep, endless"
+  ],
+  "texture_detail": "tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom",
+  "avoid": [
+    "readable words or real alphabets",
+    "faces or figures",
+    "film references",
+    "logos",
+    "colours beyond the palette"
+  ],
+  "subjects": [
+    "green streams of glyphs falling on black",
+    "blue code rain fading into fog",
+    "streams curving into a slow spiral",
+    "a tunnel of falling characters seen from inside"
+  ],
+  "use": [
+    "desktop",
+    "phone"
+  ]
+}

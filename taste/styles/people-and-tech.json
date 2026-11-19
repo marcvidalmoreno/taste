@@ -2,13 +2,13 @@
   "name": "People and tech",
   "description": "Topic imagery for posts about AI and technology: a person with a headset or screen, a glowing interface, a human hand meeting a machine.",
   "palette": [
-    "#0f121b",
-    "#2a3849",
-    "#8d553f",
-    "#5f7e8f",
-    "#b5bbb9",
+    "#0f121a",
+    "#2d3646",
+    "#935243",
+    "#5f7b8d",
+    "#b6b8b8",
     "#296b9b",
-    "#b35329"
+    "#b04f32"
   ],
   "light": [
     "cool screen glow on a face, one warm accent, dark background",

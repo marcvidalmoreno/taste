@@ -2,13 +2,13 @@
   "name": "Science fiction, clear line",
   "description": "Clear-line science fiction comics: lone travellers, crystal towers and strange creatures across vast pastel deserts and alien skies.",
   "palette": [
-    "#1b1820",
-    "#5b535e",
-    "#7a96b7",
-    "#be8e60",
-    "#d6d6cd",
-    "#c38039",
-    "#3d71b1"
+    "#1b1821",
+    "#5f545b",
+    "#7996b8",
+    "#c18e60",
+    "#d4d6d0",
+    "#c37d39",
+    "#3d74b3"
   ],
   "light": [
     "bright, clear desert light, soft pastel skies, two suns or a big moon",

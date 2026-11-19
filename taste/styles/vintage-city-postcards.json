@@ -1,0 +1,72 @@
+{
+  "name": "Vintage city postcards",
+  "description": "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time.",
+  "palette": [
+    "#28261d",
+    "#625c4c",
+    "#989180",
+    "#6ab6d6",
+    "#d0d2c8",
+    "#40aad3",
+    "#956033"
+  ],
+  "light": [
+    "flat bright daylight under a pale blue sky",
+    "night: streetlights, neon on rooftops, glowing office windows, wet streets",
+    "soft overcast light, sepia or hand-tinted colour",
+    "late afternoon sun on facades"
+  ],
+  "composition": [
+    "a wide square or station forecourt seen from a high window, trams, cars and small people",
+    "a single modernist tower rising above older buildings, seen from street level",
+    "a straight boulevard running into the distance, trees and traffic",
+    "an elevated view over rooftops to the edge of the city"
+  ],
+  "camera_or_medium": "old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border",
+  "mood": [
+    "optimistic, modern, sunny",
+    "nostalgic, quiet, Sunday morning",
+    "glamorous, nocturnal, neon",
+    "busy, bustling, everyday"
+  ],
+  "texture_detail": "faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border",
+  "avoid": [
+    "modern cars or phones",
+    "sharp digital photography",
+    "HDR",
+    "readable text or captions",
+    "logos or brand names on buildings",
+    "named real buildings",
+    "copies of real postcards"
+  ],
+  "subjects": [
+    "a tram square in front of a grand railway station",
+    "a white modernist office tower over a busy crossroads",
+    "a city boulevard at night with glowing rooftop signs",
+    "an open-air swimming pool with sunbathers and a tower behind"
+  ],
+  "use": [
+    "post",
+    "desktop"
+  ],
+  "palettes": [
+    [
+      "#38352b",
+      "#726c5d",
+      "#a69d8c",
+      "#67b6d6",
+      "#d3d6cd",
+      "#3ea9d2",
+      "#9b6839"
+    ],
+    [
+      "#161511",
+      "#413d2e",
+      "#6f624b",
+      "#939885",
+      "#a3c9da",
+      "#90582e",
+      "#58bbe0"
+    ]
+  ]
+}

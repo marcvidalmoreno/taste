@@ -2,13 +2,13 @@
   "name": "Dubuffet cells",
   "description": "Abstract cell drawings like a wild hand-drawn floor plan: the whole surface broken into irregular, asymmetric cells: a mix of big blocky cells, medium cells and a few long bent corridors of varying width, with L, U and branching shapes, odd notches and bulges, straight runs meeting rounded corners. Most large cells hold smaller cells inside them, nested two or three levels deep; thick black outlines. Each cell is thin parallel red or blue stripes at its own angle, plain brushy white, or a small solid colour patch. Purely abstract, no faces, figures or objects.",
   "palette": [
-    "#191518",
+    "#1a1518",
     "#5f464a",
-    "#897a76",
-    "#baaca0",
-    "#e9e2d8",
-    "#23628e",
-    "#ad5131"
+    "#897b78",
+    "#baada3",
+    "#eae3da",
+    "#26628f",
+    "#ac4e30"
   ],
   "light": [
     "no light source, flat colour on white",

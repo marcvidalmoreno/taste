@@ -3,12 +3,12 @@
   "description": "Earth from orbit, planets, nebulae and spacecraft on black: photographic or photoreal, vast and quiet.",
   "palette": [
     "#09080d",
-    "#2d3040",
-    "#5c718a",
-    "#aa5f30",
-    "#babfbf",
-    "#2c60a1",
-    "#b45d25"
+    "#2d303f",
+    "#5a728c",
+    "#a66236",
+    "#bbc1bf",
+    "#b25d27",
+    "#2d62a2"
   ],
   "light": [
     "one hard sun source, thin atmospheric blue limb, city lights on the night side, black space",

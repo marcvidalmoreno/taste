@@ -84,6 +84,46 @@
     ]
    }
   },
+  "art-nouveau-interiors": {
+   "name": "Art Nouveau interiors",
+   "prompt": "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate. Light: soft daylight falling through a stained-glass skylight. Composition: looking up a curving stair to a glass ceiling. Medium: architectural photography, wide lens, natural light, rich detail. Mood: hushed, warm, luxurious. Detail: whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth. Palette: #3a281e, #70523c, #967d69, #b8a997, #dbdcd9, #88542f, #c78a43. Avoid: people; modern furniture; clutter; fisheye distortion; named real buildings; readable text. No text, no logos, no watermark.",
+   "subjects": [
+    "a spiral staircase under a stained-glass dome",
+    "an empty winter garden with iron columns like plant stems",
+    "a dining room with a curved bay window of coloured glass",
+    "a mosaic-floored entrance hall with a sweeping stair"
+   ],
+   "looks": [
+    "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate. Light: soft daylight falling through a stained-glass skylight. Composition: looking up a curving stair to a glass ceiling. Medium: architectural photography, wide lens, natural light, rich detail. Mood: hushed, warm, luxurious. Detail: whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth. Palette: #3a281e, #70523c, #967d69, #b8a997, #dbdcd9, #88542f, #c78a43. Avoid: people; modern furniture; clutter; fisheye distortion; named real buildings; readable text. No text, no logos, no watermark.",
+    "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate. Light: warm amber lamplight in the evening. Composition: a symmetrical hall or gallery seen from the doorway. Medium: architectural photography, wide lens, natural light, rich detail. Mood: airy, light, elegant. Detail: whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth. Palette: #3a281e, #70523c, #967d69, #b8a997, #dbdcd9, #88542f, #c78a43. Avoid: people; modern furniture; clutter; fisheye distortion; named real buildings; readable text. No text, no logos, no watermark.",
+    "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate. Light: cool side light from tall windows, long reflections on polished floors. Composition: a close view of one window, railing or doorway. Medium: architectural photography, wide lens, natural light, rich detail. Mood: mysterious, dim, amber. Detail: whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth. Palette: #3a281e, #70523c, #967d69, #b8a997, #dbdcd9, #88542f, #c78a43. Avoid: people; modern furniture; clutter; fisheye distortion; named real buildings; readable text. No text, no logos, no watermark.",
+    "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate. Light: coloured light spots from stained glass on the walls. Composition: a room seen from a corner, layers of arches and openings. Medium: architectural photography, wide lens, natural light, rich detail. Mood: calm, empty, timeless. Detail: whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth. Palette: #3a281e, #70523c, #967d69, #b8a997, #dbdcd9, #88542f, #c78a43. Avoid: people; modern furniture; clutter; fisheye distortion; named real buildings; readable text. No text, no logos, no watermark."
+   ],
+   "template": "Real Art Nouveau interiors: stained-glass ceilings and windows, curving stairs with whiplash iron railings, mosaic floors, carved wood and plant-like forms everywhere; warm, hushed and ornate. {light} {composition} Medium: architectural photography, wide lens, natural light, rich detail. {mood} Detail: whiplash curves in iron and wood, floral and vine motifs, stained glass in amber, green and blue, marble and mosaic, polished brass, slight film warmth. {palette} Avoid: people; modern furniture; clutter; fisheye distortion; named real buildings; readable text. No text, no logos, no watermark.",
+   "axes": {
+    "light": [
+     "Light: soft daylight falling through a stained-glass skylight.",
+     "Light: warm amber lamplight in the evening.",
+     "Light: cool side light from tall windows, long reflections on polished floors.",
+     "Light: coloured light spots from stained glass on the walls."
+    ],
+    "composition": [
+     "Composition: looking up a curving stair to a glass ceiling.",
+     "Composition: a symmetrical hall or gallery seen from the doorway.",
+     "Composition: a close view of one window, railing or doorway.",
+     "Composition: a room seen from a corner, layers of arches and openings."
+    ],
+    "mood": [
+     "Mood: hushed, warm, luxurious.",
+     "Mood: airy, light, elegant.",
+     "Mood: mysterious, dim, amber.",
+     "Mood: calm, empty, timeless."
+    ],
+    "palette": [
+     "Palette: #3a281e, #70523c, #967d69, #b8a997, #dbdcd9, #88542f, #c78a43."
+    ]
+   }
+  },
   "calm-surreal-pastel": {
    "name": "Calm surreal pastel",
    "prompt": "Soft-render or flat-colour surreal scenes: a lone figure, a giant object, pastel gradient sky, lots of space. Light: soft even light, pastel gradient sky from peach to sky blue. Composition: a tiny lone figure and one oversized object, low horizon, most of the frame empty sky. Medium: soft 3D render or flat colour illustration. Mood: gentle, wry, dreamy. Detail: smooth surfaces, minimal detail, a little film grain. Palette: #342b2b, #74737e, #468cd0, #db8a51, #d9d1c2, #d57838, #3b87cc. Avoid: dark tones; clutter; many figures; text and logos. No text, no logos, no watermark.",
@@ -248,6 +288,44 @@
      "Palette: #221c18, #5a4c41, #8b7c6d, #b4aca2, #deddd9, #9d6433, #335c91.",
      "Palette: #16110e, #43372b, #715f4f, #9f8e7c, #d1cdc2, #7b5433, #c48349.",
      "Palette: #3e3328, #806f5d, #a49d91, #c7c2bb, #e2e3e2, #c57f40, #85582d."
+    ]
+   }
+  },
+  "digital-rain": {
+   "name": "Digital rain",
+   "prompt": "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel. Light: the glyphs are the only light, on pure black. Composition: all-over streams top to bottom, random lengths and speeds. Medium: digital render, crisp glyphs, shallow depth of field on the nearest streams. Mood: calm, hypnotic. Detail: tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom. Palette: #030907, #0c252a, #0a3984, #2b523a, #6a9f7f, #115ac6, #093c8c. Avoid: readable words or real alphabets; faces or figures; film references; logos; colours beyond the palette. No text, no logos, no watermark.",
+   "subjects": [
+    "green streams of glyphs falling on black",
+    "blue code rain fading into fog",
+    "streams curving into a slow spiral",
+    "a tunnel of falling characters seen from inside"
+   ],
+   "looks": [
+    "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel. Light: the glyphs are the only light, on pure black. Composition: all-over streams top to bottom, random lengths and speeds. Medium: digital render, crisp glyphs, shallow depth of field on the nearest streams. Mood: calm, hypnotic. Detail: tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom. Palette: #030907, #0c252a, #0a3984, #2b523a, #6a9f7f, #115ac6, #093c8c. Avoid: readable words or real alphabets; faces or figures; film references; logos; colours beyond the palette. No text, no logos, no watermark.",
+    "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel. Light: a soft glow and bloom around the brightest streams. Composition: a few streams in the dark, lots of black. Medium: digital render, crisp glyphs, shallow depth of field on the nearest streams. Mood: tense, cinematic. Detail: tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom. Palette: #030907, #0c252a, #0a3984, #2b523a, #6a9f7f, #115ac6, #093c8c. Avoid: readable words or real alphabets; faces or figures; film references; logos; colours beyond the palette. No text, no logos, no watermark.",
+    "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel. Light: a faint fog of light deep in the background. Composition: streams bending into a spiral, wave or tunnel in depth. Medium: digital render, crisp glyphs, shallow depth of field on the nearest streams. Mood: deep, endless. Detail: tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom. Palette: #030907, #0c252a, #0a3984, #2b523a, #6a9f7f, #115ac6, #093c8c. Avoid: readable words or real alphabets; faces or figures; film references; logos; colours beyond the palette. No text, no logos, no watermark.",
+    "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel. Light: the glyphs are the only light, on pure black. Composition: streams thick in the foreground, tiny in the distance. Medium: digital render, crisp glyphs, shallow depth of field on the nearest streams. Mood: calm, hypnotic. Detail: tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom. Palette: #030907, #0c252a, #0a3984, #2b523a, #6a9f7f, #115ac6, #093c8c. Avoid: readable words or real alphabets; faces or figures; film references; logos; colours beyond the palette. No text, no logos, no watermark."
+   ],
+   "template": "Abstract screens of falling code: vertical streams of tiny glowing characters on black, bright at the head of each stream and fading behind, sometimes bending into a spiral, a wave or a tunnel. {light} {composition} Medium: digital render, crisp glyphs, shallow depth of field on the nearest streams. {mood} Detail: tiny made-up characters (not real letters or words), each stream with one white-hot head and a fading tail, subtle scan lines, soft bloom. {palette} Avoid: readable words or real alphabets; faces or figures; film references; logos; colours beyond the palette. No text, no logos, no watermark.",
+   "axes": {
+    "light": [
+     "Light: the glyphs are the only light, on pure black.",
+     "Light: a soft glow and bloom around the brightest streams.",
+     "Light: a faint fog of light deep in the background."
+    ],
+    "composition": [
+     "Composition: all-over streams top to bottom, random lengths and speeds.",
+     "Composition: a few streams in the dark, lots of black.",
+     "Composition: streams bending into a spiral, wave or tunnel in depth.",
+     "Composition: streams thick in the foreground, tiny in the distance."
+    ],
+    "mood": [
+     "Mood: calm, hypnotic.",
+     "Mood: tense, cinematic.",
+     "Mood: deep, endless."
+    ],
+    "palette": [
+     "Palette: #030907, #0c252a, #0a3984, #2b523a, #6a9f7f, #115ac6, #093c8c."
     ]
    }
   },
@@ -670,6 +748,44 @@
     ]
    }
   },
+  "minoan-fresco": {
+   "name": "Minoan frescoes",
+   "prompt": "Ancient Aegean wall paintings: leaping dolphins and fish, lilies, crocuses and swallows, and stylised profile figures with long dark hair, painted flat on rough lime plaster with cracks, losses and faded edges. Light: no light source, flat colour on plaster. Composition: a frieze band across the wall, repeating creatures or figures. Medium: fresco on lime plaster, mineral pigments, flat colour with dark outlines, photographed straight on. Mood: joyful, light, maritime. Detail: chalky plaster texture, cracks and flaked areas, wavy borders and rosette bands, flat ochre, red, blue and black with a thin dark outline, uneven faded edges. Palette: #463129, #9a6f49, #798886, #c7af86, #e8ddc7, #8a4c34, #c58a3f. Avoid: 3D shading; photorealism; modern objects; glossy surfaces; readable text; copies of famous works; nudity. No text, no logos, no watermark.",
+   "subjects": [
+    "a frieze of blue dolphins and small fish",
+    "a field of red lilies with swallows in flight",
+    "three robed figures walking in profile carrying vessels",
+    "a sea wall of octopus, seaweed and wavy bands"
+   ],
+   "looks": [
+    "Ancient Aegean wall paintings: leaping dolphins and fish, lilies, crocuses and swallows, and stylised profile figures with long dark hair, painted flat on rough lime plaster with cracks, losses and faded edges. Light: no light source, flat colour on plaster. Composition: a frieze band across the wall, repeating creatures or figures. Medium: fresco on lime plaster, mineral pigments, flat colour with dark outlines, photographed straight on. Mood: joyful, light, maritime. Detail: chalky plaster texture, cracks and flaked areas, wavy borders and rosette bands, flat ochre, red, blue and black with a thin dark outline, uneven faded edges. Palette: #463129, #9a6f49, #798886, #c7af86, #e8ddc7, #8a4c34, #c58a3f. Avoid: 3D shading; photorealism; modern objects; glossy surfaces; readable text; copies of famous works; nudity. No text, no logos, no watermark.",
+    "Ancient Aegean wall paintings: leaping dolphins and fish, lilies, crocuses and swallows, and stylised profile figures with long dark hair, painted flat on rough lime plaster with cracks, losses and faded edges. Light: soft museum light raking across the plaster surface. Composition: a few large figures in profile on a plain ground. Medium: fresco on lime plaster, mineral pigments, flat colour with dark outlines, photographed straight on. Mood: calm, ceremonial. Detail: chalky plaster texture, cracks and flaked areas, wavy borders and rosette bands, flat ochre, red, blue and black with a thin dark outline, uneven faded edges. Palette: #463129, #9a6f49, #798886, #c7af86, #e8ddc7, #8a4c34, #c58a3f. Avoid: 3D shading; photorealism; modern objects; glossy surfaces; readable text; copies of famous works; nudity. No text, no logos, no watermark.",
+    "Ancient Aegean wall paintings: leaping dolphins and fish, lilies, crocuses and swallows, and stylised profile figures with long dark hair, painted flat on rough lime plaster with cracks, losses and faded edges. Light: warm sunlit plaster, colours a little bleached. Composition: a whole painted room seen from the doorway. Medium: fresco on lime plaster, mineral pigments, flat colour with dark outlines, photographed straight on. Mood: ancient, worn, sunlit. Detail: chalky plaster texture, cracks and flaked areas, wavy borders and rosette bands, flat ochre, red, blue and black with a thin dark outline, uneven faded edges. Palette: #463129, #9a6f49, #798886, #c7af86, #e8ddc7, #8a4c34, #c58a3f. Avoid: 3D shading; photorealism; modern objects; glossy surfaces; readable text; copies of famous works; nudity. No text, no logos, no watermark.",
+    "Ancient Aegean wall paintings: leaping dolphins and fish, lilies, crocuses and swallows, and stylised profile figures with long dark hair, painted flat on rough lime plaster with cracks, losses and faded edges. Light: no light source, flat colour on plaster. Composition: a fragment: part of the scene missing, raw plaster around it. Medium: fresco on lime plaster, mineral pigments, flat colour with dark outlines, photographed straight on. Mood: joyful, light, maritime. Detail: chalky plaster texture, cracks and flaked areas, wavy borders and rosette bands, flat ochre, red, blue and black with a thin dark outline, uneven faded edges. Palette: #463129, #9a6f49, #798886, #c7af86, #e8ddc7, #8a4c34, #c58a3f. Avoid: 3D shading; photorealism; modern objects; glossy surfaces; readable text; copies of famous works; nudity. No text, no logos, no watermark."
+   ],
+   "template": "Ancient Aegean wall paintings: leaping dolphins and fish, lilies, crocuses and swallows, and stylised profile figures with long dark hair, painted flat on rough lime plaster with cracks, losses and faded edges. {light} {composition} Medium: fresco on lime plaster, mineral pigments, flat colour with dark outlines, photographed straight on. {mood} Detail: chalky plaster texture, cracks and flaked areas, wavy borders and rosette bands, flat ochre, red, blue and black with a thin dark outline, uneven faded edges. {palette} Avoid: 3D shading; photorealism; modern objects; glossy surfaces; readable text; copies of famous works; nudity. No text, no logos, no watermark.",
+   "axes": {
+    "light": [
+     "Light: no light source, flat colour on plaster.",
+     "Light: soft museum light raking across the plaster surface.",
+     "Light: warm sunlit plaster, colours a little bleached."
+    ],
+    "composition": [
+     "Composition: a frieze band across the wall, repeating creatures or figures.",
+     "Composition: a few large figures in profile on a plain ground.",
+     "Composition: a whole painted room seen from the doorway.",
+     "Composition: a fragment: part of the scene missing, raw plaster around it."
+    ],
+    "mood": [
+     "Mood: joyful, light, maritime.",
+     "Mood: calm, ceremonial.",
+     "Mood: ancient, worn, sunlit."
+    ],
+    "palette": [
+     "Palette: #463129, #9a6f49, #798886, #c7af86, #e8ddc7, #8a4c34, #c58a3f."
+    ]
+   }
+  },
   "neon-night-cities": {
    "name": "Neon night cities",
    "prompt": "Rain-wet cyberpunk streets, towers and film-still sci-fi at night; in one variant a flat synthwave sunset and grid. Light: neon magenta and cyan signs, wet reflections, haze. Composition: street-level one-point perspective, one small figure or car, deep haze in the distance. Medium: cinematic film still, or flat vector synthwave illustration. Mood: lonely, nocturnal. Detail: rain, mist, subtle light bloom, film grain in stills. Palette: #161824, #383b4b, #4c6b86, #a1625f, #b4afb0, #2e678d, #b14d4b. Avoid: readable text on signs; crowds; weapons and violence; teal-and-orange blockbuster grading; cluttered HUD overlays; logos. No text, no logos, no watermark.",
@@ -922,6 +1038,44 @@
     ]
    }
   },
+  "sci-fi-interface-panels": {
+   "name": "Sci-fi interface panels",
+   "prompt": "Futuristic computer interface screens on black: panels of rounded colour blocks, pill-shaped buttons, thin lines and schematic drawings of craft or systems, in warm orange, peach, lilac and pale blue; flat, tidy and calm. Light: screen glow on black, flat colour. Composition: a full-screen panel: blocks and buttons framing a central schematic. Medium: flat vector user interface, crisp edges, screen render. Mood: calm, orderly, optimistic. Detail: rounded rectangles and pill shapes, thin line work, schematic outline drawings, grids of small bars and dots; labels shown as short blocks or unreadable glyphs, not words. Palette: #070606, #443331, #715f6e, #c7893d, #d8c9d8, #de9b38, #87553c. Avoid: readable text or words; logos or insignia; franchise designs or recognisable starships; the curved corner-bracket frames of a known TV series; 3D glossy buttons; people. No text, no logos, no watermark.",
+   "subjects": [
+    "a craft schematic framed by orange and lilac panels",
+    "a navigation panel with a star chart and readouts",
+    "a status dashboard of coloured bars and buttons",
+    "a tall control column beside a planet scan"
+   ],
+   "looks": [
+    "Futuristic computer interface screens on black: panels of rounded colour blocks, pill-shaped buttons, thin lines and schematic drawings of craft or systems, in warm orange, peach, lilac and pale blue; flat, tidy and calm. Light: screen glow on black, flat colour. Composition: a full-screen panel: blocks and buttons framing a central schematic. Medium: flat vector user interface, crisp edges, screen render. Mood: calm, orderly, optimistic. Detail: rounded rectangles and pill shapes, thin line work, schematic outline drawings, grids of small bars and dots; labels shown as short blocks or unreadable glyphs, not words. Palette: #070606, #443331, #715f6e, #c7893d, #d8c9d8, #de9b38, #87553c. Avoid: readable text or words; logos or insignia; franchise designs or recognisable starships; the curved corner-bracket frames of a known TV series; 3D glossy buttons; people. No text, no logos, no watermark.",
+    "Futuristic computer interface screens on black: panels of rounded colour blocks, pill-shaped buttons, thin lines and schematic drawings of craft or systems, in warm orange, peach, lilac and pale blue; flat, tidy and calm. Light: a soft glow on the brightest blocks. Composition: a dense dashboard of many small readouts. Medium: flat vector user interface, crisp edges, screen render. Mood: busy, technical. Detail: rounded rectangles and pill shapes, thin line work, schematic outline drawings, grids of small bars and dots; labels shown as short blocks or unreadable glyphs, not words. Palette: #070606, #443331, #715f6e, #c7893d, #d8c9d8, #de9b38, #87553c. Avoid: readable text or words; logos or insignia; franchise designs or recognisable starships; the curved corner-bracket frames of a known TV series; 3D glossy buttons; people. No text, no logos, no watermark.",
+    "Futuristic computer interface screens on black: panels of rounded colour blocks, pill-shaped buttons, thin lines and schematic drawings of craft or systems, in warm orange, peach, lilac and pale blue; flat, tidy and calm. Light: a screen set in a dark console, faint reflections. Composition: one large line-drawn schematic of a craft with a few labels as blocks. Medium: flat vector user interface, crisp edges, screen render. Mood: quiet, night shift. Detail: rounded rectangles and pill shapes, thin line work, schematic outline drawings, grids of small bars and dots; labels shown as short blocks or unreadable glyphs, not words. Palette: #070606, #443331, #715f6e, #c7893d, #d8c9d8, #de9b38, #87553c. Avoid: readable text or words; logos or insignia; franchise designs or recognisable starships; the curved corner-bracket frames of a known TV series; 3D glossy buttons; people. No text, no logos, no watermark.",
+    "Futuristic computer interface screens on black: panels of rounded colour blocks, pill-shaped buttons, thin lines and schematic drawings of craft or systems, in warm orange, peach, lilac and pale blue; flat, tidy and calm. Light: screen glow on black, flat colour. Composition: a tall narrow panel with a column of buttons. Medium: flat vector user interface, crisp edges, screen render. Mood: calm, orderly, optimistic. Detail: rounded rectangles and pill shapes, thin line work, schematic outline drawings, grids of small bars and dots; labels shown as short blocks or unreadable glyphs, not words. Palette: #070606, #443331, #715f6e, #c7893d, #d8c9d8, #de9b38, #87553c. Avoid: readable text or words; logos or insignia; franchise designs or recognisable starships; the curved corner-bracket frames of a known TV series; 3D glossy buttons; people. No text, no logos, no watermark."
+   ],
+   "template": "Futuristic computer interface screens on black: panels of rounded colour blocks, pill-shaped buttons, thin lines and schematic drawings of craft or systems, in warm orange, peach, lilac and pale blue; flat, tidy and calm. {light} {composition} Medium: flat vector user interface, crisp edges, screen render. {mood} Detail: rounded rectangles and pill shapes, thin line work, schematic outline drawings, grids of small bars and dots; labels shown as short blocks or unreadable glyphs, not words. {palette} Avoid: readable text or words; logos or insignia; franchise designs or recognisable starships; the curved corner-bracket frames of a known TV series; 3D glossy buttons; people. No text, no logos, no watermark.",
+   "axes": {
+    "light": [
+     "Light: screen glow on black, flat colour.",
+     "Light: a soft glow on the brightest blocks.",
+     "Light: a screen set in a dark console, faint reflections."
+    ],
+    "composition": [
+     "Composition: a full-screen panel: blocks and buttons framing a central schematic.",
+     "Composition: a dense dashboard of many small readouts.",
+     "Composition: one large line-drawn schematic of a craft with a few labels as blocks.",
+     "Composition: a tall narrow panel with a column of buttons."
+    ],
+    "mood": [
+     "Mood: calm, orderly, optimistic.",
+     "Mood: busy, technical.",
+     "Mood: quiet, night shift."
+    ],
+    "palette": [
+     "Palette: #070606, #443331, #715f6e, #c7893d, #d8c9d8, #de9b38, #87553c."
+    ]
+   }
+  },
   "science-fiction": {
    "name": "Science fiction, clear line",
    "prompt": "Clear-line science fiction comics: lone travellers, crystal towers and strange creatures across vast pastel deserts and alien skies. Light: bright, clear desert light, soft pastel skies, two suns or a big moon. Composition: wide, a tiny figure in a vast landscape, tall rock or crystal spires, lots of sky. Medium: fine ink clear-line drawing with flat watercolour and pastel colouring. Mood: dreamlike, serene, epic, lonely. Detail: thin even ink lines, hatching in shadows, flat washes, airy colour. Palette: #1b1820, #5b535e, #7a96b7, #be8e60, #d6d6cd, #c38039, #3d71b1. Avoid: photorealism; gritty 3D; dark heavy shading; copies of famous panels; named artists or characters. No text, no logos, no watermark.",
@@ -961,6 +1115,47 @@
      "Palette: #1b1820, #5b535e, #7a96b7, #be8e60, #d6d6cd, #c38039, #3d71b1.",
      "Palette: #5398b8, #a58e6e, #a9c2cf, #d6c9af, #ebefe9, #3895c0, #bf9337.",
      "Palette: #0f0d13, #473c41, #415d84, #ae763b, #b0a797, #b47630, #2e5e90."
+    ]
+   }
+  },
+  "vintage-city-postcards": {
+   "name": "Vintage city postcards",
+   "prompt": "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time. Light: flat bright daylight under a pale blue sky. Composition: a wide square or station forecourt seen from a high window, trams, cars and small people. Medium: old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border. Mood: optimistic, modern, sunny. Detail: faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border. Palette: #38352b, #726c5d, #a69d8c, #67b6d6, #d3d6cd, #3ea9d2, #9b6839. Avoid: modern cars or phones; sharp digital photography; HDR; readable text or captions; logos or brand names on buildings; named real buildings; copies of real postcards. No text, no logos, no watermark.",
+   "subjects": [
+    "a tram square in front of a grand railway station",
+    "a white modernist office tower over a busy crossroads",
+    "a city boulevard at night with glowing rooftop signs",
+    "an open-air swimming pool with sunbathers and a tower behind"
+   ],
+   "looks": [
+    "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time. Light: flat bright daylight under a pale blue sky. Composition: a wide square or station forecourt seen from a high window, trams, cars and small people. Medium: old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border. Mood: optimistic, modern, sunny. Detail: faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border. Palette: #38352b, #726c5d, #a69d8c, #67b6d6, #d3d6cd, #3ea9d2, #9b6839. Avoid: modern cars or phones; sharp digital photography; HDR; readable text or captions; logos or brand names on buildings; named real buildings; copies of real postcards. No text, no logos, no watermark.",
+    "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time. Light: night: streetlights, neon on rooftops, glowing office windows, wet streets. Composition: a single modernist tower rising above older buildings, seen from street level. Medium: old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border. Mood: nostalgic, quiet, Sunday morning. Detail: faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border. Palette: #161511, #413d2e, #6f624b, #939885, #a3c9da, #90582e, #58bbe0. Avoid: modern cars or phones; sharp digital photography; HDR; readable text or captions; logos or brand names on buildings; named real buildings; copies of real postcards. No text, no logos, no watermark.",
+    "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time. Light: soft overcast light, sepia or hand-tinted colour. Composition: a straight boulevard running into the distance, trees and traffic. Medium: old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border. Mood: glamorous, nocturnal, neon. Detail: faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border. Palette: #38352b, #726c5d, #a69d8c, #67b6d6, #d3d6cd, #3ea9d2, #9b6839. Avoid: modern cars or phones; sharp digital photography; HDR; readable text or captions; logos or brand names on buildings; named real buildings; copies of real postcards. No text, no logos, no watermark.",
+    "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time. Light: late afternoon sun on facades. Composition: an elevated view over rooftops to the edge of the city. Medium: old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border. Mood: busy, bustling, everyday. Detail: faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border. Palette: #161511, #413d2e, #6f624b, #939885, #a3c9da, #90582e, #58bbe0. Avoid: modern cars or phones; sharp digital photography; HDR; readable text or captions; logos or brand names on buildings; named real buildings; copies of real postcards. No text, no logos, no watermark."
+   ],
+   "template": "Old picture postcards of a European capital: hand-tinted 1900s views of station squares full of trams and carriages, and 1960s colour postcards of new modernist towers, boulevards and lido pools, with the slightly off, printed colour of the time. {light} {composition} Medium: old offset-printed or hand-tinted photo postcard; soft focus, halftone grain, a thin white border. {mood} Detail: faded and slightly shifted printed colour, sky a little too cyan, warm yellowed paper, halftone grain, gentle vignetting, a thin white border. {palette} Avoid: modern cars or phones; sharp digital photography; HDR; readable text or captions; logos or brand names on buildings; named real buildings; copies of real postcards. No text, no logos, no watermark.",
+   "axes": {
+    "light": [
+     "Light: flat bright daylight under a pale blue sky.",
+     "Light: night: streetlights, neon on rooftops, glowing office windows, wet streets.",
+     "Light: soft overcast light, sepia or hand-tinted colour.",
+     "Light: late afternoon sun on facades."
+    ],
+    "composition": [
+     "Composition: a wide square or station forecourt seen from a high window, trams, cars and small people.",
+     "Composition: a single modernist tower rising above older buildings, seen from street level.",
+     "Composition: a straight boulevard running into the distance, trees and traffic.",
+     "Composition: an elevated view over rooftops to the edge of the city."
+    ],
+    "mood": [
+     "Mood: optimistic, modern, sunny.",
+     "Mood: nostalgic, quiet, Sunday morning.",
+     "Mood: glamorous, nocturnal, neon.",
+     "Mood: busy, bustling, everyday."
+    ],
+    "palette": [
+     "Palette: #38352b, #726c5d, #a69d8c, #67b6d6, #d3d6cd, #3ea9d2, #9b6839.",
+     "Palette: #161511, #413d2e, #6f624b, #939885, #a3c9da, #90582e, #58bbe0."
     ]
    }
   },

@@ -107,6 +107,13 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **19 Nov 2026** – New collection `new-2026-11-19` (308 files, 282 after duplicates; local only), tagged by eye.
+  Five new styles: `vintage-city-postcards` (38 old Brussels postcards; day and night palette families),
+  `art-nouveau-interiors` (10), `minoan-fresco` (10), `digital-rain` (14) and `sci-fi-interface-panels` (15, kept
+  generic: no franchise designs, labels as blocks, not words). 56 images join ten existing styles; nine of them
+  get re-measured base palettes (tiny shifts; `anime-megacity` left as is, its originals aren't in the sources).
+  The 91 documentary photos of a real people are left out. `remeasure.py` now also counts `_join:<style>` tags.
+  29 styles. Undo: `git revert` this commit, then `build_taste.py .`
 - **18 Nov 2026** – `batch.py --start K`: begin at subject K, so a second batch uses a subjects file's later
   subjects (image names K+1…). Undo: `git revert` this commit.
 - **18 Nov 2026** – More variation (the 18 Nov x4 run repeated 44 of 96 earlier prompts word for word): new
