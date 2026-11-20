@@ -221,12 +221,32 @@ def start_job(src, style, subject, n, note=''):
     threading.Thread(target=follow, daemon=True).start()
 
 
+def chat_run():
+    """A run started outside the page (batch.py, variations.py or codex_run.py from chat): scripts/progress.py
+    writes generated/codex/.progress.json as it goes. No heartbeat for 45 s = the run was stopped."""
+    import time
+    try:
+        d = read_json(BASE / '.progress.json', None)
+    except OSError:  # being replaced right now: next poll
+        return None
+    if not isinstance(d, dict) or not d.get('batch') or not isinstance(d.get('expected'), list):
+        return None
+    alive = d.get('finished') is None and time.time() - d.get('updated', 0) < 45
+    return {**d, 'running': alive, 'finished': d.get('finished') or (None if alive else d.get('updated')),
+            'stopped': not alive and d.get('finished') is None, 'from_chat': True, 'dry_run': False}
+
+
 def job_state():
-    if 'batch' not in JOB:
-        return {'running': False}
-    folder = BASE / JOB['batch']
-    made = [n for n in JOB['expected'] if (folder / f'{n}.png').exists()]
-    return {**JOB, 'exists': folder.is_dir(), 'made': made}
+    run = None if JOB.get('running') else chat_run()
+    if run and 'batch' in JOB and JOB['started'] > run['started']:
+        run = None  # the page's own job is newer
+    if not run:
+        if 'batch' not in JOB:
+            return {'running': False}
+        run = {**JOB, 'kind': 'variations'}
+    folder = BASE / run['batch']
+    made = [n for n in run['expected'] if (folder / f'{n}.png').exists()]
+    return {**run, 'exists': is_batch(run['batch']), 'made': made}
 
 
 # ---------------------------------------------------------------- HTTP
@@ -434,6 +454,8 @@ class Handler(BaseHTTPRequestHandler):
         with LOCK:
             if JOB.get('running'):
                 raise ApiError(409, 'a variation job is already running: one at a time')
+            if (chat_run() or {}).get('running'):
+                raise ApiError(409, 'images started from chat are still being made: one run at a time')
             start_job(src, style, subject, n, note)
         return job_state()
 

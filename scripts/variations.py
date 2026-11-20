@@ -66,17 +66,26 @@ if a.dry_run:
     sys.exit(0)
 batch.mkdir(parents=True, exist_ok=True)
 shutil.copy2(seed, batch / f'seed{seed.suffix.lower()}')
+sys.path.insert(0, str(ROOT / 'scripts'))
+from progress import Progress, CHILD_ENV  # noqa: E402
+prog = Progress(batch, [f'{i}-{c}' for i, (c, _) in enumerate(jobs, 1)], 'variations')
 failed = 0
 for i, (change, text) in enumerate(jobs, 1):
     must = f' In every image, and above the style notes: {a.note.rstrip(".")}.' if a.note else ''
     prompt = f'Wide 16:9 desktop wallpaper. {text}{must} Style notes (follow them where the change leaves room): {s["prompt"]}'
+    prog.begin(f'{i}-{change}', change)
     r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', str(batch),
                         '--name', f'{i}-{change}', '--prompt', prompt, '--ref', str(seed), '--style', style,
-                        '--mode', 'variations', '--change', change])
+                        '--mode', 'variations', '--change', change], env=CHILD_ENV)
     if r.returncode:
+        prog.fail(f'{i}-{change}')
         failed += 1
         if failed == 2:
             print('two failures: stopping the batch, report and do not retry', file=sys.stderr)
+            prog.line('STOPPED: two failures')
             break
+    else:
+        prog.ok(f'{i}-{change}')
+prog.end('done')
 subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'sheet.py'), str(batch)])
 print(f'rate with: .venv/Scripts/python -I scripts/rate.py {batch.name} 1=keep 2=almost:why 3=no:why')

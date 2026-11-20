@@ -19,6 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 from codex_run import EXTREMES  # noqa: E402
+from progress import Progress, CHILD_ENV  # noqa: E402
 
 RATIOS = ['wide', 'portrait', 'square', 'wide']
 PY = sys.executable
@@ -45,6 +46,8 @@ if unknown:
 seed = a.seed or Path(a.out).name
 rnd = random.Random(seed)
 fails = 0
+names = [f'{s}-{i + 1}' for s in styles for i in range(a.start, a.start + a.n)]
+prog = None if a.dry_run else Progress(a.out, names, 'batch')
 for style in styles:
     for i in range(a.start, a.start + a.n):
         name = f'{style}-{i + 1}'
@@ -57,19 +60,25 @@ for style in styles:
             out = subprocess.run(cmd + ['--print'], capture_output=True, text=True, encoding='utf-8')
             print(out.stdout.strip() or out.stderr.strip())
             continue
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+        prog.begin(name, subjects[style][i % len(subjects[style])])
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', env=CHILD_ENV)
         if res.returncode == 0:
             print(f'ok {name}', flush=True)
+            prog.ok(name)
             fails = 0
         else:
             print(f'FAILED {name}', flush=True)
+            why = ((res.stderr or res.stdout or '').strip().splitlines() or [''])[-1][:200]
+            prog.fail(name, why)
             fails += 1
             if fails >= 3:
                 print('STOPPED: 3 failures in a row')
+                prog.line('STOPPED: 3 failures in a row')
                 break
     else:
         continue
     break
 if not a.dry_run:
+    prog.end('done')
     subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'read'])
     print(f'next: {PY} -I scripts/sheet.py {a.out}, then rate in the web app')

@@ -282,8 +282,14 @@ dialog.variations legend { font-weight: 600; margin-bottom: .25rem; }
 .meter .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--pico-muted-color); }
 pre.log { font-size: .8rem; max-height: 50vh; overflow: auto; white-space: pre-wrap; background: var(--surface); padding: .75rem; }
 
-.job-chip { display: inline-flex; align-items: center; gap: .45rem; font-size: .88rem; padding: .2rem .7rem;
-            border: 1px solid #3a3a3a; border-radius: 99px; color: var(--text); text-decoration: none; }
+.job-chip { display: inline-flex; align-items: center; gap: .6rem; font-size: .88rem; padding: .2rem .25rem .2rem .7rem;
+            border: 1px solid #3a3a3a; border-radius: 99px; }
+.job-chip > a { display: inline-flex; align-items: center; gap: .45rem; padding: 0; margin: 0; color: var(--text); text-decoration: none; }
+.job-chip .chip-log { margin: 0; padding: .1rem .6rem; width: auto; font-size: .8rem; border-radius: 99px;
+                      background: transparent; border: 1px solid #3a3a3a; color: var(--pico-muted-color); }
+.job-chip .chip-log:hover { color: var(--text); border-color: #5a5a5a; }
+.pending-tile .frame { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; text-align: center; }
+.pending-tile .subject { max-width: 85%; font-size: .78rem; line-height: 1.35; opacity: .8; }
 .pulse { width: .5rem; height: .5rem; border-radius: 50%; background: #cfcfcf; animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .25; } }
 .pending-tile .frame { color: var(--pico-muted-color); font-size: .9rem; border: 1px dashed #3a3a3a; }

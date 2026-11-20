@@ -21,6 +21,8 @@ import argparse, csv, datetime, json, os, random, shutil, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'scripts'))
+from progress import Progress, is_child  # noqa: E402
 LOG = ROOT / 'generated' / 'codex' / 'runs.csv'
 CODEX = Path.home() / '.codex'
 HEADER = ['date', 'time', 'batch', 'name', 'mode', 'style', 'change', 'seed', 'ok', 'width', 'height',
@@ -151,6 +153,10 @@ def gen(a):
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'workspace-write']
     if ref:
         cmd += ['-i', str(ref)]
+    prog = None
+    if not is_child():  # run alone from chat: show it in the web app (batch.py / variations.py do it otherwise)
+        prog = Progress(out, [a.name], a.mode)
+        prog.begin(a.name, a.subject or a.change)
     start = time.time()
     res = subprocess.run(cmd, input=job, cwd=out, capture_output=True, text=True, encoding='utf-8',
                          errors='replace', timeout=900)
@@ -182,6 +188,9 @@ def gen(a):
             wr.writerow(HEADER)
         wr.writerow(row)
     print(json.dumps(dict(zip(HEADER[:18], row[:18]))))
+    if prog:
+        prog.ok(a.name) if png.exists() else prog.fail(a.name, f'Codex exit code {res.returncode}')
+        prog.end()
     if not png.exists():
         print(f'FAILED: no image. Codex exit code {res.returncode}; see {a.name}.codex.log', file=sys.stderr)
         sys.exit(2)

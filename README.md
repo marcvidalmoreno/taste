@@ -107,6 +107,12 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **20 Nov 2026** – Live progress for runs started from chat: `batch.py`, `variations.py` and a lone
+  `codex_run.py gen` write `generated/codex/.progress.json` (new `scripts/progress.py`, 10 s heartbeat). The web
+  app's header chip shows "Making 3 of 16 · fern-3 · 4:12" for any run, a **Log** button opens the live log
+  (each image's subject, ok / failed and time), the batch grid shows a placeholder per image to come, and a toast
+  says when the run ends or stopped. The page checks every 10 s when idle, so no reload needed. Restart the app
+  server once to pick it up. Undo: `git revert` this commit.
 - **20 Nov 2026** – `sci-fi-interface-panels` broadened (the first tests looked alike and close to the sources):
   five kinds of interface (colour-block panels, holographic glass displays, green wireframe terminals, radial
   displays, white medical screens) and three more palette families (cyan hologram, green phosphor, white with red;

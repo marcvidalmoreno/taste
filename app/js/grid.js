@@ -81,16 +81,31 @@ function filters() {
     }, f.label, ' ', h('span', { class: 'n' }, c[key]))));
 }
 
-// Images the running variation job hasn't made yet: a placeholder each, replaced as they land.
+// Images the running job hasn't made yet: a placeholder each, replaced as they land.
+// Names are "1-palette" (variations) or "fern-3" (batch.py): split into number and kind either way.
+function splitName(n) {
+  let m = n.match(/^(\d+)-(.+)$/);
+  if (m) return { num: m[1], kind: m[2] };
+  m = n.match(/^(.+)-(\d+)$/);
+  return m ? { num: m[2], kind: m[1] } : { num: '', kind: n };
+}
+
 function pendingTiles() {
   if (!job.running || job.batch !== store.data.batch || store.show !== 'to-rate') return [];
   const have = new Set(store.data.items.map((im) => im.name));
-  return job.expected.filter((n) => !have.has(n)).map((n, i) => h('li', { class: 'pending-tile' },
-    h('div', { class: 'frame' }, h('span', { 'aria-busy': i === 0 ? 'true' : null },
-      i === 0 ? 'Making…' : 'Waiting')),
-    h('div', { class: 'caption' }, h('span', { class: 'num' }, n.split('-')[0]),
-      h('span', { class: 'muted' }, job.dry_run ? 'dry run' : 'about a minute each'),
-      h('span', { class: 'kind' }, n.split('-').slice(1).join('-')))));
+  const failed = new Set(job.failed || []);
+  const left = job.expected.filter((n) => !have.has(n) && !failed.has(n));
+  const now = job.current?.name || left[0];
+  return left.map((n) => {
+    const { num, kind } = splitName(n);
+    const making = n === now;
+    return h('li', { class: 'pending-tile' },
+      h('div', { class: 'frame' }, h('span', { 'aria-busy': making ? 'true' : null }, making ? 'Making…' : 'Waiting'),
+        making && job.current?.subject ? h('small', { class: 'subject' }, job.current.subject) : null),
+      h('div', { class: 'caption' }, h('span', { class: 'num' }, num),
+        h('span', { class: 'muted' }, job.dry_run ? 'dry run' : 'about a minute each'),
+        h('span', { class: 'kind' }, kind)));
+  });
 }
 
 function seedTile(d) {
