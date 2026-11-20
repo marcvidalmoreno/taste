@@ -107,6 +107,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
 
 ## Changelog
+- **20 Nov 2026** – `sci-fi-interface-panels` broadened (the first tests looked alike and close to the sources):
+  five kinds of interface (colour-block panels, holographic glass displays, green wireframe terminals, radial
+  displays, white medical screens) and three more palette families (cyan hologram, green phosphor, white with red;
+  picked by hand, not measured). Undo: `git revert` this commit, then `build_taste.py .`
 - **20 Nov 2026** – `batch.py` spreads the looks: within a style, each image takes a different light, framing,
   mood and palette (`codex_run.py --slot K`) instead of a random pick that could repeat. Undo: `git revert` this commit.
 - **19 Nov 2026** – `dubuffet` as a family of combinations (Marc: each Dubuffet work combines the traits
