@@ -108,7 +108,14 @@ def compose(a):
         i = (rnd or random.Random()).randrange(len(opts))
         wild = f'Wildcard: push the {a.extreme} to an extreme: {opts[i]}. Keep everything else in this style.'
     if st.get('axes') and (rnd or a.extreme):
-        pick = {k: (rnd.randrange(len(v)) if rnd else (a.look or 0) % len(v)) for k, v in st['axes'].items()}
+        if rnd and a.slot is not None:
+            # spread: one shuffled order per axis for the whole style (same seed), image K takes option K of each,
+            # so the images of a batch never repeat a light, framing, mood or palette until the options run out
+            srnd = random.Random(f'{a.mix}-{a.style}')
+            order = {k: srnd.sample(range(len(v)), len(v)) for k, v in st['axes'].items()}
+            pick = {k: order[k][a.slot % len(order[k])] for k in order}
+        else:
+            pick = {k: (rnd.randrange(len(v)) if rnd else (a.look or 0) % len(v)) for k, v in st['axes'].items()}
         fill = {k: st['axes'][k][i] for k, i in pick.items()}
         slot = AXIS.get(a.extreme)
         if slot:  # the wildcard replaces its own axis, so the prompt never asks for two lights at once
@@ -203,6 +210,7 @@ if __name__ == '__main__':
     g.add_argument('--subject', default='')
     g.add_argument('--ratio', default='wide', choices=['wide', 'square', 'portrait'])
     g.add_argument('--look', type=int, help='which look of the style (light, framing, mood, palette); 0 = default')
+    g.add_argument('--slot', type=int, help='with --mix: image K of the style in this batch; spreads the options')
     g.add_argument('--mix', help='seed: pick light, framing, mood and palette each on their own')
     g.add_argument('--extreme', choices=list(EXTREMES), help='wildcard: push one dimension to an extreme')
     g.add_argument('--print', action='store_true', help='only print the prompt and change; no Codex run')

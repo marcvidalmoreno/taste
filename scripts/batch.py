@@ -7,8 +7,8 @@ Usage (from the project root):
 
 <subjects.json> is {"<style>": ["subject", ...], ...}, written fresh by Claude Code for each batch (keep it in
 the batch folder, git-ignored). Styles default to the keys of that file. Per style, image i gets subject i
-(cycled), a ratio from wide / portrait / square / wide, and its own random mix of light, framing, mood and palette
-(codex_run.py --mix). The last --wildcards images of each style also push one random dimension to an extreme
+(cycled), a ratio from wide / portrait / square / wide, and its own mix of light, framing, mood and palette
+(codex_run.py --mix --slot i: options spread so the images of a style don't repeat one until all are used). The last --wildcards images of each style also push one random dimension to an extreme
 (codex_run.py --extreme). Everything picked is logged in the "change" column, so ratings show what worked.
 --dry-run prints the prompts and spends nothing. A failed or blocked image is skipped (codex_run makes its one
 recovery); 3 failures in a row stop the run.
@@ -50,7 +50,7 @@ for style in styles:
         name = f'{style}-{i + 1}'
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', a.out, '--name', name,
                '--style', style, '--subject', subjects[style][i % len(subjects[style])],
-               '--ratio', RATIOS[i % len(RATIOS)], '--mix', seed, '--mode', 'test']
+               '--ratio', RATIOS[i % len(RATIOS)], '--mix', seed, '--slot', str(i), '--mode', 'test']
         if i >= a.start + a.n - a.wildcards:
             cmd += ['--extreme', rnd.choice(sorted(EXTREMES))]
         if a.dry_run:
