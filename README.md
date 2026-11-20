@@ -105,8 +105,13 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   so **at least ~400 images a week, ~1,700 a month**, if nothing else used Codex. The weekly allowance is shared with
   other Codex work, so in practice: budget 10 % of the week for images = **at least ~40 a week, ~170 a month**.
 - The figure firms up as `runs.csv` grows; recompute after ~20 images.
+- **Remeasured 20 Nov 2026:** 690 images in 7 days with the weekly allowance at only 35 %, so ≤ 0.05 % of the
+  week per image (≥ ~2,000 a week if nothing else used Codex). 10 % of the week for images ≈ **200 a week**; the
+  web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **20 Nov 2026** – Image budget raised from 40 to 200 a week (`WEEK_BUDGET` in `scripts/app.py`, "Allowance"
+  above), so the variations dialog stops warning on normal use. Undo: `git revert` this commit.
 - **20 Nov 2026** – Live progress for runs started from chat: `batch.py`, `variations.py` and a lone
   `codex_run.py gen` write `generated/codex/.progress.json` (new `scripts/progress.py`, 10 s heartbeat). The web
   app's header chip shows "Making 3 of 16 · fern-3 · 4:12" for any run, a **Log** button opens the live log

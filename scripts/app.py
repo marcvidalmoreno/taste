@@ -145,7 +145,7 @@ def thumbnail(batch, file):
 
 PY = sys.executable
 CHANGES = ['palette', 'subject', 'composition', 'mood']   # the order scripts/variations.py makes them in
-WEEK_BUDGET = 40          # README "Allowance": 10 % of the week for images = at least ~40 images
+WEEK_BUDGET = 200         # README "Allowance": 10 % of the week for images = about 200 images (remeasured 20 Nov 2026)
 DRY_RUN = False           # --dry-run: jobs run variations.py --dry-run (no Codex, no allowance)
 JOB = {'running': False}  # the one variation job; read by GET /api/job
 _guess = None             # nearest.model, loaded on first use (a few seconds: sklearn + 1,000 thumbnails)
