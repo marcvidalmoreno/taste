@@ -7,6 +7,7 @@
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
 import { api, styles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
+import { setKept, keepButton } from './marks.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping } from './ui.js';
 
 const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
@@ -88,11 +89,12 @@ function tile(im, i) {
   const r = ratio(im);
   return h('button', {
     class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 ${Math.round(r * ROW_H)}px`, aspectRatio: String(r) },
-    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.why ? ': ' + im.why : ''}`,
+    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.why ? ': ' + im.why : ''}`,
     onClick: () => openLarge(i),
   },
   h('img', { src: thumbUrl(im.batch, im.file, im.mtime), alt: '', loading: 'lazy', decoding: 'async' }),
-  im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph));
+  im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph),
+  im.kept && h('span', { class: 'kept-star', title: 'Kept as an example', 'aria-hidden': 'true' }, '★'));
 }
 
 const keyOf = (im) => `${im.batch}/${im.name}`;
@@ -149,6 +151,11 @@ function redraw(im) {
   if (dlg?.open && shown[index] === im) drawMarks(im);
 }
 
+// Keep as example: the star shows on the tile and on Taste; the grid does not reflow.
+function keep(im) {
+  setKept(im, im.batch, !im.kept).then(() => { refreshTile(im); if (dlg?.open && shown[index] === im) drawKeep(im); }).catch(() => {});
+}
+
 // ------------------------------------------------------------------ large view
 
 function ensureDialog() {
@@ -158,6 +165,7 @@ function ensureDialog() {
     if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
     const rating = ratingForKey(e.key.toLowerCase());
     if (rating) { e.preventDefault(); toggleMark(shown[index], rating); }
+    if (e.key.toLowerCase() === 'x') { e.preventDefault(); keep(shown[index]); }
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
   });
@@ -183,7 +191,8 @@ function step(d) {
   draw();
 }
 
-let markBox;
+let markBox, keepBox;
+function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im))); }
 
 function draw() {
   const im = shown[index];
@@ -198,6 +207,7 @@ function draw() {
         h('button', { class: 'secondary outline', onClick: () => step(1), disabled: index === shown.length - 1, 'aria-label': 'Next image' }, '→'),
         h('button', { class: 'secondary outline close', onClick: () => dlg.close(), 'aria-label': 'Close' }, '✕')),
       markBox = h('section', { class: 'mark-box' }),
+      keepBox = h('div', { class: 'keep-box' }),
       h('dl', {},
         h('dt', {}, 'Style'), h('dd', {}, st ? h('a', { href: '#/taste/' + encodeURIComponent(im.style), onClick: () => dlg.close() }, st.name) : '–'),
         h('dt', {}, 'Batch'), h('dd', {}, h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch)),
@@ -207,8 +217,9 @@ function draw() {
         `Change the style…`),
       im.prompt && h('details', {}, h('summary', {}, 'Prompt'), h('p', { class: 'prompt' }, im.prompt)),
       h('p', { class: 'keys muted small' }, h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ',
-        h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ', h('kbd', {}, 'Esc'), ' close')));
+        h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ', h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'Esc'), ' close')));
   drawMarks(im);
+  drawKeep(im);
 }
 
 // Thumbs, why and a one-line status. Redrawn alone after a mark, so the why field keeps its cursor otherwise.

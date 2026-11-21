@@ -9,6 +9,7 @@ import { openNote } from './notes.js';
 import { openStyleEdit, undoEdit, diffValue, FIELDS } from './styleedit.js';
 import { api } from './api.js';
 import { openNewStyle } from './newstyle.js';
+import { setKept } from './marks.js';
 
 const FACTS = [['light', 'Light'], ['composition', 'Composition'], ['camera_or_medium', 'Medium'],
   ['mood', 'Mood'], ['texture_detail', 'Detail'], ['prefer', 'Lean towards']];
@@ -47,14 +48,18 @@ export async function renderTaste(view, focus) {
 
 function styleCard(key, s, imgs) {
   const by = (r) => imgs.filter((im) => im.rating === r);
-  const keep = by('keep'), almost = by('almost'), no = by('no');
+  const kept = imgs.filter((im) => im.kept), keep = by('keep').filter((im) => !im.kept), almost = by('almost'), no = by('no');
   const unrated = imgs.filter((im) => !im.rating).length;
-  const examples = (list, label, max) => list.length > 0 && h('div', { class: 'examples' },
-    h('h3', {}, h('span', { class: `rating-pill ${list[0].rating}` }, label), ' ', h('small', { class: 'muted' }, list.length)),
-    h('div', { class: 'ex-row' }, list.slice(0, max).map((im) => h('figure', {},
+  const examples = (list, label, max, pill) => list.length > 0 && h('div', { class: 'examples' },
+    h('h3', {}, h('span', { class: pill || `rating-pill ${list[0].rating}` }, label), ' ', h('small', { class: 'muted' }, list.length)),
+    h('div', { class: 'ex-row' }, list.slice(0, max).map((im) => h('figure', { class: 'ex-fig' },
       h('button', { class: 'ex', onClick: () => openLarge(imgs.indexOf(im), imgs),
         'aria-label': `${label}${im.why ? ': ' + im.why : ''}` },
         h('img', { src: thumbUrl(im.batch, im.file, im.mtime), alt: '', loading: 'lazy' })),
+      h('button', { class: 'star-btn', 'aria-pressed': String(!!im.kept), title: im.kept ? 'Kept as an example: click to stop' : 'Keep as an example of this style',
+        'aria-label': im.kept ? 'Stop keeping as example' : 'Keep as example',
+        onClick: () => setKept(im, im.batch, !im.kept).then(() => document.getElementById('style-' + key)?.replaceWith(styleCard(key, s, imgs))).catch(() => {}) },
+      im.kept ? '★' : '☆'),
       im.why && h('figcaption', {}, im.why)))));
 
   return h('article', { class: 'card style-card', id: 'style-' + key },
@@ -80,7 +85,7 @@ function styleCard(key, s, imgs) {
         s.use?.length && [h('dt', {}, 'Good for'), h('dd', {}, s.use.map((u) => USES[u] || u).join(' · '))]),
       h('div', { class: 'evidence' },
         imgs.length
-          ? [examples(keep, RATING_LABELS.keep.label, 8), examples(no, RATING_LABELS.no.label, 4), examples(almost, RATING_LABELS.almost.label, 4),
+          ? [examples(kept, '★ Kept as examples', 8, 'rating-pill kept'), examples(keep, RATING_LABELS.keep.label, 8), examples(no, RATING_LABELS.no.label, 4), examples(almost, RATING_LABELS.almost.label, 4),
              h('p', { class: 'muted small' },
                unrated ? `${plural(unrated, 'image')} not rated yet. ` : '',
                h('a', { href: galleryHref({ style: key }) }, `All ${plural(imgs.length, 'image')} in the gallery`))]

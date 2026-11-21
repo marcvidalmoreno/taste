@@ -15,9 +15,10 @@ const RATIO_HINT = {
   mixed: 'Wide, portrait, square, wide in turn: one batch shows how the style holds up in each shape.',
   wide: '16:9, desktop and Teams backgrounds.', portrait: '4:5, LinkedIn posts and phones.', square: '1:1, LinkedIn posts.',
 };
-const fresh = () => ({ mode: 'batch', styles: [], n: 4, ratio: 'mixed', wildcards: true, subjects: {}, hints: {}, name: '',
+const fresh = () => ({ mode: 'batch', styles: [], n: 4, ratio: 'mixed', wildcards: true, useKept: true, subjects: {}, hints: {}, name: '',
   one: { style: '', subject: '', ratio: 'wide', n: 1 } });
 
+let kept = {};   // style -> how many images are kept as examples
 let state, all, view, alw = null, filter = '', writing = {}, unsub = null;
 
 export async function renderNewRun(el, query) {
@@ -34,6 +35,7 @@ export async function renderNewRun(el, query) {
   }
   if (!state.one.style) state.one.style = state.styles[0] || Object.keys(all)[0];
   document.title = 'New run · taste';
+  kept = await api('kept').then((d) => d.counts).catch(() => ({}));
   draw();
   allowance().then((a) => { alw = a; }).catch((e) => { alw = { error: e.message }; }).finally(drawSummary);
   unsub?.();
@@ -79,6 +81,19 @@ function selectorOf(el) {
   return null;
 }
 
+// ---------------------------------------------------------------- kept examples
+
+// Shown only when one of the styles has images kept as examples (the star in the large view and on Taste).
+function keptTick(keys) {
+  const withKept = keys.filter((k) => kept[k]);
+  if (!withKept.length) return null;
+  const list = withKept.map((k) => `${all[k].name} (${kept[k]})`).join(', ');
+  return h('label', { class: 'nr-block nr-check kept-tick' },
+    h('input', { type: 'checkbox', checked: state.useKept, 'data-focus': 'use-kept', onChange: (e) => { state.useKept = e.target.checked; save(); } }),
+    h('span', {}, `Send my kept examples along as references: ${list}. `,
+      h('small', { class: 'muted' }, 'Up to 2 go with each image. No extra images are spent; the result stays closer to the examples.')));
+}
+
 // ---------------------------------------------------------------- batch
 
 function batchForm() {
@@ -111,6 +126,7 @@ function batchForm() {
           onChange: (e) => { state.wildcards = e.target.checked; save(); } }),
         h('span', {}, 'Wildcard: the last image of each style pushes one thing to an extreme (light, framing, palette, scale, detail or mood)'))),
 
+    keptTick(state.styles),
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Subjects'),
       state.styles.length
@@ -216,6 +232,7 @@ function oneForm() {
           keys.map((k) => h('option', { value: k, selected: k === o.style }, all[k].name))),
         st && h('span', { class: 'swatches big', 'aria-hidden': 'true' }, (st.palette || []).map((c) => h('i', { style: { background: c } })))),
       st?.description && h('p', { class: 'muted small' }, st.description)),
+    keptTick(o.style ? [o.style] : []),
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Subject'),
       h('textarea', { rows: 3, maxlength: 200, 'data-focus': 'one-subject', 'aria-label': 'Subject',
@@ -295,9 +312,9 @@ function drawStart() {
 function body() {
   if (state.mode === 'one') {
     const o = state.one;
-    return { kind: 'single', style: o.style, subject: o.subject, ratio: o.ratio, n: o.n };
+    return { kind: 'single', style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
   }
-  return { kind: 'batch', styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, name: state.name,
+  return { kind: 'batch', styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, name: state.name, use_kept: state.useKept,
     subjects: Object.fromEntries(state.styles.map((k) => [k, lines(k)])), hints: state.hints };
 }
 
@@ -336,7 +353,8 @@ async function preview() {
       prompts.some((p) => p.placeholder) && h('p', { class: 'notice' }, 'Rows marked "example subject" use one of the style\'s examples as a stand-in: Codex writes a fresh subject there when the run starts.'),
       h('ul', { class: 'plain' }, prompts.map((p) => h('li', { class: 'preview-item' },
         h('div', { class: 'preview-meta' }, h('strong', {}, p.name), h('code', {}, p.change || ''),
-          p.placeholder && h('span', { class: 'count' }, 'example subject')),
+          p.placeholder && h('span', { class: 'count' }, 'example subject'),
+          p.refs?.length > 0 && h('span', { class: 'count' }, `★ with ${plural(p.refs.length, 'kept example')}`)),
         h('p', { class: 'prompt' }, p.prompt))))));
   } catch (err) {
     list.removeAttribute('aria-busy');

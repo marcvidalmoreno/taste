@@ -2,7 +2,7 @@
 
 Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --prompt "<text>"
-        [--ref <seed image>] [--style <style>] [--mode variations|text|test] [--change "<what this one changes>"]
+        [--ref <seed image>] [--ref <more> --refs-kept] [--style <style>] [--mode variations|text|test] [--change "<what this one changes>"]
   .venv/Scripts/python -I scripts/codex_run.py gen --out ... --name ... --style <style> --subject "<scene>"
         [--ratio wide|square|portrait] [--look N]   # prompt from taste/taste.json; N picks one of the style's looks
         [--mix SEED] [--extreme light|framing|palette|scale|detail|mood]
@@ -33,6 +33,8 @@ JOB = """Image job. Use the image_gen tool exactly once. Do not write code to dr
 When it is done, copy the generated PNG to {name}.png in the current directory. Reply with the file name only."""
 REF = ('The attached image ({path}) is the seed: pass it to image_gen as referenced_image_paths. '
        'Keep its overall look unless the prompt says what to change; make a new image, not a copy.\n')
+REF_KEPT = ('The attached images ({paths}) are examples of the look wanted: pass them to image_gen as '
+            "referenced_image_paths. Match their palette, light and feel; make a new image of the prompt's subject, not a copy.\n")
 
 
 def readings(path):
@@ -169,15 +171,21 @@ def gen(a):
             sys.exit('give --prompt, or --style and --subject')
         a.prompt = compose(a)
     if a.print:
-        print(json.dumps({'name': a.name, 'change': a.change, 'prompt': a.prompt}, ensure_ascii=False))
+        print(json.dumps({'name': a.name, 'change': a.change, 'prompt': a.prompt,
+                          'refs': [Path(r).name for r in a.ref] if a.refs_kept else []}, ensure_ascii=False))
         return
     out = (ROOT / a.out).resolve() if not os.path.isabs(a.out) else Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    ref = Path(a.ref).resolve() if a.ref else None
-    job = JOB.format(ref=REF.format(path=ref) if ref else '', prompt=a.prompt, name=a.name)
+    refs = [Path(r).resolve() for r in a.ref]
+    ref = refs[0] if refs else None
+    if a.refs_kept and refs:
+        note = REF_KEPT.format(paths=', '.join(str(r) for r in refs))
+    else:
+        note = REF.format(path=ref) if ref else ''
+    job = JOB.format(ref=note, prompt=a.prompt, name=a.name)
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'workspace-write']
-    if ref:
-        cmd += ['-i', str(ref)]
+    for r in refs:
+        cmd += ['-i', str(r)]
     prog = None
     if not is_child():  # run alone from chat: show it in the web app (batch.py / variations.py do it otherwise)
         prog = Progress(out, [a.name], a.mode)
@@ -203,7 +211,7 @@ def gen(a):
     first, last = (r[0], r[-1]) if r else ((None, '', ''), (None, '', ''))
     now = datetime.datetime.now()
     row = [now.date().isoformat(), now.strftime('%H:%M'), out.name, a.name, a.mode, a.style, a.change,
-           ref.name if ref else '', 'yes' if png.exists() else 'no', w, h, last[0] if last[0] is not None else '',
+           ('kept ' + ' + '.join(r.name for r in refs)) if (a.refs_kept and refs) else ref.name if ref else '', 'yes' if png.exists() else 'no', w, h, last[0] if last[0] is not None else '',
            first[1], last[1], first[2], last[2], secs, sid, a.prompt]
     LOG.parent.mkdir(parents=True, exist_ok=True)
     new = not LOG.exists()
@@ -249,7 +257,8 @@ if __name__ == '__main__':
     g.add_argument('--extreme', choices=list(EXTREMES), help='wildcard: push one dimension to an extreme')
     g.add_argument('--print', action='store_true', help='only print the prompt and change; no Codex run')
     g.add_argument('--no-lean', action='store_true', help='pick options evenly, ignoring the ratings (scripts/leaning.py)')
-    g.add_argument('--ref', default='')
+    g.add_argument('--ref', action='append', default=[], help='reference image; repeat for several')
+    g.add_argument('--refs-kept', action='store_true', help='the --ref images are kept examples of the style (not a seed)')
     g.add_argument('--style', default='')
     g.add_argument('--mode', default='test')
     g.add_argument('--change', default='')

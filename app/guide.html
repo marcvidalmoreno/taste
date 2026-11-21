@@ -152,7 +152,7 @@
   <ol>
     <li><strong>Number, style and kind.</strong></li>
     <li><strong>Thumbs and why</strong>, with a line saying what your thumb did (see Rating).</li>
-    <li><strong>Actions</strong>: Remix… (<kbd>R</kbd>), Variations… (<kbd>V</kbd>), Change the style… (<kbd>E</kbd>),
+    <li><strong>Actions</strong>: <strong>Keep as example</strong> (<kbd>X</kbd>, see Taste), Remix… (<kbd>R</kbd>), Variations… (<kbd>V</kbd>), Change the style… (<kbd>E</kbd>),
       Note for Claude… (<kbd>C</kbd>), and Ignore (<kbd>I</kbd>) or Restore when it has no thumb.</li>
     <li><strong>Details</strong>: style with its palette, the change (for variations), how it was made, what was
       made from it (links), the seed, the size, when and how long it took.</li>
@@ -219,6 +219,9 @@
   <ul>
     <li><strong>Preview the prompts (free)</strong> (batch only): the exact prompts, without running Codex. Rows marked
       "example subject" get a fresh subject when the run starts.</li>
+    <li>When a picked style has images you kept as examples, a tick offers to <strong>send them along as
+      references</strong> (on by default; up to 2 with each image, no extra images spent). The result then stays closer
+      to those examples; untick it for a fresh start. The preview shows which images go with which prompt.</li>
     <li>The cost block shows images, minutes and allowance (see Allowance).</li>
     <li><strong>Start · make N images</strong>, or <strong>Add to queue</strong> when a run is busy.
       <kbd>Ctrl</kbd> + <kbd>Enter</kbd> does the same.</li>
@@ -288,7 +291,8 @@
     <li>The filters are in the address, so Back returns to them.</li>
   </ul>
   <p>Click an image for the large view: ← → to step, <strong>Up</strong> / <strong>Down</strong> thumbs
-    (<kbd>U</kbd> <kbd>D</kbd>, saved at once, the same thumb again takes it back) and a why, links to its
+    (<kbd>U</kbd> <kbd>D</kbd>, saved at once, the same thumb again takes it back) and a why,
+    <strong>Keep as example</strong> (<kbd>X</kbd>; kept images show a ★ on their tile), links to its
     <strong>style</strong> (on Taste) and its <strong>batch</strong>, <strong>Change the style…</strong>, and the
     prompt. The grid keeps its order while you mark, so nothing jumps away; the filters apply again on the next
     visit.</p>
@@ -310,8 +314,10 @@
       New style from images; click one to see it large) and the <strong>palette</strong> with colour codes.</li>
     <li>Light, Composition, Medium, Mood, Detail, Lean towards, <strong>Avoid</strong>, and Good for (desktop, Teams,
       phone, post).</li>
-    <li><strong>Evidence</strong>: up to 8 images rated Up, 4 rated Down with their whys, how many are not rated, and
-      a link to all of them in the Gallery.</li>
+    <li><strong>Evidence</strong>: first the images you <strong>kept as examples</strong> (★), then up to 8 rated Up,
+      4 rated Down with their whys, how many are not rated, and a link to all of them in the Gallery. Every example
+      has a small ☆ / ★: click it to keep it as an example of this style, or to stop. Kept examples are sent along
+      as references when you start a new run of the style (see New run).</li>
   </ul>
 </section>
 
@@ -422,6 +428,7 @@
       <tr><td><kbd>←</kbd> <kbd>→</kbd>, <kbd>Home</kbd> <kbd>End</kbd></td><td>Large view</td><td>Previous / next, first / last</td></tr>
       <tr><td><kbd>U</kbd> / <kbd>D</kbd></td><td>Grid, large view</td><td>Thumb up / down; again takes it back</td></tr>
       <tr><td><kbd>I</kbd></td><td>Grid, large view</td><td>Ignore or restore</td></tr>
+      <tr><td><kbd>X</kbd></td><td>Large view (batch and Gallery)</td><td>Keep as example of its style, or stop</td></tr>
       <tr><td><kbd>Enter</kbd></td><td>Large view</td><td>Type a why; again saves and moves on</td></tr>
       <tr><td><kbd>R</kbd></td><td>Large view</td><td>Remix</td></tr>
       <tr><td><kbd>V</kbd></td><td>Large view</td><td>Variations</td></tr>
@@ -449,7 +456,9 @@
     <li>On <strong>Taste</strong>, the image shows among the style's Up examples, and your edit under "Changed from
       the app".</li>
   </ol>
-  <p class="muted small">There is no button yet to keep one exact image as a reference example for its style.</p>
+  <p class="muted small">To keep one exact image as a reference example for its style, press <kbd>X</kbd> (or
+    <strong>Keep as example</strong>) in the large view: it shows first on Taste and goes along as a reference in new
+    runs of that style.</p>
 
   <h3>Start a style from a look you found</h3>
   <ol>
@@ -551,6 +560,7 @@
     <tbody>
       <tr><td>Thumb</td><td>A row in the ratings log; the style's next runs re-weight their options</td><td>Same thumb again</td></tr>
       <tr><td>Why</td><td>Saved with the thumb; read by the next suggestion round</td><td>Clear the field</td></tr>
+      <tr><td>Keep as example</td><td>Image listed in a small file; new runs of its style send up to 2 kept images along as references</td><td>Press the star again</td></tr>
       <tr><td>Ignore</td><td>Hidden and left out of ratings</td><td>Undo in the message, or Restore</td></tr>
       <tr><td>Start a run</td><td>Joins the queue; one image at a time into a dated folder</td><td>Remove, or Stop</td></tr>
       <tr><td>Apply a style change or suggestion</td><td>Style file rewritten, prompts rebuilt, before and after logged</td><td>Undo in the message, or on the Taste card</td></tr>

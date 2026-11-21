@@ -669,3 +669,17 @@ dialog.style-edit article { max-width: 46rem; }
 .ns-done { display: flex; gap: 1rem; align-items: center; }
 .ns-done p { margin: 0 0 .25rem; }
 dialog.variations footer a[role=button] { margin: 0; width: auto; }
+
+/* Keep as example (21 Nov 2026): a star, calm and quiet */
+.keep-box { margin: .25rem 0 .75rem; }
+.keep-btn { margin: 0; width: auto; padding: .4rem .8rem; font-size: .9rem; }
+.keep-btn[aria-pressed="true"] span { color: #f2c94c; }
+.kept-star { position: absolute; right: .35rem; top: .3rem; color: #f2c94c; font-size: 1.1rem; line-height: 1; text-shadow: 0 0 3px rgba(0,0,0,.7); pointer-events: none; }
+.jtile { position: relative; }
+.rating-pill.kept { background: #f2c94c; color: #111; }
+.ex-fig { position: relative; }
+.star-btn { position: absolute; right: .3rem; top: .25rem; margin: 0; padding: .1rem .35rem; width: auto; border: 0; border-radius: 4px;
+  background: rgba(0,0,0,.45); color: #fff; font-size: 1rem; line-height: 1.2; opacity: .75; }
+.star-btn:hover, .star-btn:focus-visible, .star-btn[aria-pressed="true"] { opacity: 1; }
+.star-btn[aria-pressed="true"] { color: #f2c94c; }
+.kept-tick small { display: block; }

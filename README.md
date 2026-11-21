@@ -114,6 +114,15 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Keep as example (Marc picked idea 1 of the inspiration research). A **★ Keep as example** button
+  (key **X**; K was already "up") in the batch Large view and the Gallery large view, and a ☆ / ★ on every example
+  thumbnail on Taste. Kept images show first in the style's Evidence ("★ Kept as examples") and a star on their
+  Gallery tile. New batch and single-image runs of that style send up to 2 kept images along as references (turning
+  through them), through a tick in New run that is on by default and never spends extra images; Preview shows which
+  images go with which prompt, and a retried image gets the same ones. Stored in `generated/codex/kept.json`
+  (git-ignored). `codex_run.py` takes several `--ref`; runs.csv writes `kept a.png + b.png` in the seed column.
+  Guide updated (Large view, New run, Gallery, Taste, keys, use case, undo table). Undo: press the star again per
+  image, untick "Send my kept examples" per run, or `git revert` this commit.
 - **21 Nov 2026** – New style from images (Marc: "Yes, build it", after asking how a Midjourney `--sref` look could
   become a taste style). Taste → **New style from images…**: add 1-4 references (choose, drop or paste), optional
   name and "what draws you to them"; Codex looks at them (`codex_text.py new`, `codex exec -i`, read-only, medium

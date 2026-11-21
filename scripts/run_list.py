@@ -5,7 +5,7 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/run_list.py --out generated/codex/<batch> --jobs <jobs.json> [--dry-run]
 
 <jobs.json> is a list; each job is one codex_run.py gen call:
-  {"name": "remix-1", "prompt": "...", "ref": "<path to a reference image>", "style": "...", "mode": "remix",
+  {"name": "remix-1", "prompt": "...", "ref": "<path to a reference image>" (or a list of paths; "kept": true for kept examples), "style": "...", "mode": "remix",
    "change": "remix: less pink"}
   or {"name": "fern-1", "style": "...", "subject": "...", "ratio": "wide", "mode": "text"}
 Writes live progress for the web app (scripts/progress.py). One recovery happens inside codex_run.py; here
@@ -33,9 +33,13 @@ jobs = json.load(open(a.jobs, encoding='utf-8'))
 def command(j):
     cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', a.out, '--name', j['name'],
            '--mode', j.get('mode', 'test')]
-    for key in ('prompt', 'ref', 'style', 'subject', 'ratio', 'change'):
+    for key in ('prompt', 'style', 'subject', 'ratio', 'change'):
         if j.get(key):
             cmd += [f'--{key}', str(j[key])]
+    for ref in (j['ref'] if isinstance(j.get('ref'), list) else [j['ref']] if j.get('ref') else []):
+        cmd += ['--ref', str(ref)]
+    if j.get('kept'):
+        cmd.append('--refs-kept')   # the references are kept examples of the style, not a seed to vary
     return cmd
 
 

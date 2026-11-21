@@ -1,7 +1,7 @@
 // Large view: one image at full size, its details, and the marks. A modal <dialog>, so focus stays
 // inside it, the page behind is inert, and Esc closes it.
 import { store, item, styleName, kindOf, onChange, visible } from './store.js';
-import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons } from './marks.js';
+import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons, setKept, keepButton } from './marks.js';
 import { openVariations } from './variations.js';
 import { openRemix } from './remix.js';
 import { openNote } from './notes.js';
@@ -128,7 +128,7 @@ function drawPanel(im) {
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),
       ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
-      h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ', h('kbd', {}, 'F'), ' 1:1  ',
+      h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ', h('kbd', {}, 'F'), ' 1:1  ',
       h('kbd', {}, 'Esc'), ' close'));
 }
 
@@ -162,6 +162,7 @@ function markSection(im) {
 
 function actions(im) {
   return h('section', { class: 'actions' },
+    keepButton(im, () => keepOf(im)),
     h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'Say what should change; Codex rewrites the prompt' }, 'Remix… ', h('kbd', {}, 'R')),
     h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Variations… ', h('kbd', {}, 'V')),
     im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
@@ -170,6 +171,7 @@ function actions(im) {
       im.status === 'ignored' ? 'Restore' : 'Ignore', ' ', h('kbd', {}, 'I')));
 }
 
+const keepOf = (im) => setKept(im, store.data.batch, !im.kept).then(() => drawPanel(im)).catch(() => {});
 const variationsOf = (im) => openVariations({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style });
 const remixOf = (im) => openRemix({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style, prompt: im.prompt });
 const styleOf = (im) => im.style && openStyleEdit({ style: im.style, batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}` });
@@ -255,6 +257,7 @@ function onKey(e) {
   else if (key === 'ArrowLeft') go(-1);
   else if (key === 'Home') go(-index);
   else if (key === 'End') go(order.length);
+  else if (key === 'x') keepOf(im);
   else if (key === 'i') { if (!im.draft?.rating) ignoreAndMove(im.name); }
   else if (key === 'f') toggleFit();
   else if (key === 'v') variationsOf(im);

@@ -18,6 +18,8 @@ Files this server reads or writes (all in generated/codex/)
   ratings.csv          saved ratings (read; appended through rate.append_ratings)
   app-drafts.json      marks not saved yet, so they survive closing the tab (written)
   app-ignored.json     images hidden from the grid and left out of ratings (written)
+  kept.json            images kept as examples of their style: [{batch, name, style, at}] (written; new batch and
+                       single-image runs of that style send up to 2 of them along as references, 21 Nov 2026)
   .thumbs/             small JPEG copies for the grid (written, safe to delete)
   distil-state.json    where the last distil stopped (read only: --mark stays a command-line step)
   <batch>/run.json     what a run started here was, where it came from and how it was set (written)
@@ -85,6 +87,36 @@ def saved_ratings():
     return {(r['batch'], r['name']): r for _, r in rate.latest(list(csv.DictReader(open(rate.RATINGS, encoding='utf-8'))))}
 
 
+# ---------------------------------------------------------------- kept examples (21 Nov 2026)
+
+KEPT = BASE / 'kept.json'     # [{batch, name, style, at}]: images Marc keeps as examples of their style
+REFS_PER_IMAGE = 2            # how many kept examples go along with one new image
+
+
+def kept_list():
+    return [k for k in read_json(KEPT, []) if isinstance(k, dict) and k.get('batch') and k.get('name')]
+
+
+def kept_set():
+    return {(k['batch'], k['name']) for k in kept_list()}
+
+
+def kept_paths(style):
+    """Files of the images kept for a style, oldest first; ones that no longer exist are left out."""
+    out = []
+    for k in kept_list():
+        p = BASE / k['batch'] / f"{k['name']}.png"
+        if k.get('style') == style and p.is_file() and ',' not in str(p):
+            out.append(str(p))
+    return out
+
+
+def pick_refs(paths, i):
+    """The kept examples that go with image number i of a style: REFS_PER_IMAGE of them, turning through the list."""
+    n = min(REFS_PER_IMAGE, len(paths))
+    return [paths[(i * REFS_PER_IMAGE + k) % len(paths)] for k in range(n)]
+
+
 # ---------------------------------------------------------------- batches and images
 
 def is_batch(name):
@@ -113,10 +145,10 @@ def batch_images(batch, shared=None):
     shared: (runs by batch, saved ratings, ignored) read once by list_batches, so the home page does not
     parse runs.csv and ratings.csv once per batch (that took ~1.4 s with 120 batches; 21 Nov 2026)."""
     if shared:
-        runs_by_batch, saved, ignored_all = shared
+        runs_by_batch, saved, ignored_all, kept = shared
         runs = runs_by_batch.get(batch, {})
     else:
-        runs, saved, ignored_all = rate.batch_runs(batch), saved_ratings(), read_json(IGNORED, {})
+        runs, saved, ignored_all, kept = rate.batch_runs(batch), saved_ratings(), read_json(IGNORED, {}), kept_set()
     ignored = set(ignored_all.get(batch, []))
     out = []
     for i, name in enumerate(rate.batch_images(batch), 1):
@@ -133,7 +165,7 @@ def batch_images(batch, shared=None):
             'width': run.get('width', ''), 'height': run.get('height', ''),
             'date': run.get('date', ''), 'time': run.get('time', ''), 'seconds': run.get('seconds', ''),
             'draft': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
-            'saved': None,
+            'saved': None, 'kept': (batch, name) in kept,
         })
     return out
 
@@ -153,7 +185,7 @@ def summary(batch, images):
 def list_batches():
     """All batches, newest image first."""
     names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-    shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}))
+    shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set())
     out = [summary(b, batch_images(b, shared)) for b in names]
     return sorted(out, key=lambda s: s['newest'], reverse=True)
 
@@ -398,10 +430,24 @@ def launch(spec):
                 say(f'subject {st}: {s}')
         spec['subjects'] = CUR['subjects'] = subjects
         write_json(folder / 'subjects.json', subjects)
+        if spec.get('use_kept'):
+            spec['kept_refs'] = {st: kept_paths(st) for st in spec['styles'] if kept_paths(st)}
+            if spec['kept_refs']:
+                write_json(folder / '.kept-refs.json', spec['kept_refs'])
+                say('kept examples go along: ' + ', '.join(f'{st} ({len(v)})' for st, v in spec['kept_refs'].items()))
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(folder), '--subjects', str(folder / 'subjects.json'),
                '--styles', ','.join(spec['styles']), '--n', str(spec['n']), '--wildcards', str(spec['wildcards']),
                '--ratio', spec['ratio']]
+        if spec.get('kept_refs'):
+            cmd += ['--kept-refs', str(folder / '.kept-refs.json')]
     elif spec['kind'] in ('remix', 'single', 'retry'):
+        if spec['kind'] == 'single' and spec.get('use_kept'):
+            paths = kept_paths(spec['styles'][0])
+            if paths:
+                spec['kept_refs'] = {spec['styles'][0]: paths}
+                for i, j in enumerate(spec['jobs']):
+                    j['ref'], j['kept'] = pick_refs(paths, i), True
+                say(f'kept examples go along ({len(paths)} kept)')
         write_json(folder / '.jobs.json', spec['jobs'])
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'run_list.py'), '--out', str(folder), '--jobs', str(folder / '.jobs.json')]
     else:  # variations
@@ -416,7 +462,7 @@ def launch(spec):
         cmd.append('--dry-run')
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
-                                         'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep')
+                                         'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs')
                if spec.get(k) not in (None, '', [], {})}
         rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
         write_json(folder / 'run.json', rec)
@@ -545,7 +591,7 @@ def spec_batch(body, preview=False):
     title = clean(body.get('name'), 60) or (', '.join(names[:3]) + (f' +{len(names) - 3}' if len(names) > 3 else ''))
     _, batch = free_slug(clean(body.get('name'), 60) or '-'.join(styles[:2]))
     return {'kind': 'batch', 'title': title, 'batch': batch, 'styles': styles, 'n': n, 'ratio': ratio,
-            'wildcards': wildcards, 'subjects': subjects, 'hints': hints, 'placeholders': placeholders,
+            'use_kept': bool(body.get('use_kept')), 'wildcards': wildcards, 'subjects': subjects, 'hints': hints, 'placeholders': placeholders,
             'expected': [f'{s}-{i + 1}' for s in styles for i in range(n)]}
 
 
@@ -565,7 +611,8 @@ def spec_single(body):
     jobs = [{'name': f'{stem}-{i}', 'style': style, 'subject': subject, 'ratio': ratio, 'mode': 'text'}
             for i in range(1, n + 1)]
     return {'kind': 'single', 'title': f'{st.get("name", style)}: {subject[:50]}', 'batch': batch, 'jobs': jobs,
-            'styles': [style], 'n': n, 'subject': subject, 'ratio': ratio, 'expected': [j['name'] for j in jobs]}
+            'styles': [style], 'n': n, 'subject': subject, 'ratio': ratio, 'use_kept': bool(body.get('use_kept')),
+            'expected': [j['name'] for j in jobs]}
 
 
 def spec_remix(body):
@@ -598,7 +645,11 @@ def spec_retry(body):
     if any(s['batch'] == batch and name in s['expected'] for s in QUEUE):
         raise ApiError(409, 'this retry is already in the queue')
     ref = ''
-    if row['seed']:   # it had a reference image: the batch's seed copy, else the source named in run.json
+    kept = row['seed'].startswith('kept ')
+    if kept:   # it had kept examples: the same ones this batch was started with (run.json), if they still exist
+        paths = [p for p in (run_record(batch) or {}).get('kept_refs', {}).get(row['style'], []) if Path(p).is_file()]
+        ref = pick_refs(paths, int(name.rsplit('-', 1)[-1] or 1) - 1) if paths and name.rsplit('-', 1)[-1].isdigit() else ''
+    elif row['seed']:   # it had a reference image: the batch's seed copy, else the source named in run.json
         if seed_file(batch):
             ref = str(BASE / batch / seed_file(batch))
         elif (run_record(batch) or {}).get('source'):
@@ -606,7 +657,7 @@ def spec_retry(body):
             if (BASE / src['batch'] / src['file']).is_file():
                 ref = str(BASE / src['batch'] / src['file'])
     job = {'name': name, 'prompt': row['prompt'], 'style': row['style'], 'mode': row['mode'] or 'test',
-           'change': row['change'], 'ref': ref}
+           'change': row['change'], 'ref': ref, 'kept': bool(kept and ref)}
     return {'kind': 'retry', 'title': f'Retry {name}', 'batch': batch, 'jobs': [job],
             'styles': [row['style']] if row['style'] else [], 'n': 1, 'expected': [name]}
 
@@ -1032,6 +1083,8 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/batch'): 'get_batch',
         ('GET', 'api/styles'): 'get_styles',
         ('PUT', 'api/mark'): 'put_mark',
+        ('POST', 'api/keep'): 'post_keep',
+        ('GET', 'api/kept'): 'get_kept',
         ('GET', 'api/leaning'): 'get_leaning',
         ('POST', 'api/ignore'): 'post_ignore',
         ('POST', 'api/save'): 'post_save',
@@ -1205,6 +1258,33 @@ class Handler(BaseHTTPRequestHandler):
         return {'ok': True, 'style': run.get('style', ''), 'moves': matched_axes(run.get('style', ''), run.get('prompt', '')),
                 'since_last': len(rate.since_last()), 'due': rate.DUE}
 
+    def post_keep(self):
+        """Keep (or stop keeping) one image as an example of its style: {batch, name, kept: true|false}.
+        New batch and single-image runs of that style can send up to 2 kept images along as references."""
+        body = self.read_body()
+        batch, name = str(body.get('batch', '')), str(body.get('name', ''))
+        if not is_batch(batch) or name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in batch "{batch}"')
+        style = rate.batch_runs(batch).get(name, {}).get('style', '')
+        want = bool(body.get('kept'))
+        if want and not style:
+            raise ApiError(400, 'this image has no style to be an example of')
+        with LOCK:
+            rest = [k for k in kept_list() if (k['batch'], k['name']) != (batch, name)]
+            if want:
+                import time
+                rest.append({'batch': batch, 'name': name, 'style': style, 'at': time.strftime('%Y-%m-%d %H:%M')})
+            write_json(KEPT, rest)
+        return {'ok': True, 'kept': want, 'style': style, 'count': sum(1 for k in rest if k.get('style') == style)}
+
+    def get_kept(self):
+        """How many examples are kept per style (the New run page offers to send them along)."""
+        counts = {}
+        for k in kept_list():
+            if k.get('style') and (BASE / k['batch'] / f"{k['name']}.png").is_file():
+                counts[k['style']] = counts.get(k['style'], 0) + 1
+        return {'counts': counts}
+
     def get_leaning(self, style=''):
         """What the ratings say per option of each style's prompt, and liked / disliked subjects."""
         from leaning import leaning, latest_marks
@@ -1282,9 +1362,14 @@ class Handler(BaseHTTPRequestHandler):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / 'subjects.json'
             write_json(f, spec['subjects'])
+            extra = []
+            kept = {st: kept_paths(st) for st in spec['styles']} if spec['use_kept'] else {}
+            if any(kept.values()):
+                write_json(Path(tmp) / 'kept.json', {st: v for st, v in kept.items() if v})
+                extra = ['--kept-refs', str(Path(tmp) / 'kept.json')]
             r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(Path(tmp) / 'out'),
                                 '--subjects', str(f), '--styles', ','.join(spec['styles']), '--n', str(spec['n']),
-                                '--wildcards', str(spec['wildcards']), '--ratio', spec['ratio'], '--dry-run'],
+                                '--wildcards', str(spec['wildcards']), '--ratio', spec['ratio'], '--dry-run', *extra],
                                cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=120)
         out = []
         for line in r.stdout.splitlines():
@@ -1534,7 +1619,7 @@ class Handler(BaseHTTPRequestHandler):
         (rate.batch_images skips them), so wallpapers by other people never show here."""
         out = []
         names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-        shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}))
+        shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set())
         for b in names:
             for im in batch_images(b, shared):
                 if im['status'] == 'ignored':
@@ -1544,7 +1629,7 @@ class Handler(BaseHTTPRequestHandler):
                             'style': im['style'], 'mode': im['mode'], 'change': im['change'],
                             'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
                             'date': im['date'] or b[:10],
-                            'rating': s['rating'] if s else None, 'why': s['why'] if s else ''})
+                            'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept']})
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return {'images': out}
 

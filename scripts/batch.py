@@ -36,6 +36,7 @@ ap.add_argument('--wildcards', type=int, default=1)
 ap.add_argument('--ratio', default='mixed', choices=['mixed', 'wide', 'portrait', 'square'],
                 help='mixed (default): wide, portrait, square, wide in turn; or one ratio for every image')
 ap.add_argument('--seed', default='')
+ap.add_argument('--kept-refs', default='', help='JSON {style: [image paths]}: kept examples sent along as references (2 per image, turning)')
 ap.add_argument('--dry-run', action='store_true')
 a = ap.parse_args()
 
@@ -47,6 +48,8 @@ if unknown:
     sys.exit(f'no such style or no subjects for: {", ".join(unknown)}')
 seed = a.seed or Path(a.out).name
 rnd = random.Random(seed)
+kept = json.load(open(a.kept_refs, encoding='utf-8')) if a.kept_refs else {}
+PER_IMAGE = 2
 fails = 0
 names = [f'{s}-{i + 1}' for s in styles for i in range(a.start, a.start + a.n)]
 prog = None if a.dry_run else Progress(a.out, names, 'batch')
@@ -56,6 +59,11 @@ for style in styles:
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', a.out, '--name', name,
                '--style', style, '--subject', subjects[style][i % len(subjects[style])],
                '--ratio', RATIOS[i % len(RATIOS)] if a.ratio == 'mixed' else a.ratio, '--mix', seed, '--slot', str(i), '--mode', 'test']
+        have = kept.get(style) or []
+        for k in range(min(PER_IMAGE, len(have))):
+            cmd += ['--ref', have[(i * PER_IMAGE + k) % len(have)]]
+        if have:
+            cmd.append('--refs-kept')
         if i >= a.start + a.n - a.wildcards:
             cmd += ['--extreme', rnd.choice(sorted(EXTREMES))]
         if a.dry_run:

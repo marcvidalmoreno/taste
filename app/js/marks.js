@@ -84,6 +84,30 @@ export function ignoreWithUndo(name) {
     { action: 'Undo', onAction: () => setIgnored(name, !ignoring) });
 }
 
+// Keep (or stop keeping) an image as an example of its style (21 Nov 2026). Quiet and reversible: the same
+// button again takes it back. New runs of the style send up to 2 kept examples along as references.
+export async function setKept(im, batch, kept) {
+  const before = im.kept;
+  im.kept = kept;
+  try {
+    const res = await api('keep', { method: 'POST', body: { batch, name: im.name, kept } });
+    toast(kept ? `Kept as an example. ${res.count} kept for this style: new runs send up to 2 along. Press the star again to undo.` : 'No longer an example.',
+      { timeout: 3500 });
+    return res;
+  } catch (err) {
+    im.kept = before;
+    showError(err);
+    throw err;
+  }
+}
+
+export function keepButton(im, onClick) {
+  return h('button', { type: 'button', class: 'secondary outline keep-btn', 'aria-pressed': String(!!im.kept), onClick,
+    disabled: !im.style, title: im.style ? 'Keep this image as an example of its style: shown first on Taste and sent along as a reference in new runs'
+      : 'This image has no style' },
+  h('span', { 'aria-hidden': 'true' }, im.kept ? '★' : '☆'), im.kept ? ' Kept as example ' : ' Keep as example ', h('kbd', {}, 'X'));
+}
+
 // Up / Down buttons, the same in the large view and under each grid tile.
 // In the grid they stay out of the Tab order (tabindex -1): the keyboard already marks the focused tile with U / D.
 export function markButtons(im, { inGrid = false } = {}) {
