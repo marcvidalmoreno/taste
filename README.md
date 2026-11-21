@@ -114,6 +114,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Faster home page (Marc: "Load batches takes ages"): `scripts/app.py` read `runs.csv` and
+  `ratings.csv` once per batch (120+ times per load); `list_batches` and the Gallery now read them once and share
+  them (`all_runs`, `batch_images(batch, shared)`). `/api/batches` 1.4 s → 0.18 s, same data. Nothing visible
+  changed, so the Guide stays as it is. Undo: `git revert` this commit.
 - **21 Nov 2026** – Two text pages in the web app (Marc): **About** (`app/about.html`) rewritten as an introduction
   to why the project exists (taste is recognised before it is described, evidence over guesses, the human decides,
   nothing hidden, tech out of sight), still a draft for Marc's review; new **Guide** (`app/guide.html`, `#/guide`,

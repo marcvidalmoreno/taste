@@ -95,12 +95,26 @@ def seed_file(batch):
     return seeds[0] if seeds else None
 
 
-def batch_images(batch):
+def all_runs():
+    """runs.csv as {batch: {name: row}} (the last row per image wins, like rate.batch_runs)."""
+    out = {}
+    if rate.RUNS.exists():
+        for r in csv.DictReader(open(rate.RUNS, encoding='utf-8')):
+            out.setdefault(r['batch'], {})[r['name']] = r
+    return out
+
+
+def batch_images(batch, shared=None):
     """Every image of a batch with what the app shows about it.
-    status: 'rated' (saved, read-only) > 'ignored' > 'draft' (marked, not saved) > 'new'."""
-    runs = rate.batch_runs(batch)
-    saved = saved_ratings()
-    ignored = set(read_json(IGNORED, {}).get(batch, []))
+    status: 'rated' (saved, read-only) > 'ignored' > 'draft' (marked, not saved) > 'new'.
+    shared: (runs by batch, saved ratings, ignored) read once by list_batches, so the home page does not
+    parse runs.csv and ratings.csv once per batch (that took ~1.4 s with 120 batches; 21 Nov 2026)."""
+    if shared:
+        runs_by_batch, saved, ignored_all = shared
+        runs = runs_by_batch.get(batch, {})
+    else:
+        runs, saved, ignored_all = rate.batch_runs(batch), saved_ratings(), read_json(IGNORED, {})
+    ignored = set(ignored_all.get(batch, []))
     out = []
     for i, name in enumerate(rate.batch_images(batch), 1):
         run = runs.get(name, {})
@@ -136,7 +150,8 @@ def summary(batch, images):
 def list_batches():
     """All batches, newest image first."""
     names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-    out = [summary(b, batch_images(b)) for b in names]
+    shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}))
+    out = [summary(b, batch_images(b, shared)) for b in names]
     return sorted(out, key=lambda s: s['newest'], reverse=True)
 
 
@@ -1339,8 +1354,9 @@ class Handler(BaseHTTPRequestHandler):
         skips them), so wallpapers by other people never show here."""
         out = []
         names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
+        shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}))
         for b in names:
-            for im in batch_images(b):
+            for im in batch_images(b, shared):
                 if im['status'] == 'ignored':
                     continue
                 s = im['saved']
