@@ -22,6 +22,7 @@ export async function renderTaste(view, focus) {
     return showError(err);
   }
   document.title = 'Taste · taste';
+  leanings = api('leaning').then((d) => d.leaning).catch(() => ({}));
   // Styles with the most images first: where the evidence is.
   const keys = Object.keys(styles).sort((a, b) =>
     images.filter((im) => im.style === b).length - images.filter((im) => im.style === a).length
@@ -60,6 +61,7 @@ function styleCard(key, s, imgs) {
         h('button', { class: 'secondary outline small-btn', onClick: () => openStyleEdit({ style: key, onApplied: () => renderTaste(document.getElementById('view'), key) }) }, 'Change this style…'),
         h('button', { class: 'ghost small', onClick: () => openNote({ style: key }) }, 'Note for Claude…')),
       editsSlot(key),
+      leanSlot(key),
       h('p', {}, s.description),
       h('div', { class: 'swatches', role: 'list', 'aria-label': 'Palette' },
         s.palette.map((c) => h('span', { role: 'listitem', title: c }, h('i', { style: { background: c } }), h('code', {}, c))))),
@@ -92,5 +94,30 @@ function editsSlot(key) {
         h('details', { class: 'small' }, h('summary', {}, e.summary || Object.keys(e.after).map((k) => FIELDS[k] || k).join(', ')),
           Object.keys(e.after).map((k) => [h('p', { class: 'muted' }, FIELDS[k] || k), diffValue(e.before[k], e.after[k])])))))));
   }).catch(() => {});
+  return box;
+}
+
+// How the thumbs steer this style's next runs (scripts/leaning.py): the options rated up come up more often,
+// the ones rated down less, every option keeps a chance. Shown so the score is never a hidden mechanism.
+let leanings = Promise.resolve({});
+const AXES = { light: 'Light', composition: 'Framing', mood: 'Mood', palette: 'Palette', detail: 'Detail' };
+function leanSlot(key) {
+  const box = h('div', { class: 'leaning' });
+  leanings.then((all) => {
+    const l = all[key];
+    const rows = l ? Object.entries(l.axes).flatMap(([axis, opts]) => opts.length < 2 ? []
+      : opts.filter((o) => o.up || o.down).map((o) => ({ axis, ...o }))) : [];
+    if (!rows.length) return;
+    rows.sort((a, b) => b.weight - a.weight);
+    const odds = (w) => (w >= 1 ? `${w.toFixed(1)}× as likely` : `${(1 / w).toFixed(1)}× less likely`);
+    box.replaceChildren(h('details', {},
+      h('summary', { class: 'small' }, `How new runs lean, from ${plural(l.ratings, 'rating')}`),
+      h('ul', { class: 'plain lean-list' }, rows.map((o) => h('li', { class: o.weight > 1 ? 'up' : o.weight < 1 ? 'down' : '' },
+        h('span', { class: 'lean-odds' }, o.weight === 1 ? 'even' : odds(o.weight)),
+        h('span', {}, h('span', { class: 'muted' }, `${AXES[o.axis] || o.axis} · `), o.text.replace(/^[A-Za-z]+: /, '').replace(/\.$/, '')),
+        h('span', { class: 'muted small' }, `👍 ${o.up} · 👎 ${o.down}`)))),
+      l.liked_subjects.length > 0 && h('p', { class: 'small' }, h('span', { class: 'muted' }, 'Subjects you liked (Codex writes new ones in this direction): '),
+        l.liked_subjects.slice(0, 4).join('; '))));
+  });
   return box;
 }

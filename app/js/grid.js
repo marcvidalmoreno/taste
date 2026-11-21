@@ -3,7 +3,6 @@ import { api, styles } from './api.js';
 import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './store.js';
 import { toggleMark, ignoreWithUndo, markButtons } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
-import { renderSaveBar } from './save.js';
 import { job, enqueueRun, KIND } from './job.js';
 import { api as call } from './api.js';
 import { openStyleEdit } from './styleedit.js';
@@ -16,6 +15,7 @@ export async function renderBatch(el, batch, show, open) {
   show = FILTERS[show] ? show : 'to-rate';
   const fresh = store.data?.batch !== batch || !view.querySelector('.grid-page');
   if (fresh) {
+    store.justRated = new Set();
     view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the batch…'));
     try {
       [store.data, store.styles] = await Promise.all([api('batch/' + encodeURIComponent(batch)), styles()]);
@@ -63,9 +63,7 @@ function draw() {
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
     store.show === 'ignored' && list.length > 0 &&
       h('p', { class: 'muted small hint' }, 'To bring one back, open it and choose Restore, or press I on it here.'),
-    h('div', { id: 'save-slot' }),
   ));
-  renderSaveBar();
   if (focused) view.querySelector(`.tile[data-name="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
 }
 
@@ -204,7 +202,7 @@ function seedTile(d) {
 function tile(im) {
   const why = im.saved?.why || im.draft?.why;
   const label = `${im.number}. ${styleName(im.style)}, ${kindOf(im)}` +
-    (im.saved ? `, saved as ${im.saved.rating}` : im.draft?.rating ? `, marked ${im.draft.rating}` : '');
+    (im.draft?.rating ? `, marked ${im.draft.rating === 'keep' ? 'up' : 'down'}` : '');
   return h('li', {},
     h('a', { href: viewerHref(im.name), class: 'tile', dataset: { name: im.name }, 'aria-label': label,
              onClick: (e) => { e.preventDefault(); openViewer(im.name, { push: true }); } },

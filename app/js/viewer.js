@@ -56,7 +56,7 @@ export function openViewer(name, { push = false } = {}) {
   if (push) history.pushState({ viewer: true }, '', viewerHref(name));
   if (!dlg.open || !order.includes(name)) {
     const names = visible().map((im) => im.name);
-    order = names.includes(name) ? names : [name];
+    order = names.includes(name) ? names : store.data.items.map((im) => im.name);   // not in this filter: step through the whole batch
   }
   index = order.indexOf(name);
   const opening = !dlg.open;
@@ -140,8 +140,15 @@ function markSection(im) {
       h('p', { class: 'muted small' }, `Saved on ${shortDate(im.saved.date)}. Saved ratings are read-only.`));
   }
   const r = im.draft?.rating;
+  const st = styleName(im.style);
+  const parts = { light: 'light', composition: 'framing', mood: 'mood', palette: 'palette', detail: 'detail' };
+  const moved = (im.moves || []).map((k) => parts[k] || k);
+  const list = moved.length > 1 ? `${moved.slice(0, -1).join(', ')} and ${moved.at(-1)}` : moved[0];
   const status = im.status === 'ignored' ? 'Ignored: hidden from the grid and left out of ratings.'
-    : r ? 'Draft: kept on this computer until you save the batch.' : 'Not marked yet.';
+    : !r ? 'Not marked yet. A mark counts at once and steers the next runs of this style.'
+    : (r === 'keep' ? 'Saved. ' : 'Saved. ') + (list
+      ? `New ${st} runs lean ${r === 'keep' ? 'toward' : 'away from'} this image's ${list}, and its subject.`
+      : `Counts for ${st}. Press the same thumb again to take it back.`);
   return h('section', { class: 'mark-box' },
     markButtons(im),
     h('input', {
@@ -159,7 +166,7 @@ function actions(im) {
     h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Variations… ', h('kbd', {}, 'V')),
     im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
     h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C')),
-    !im.saved && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
+    !im.draft?.rating && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
       im.status === 'ignored' ? 'Restore' : 'Ignore', ' ', h('kbd', {}, 'I')));
 }
 
@@ -248,7 +255,7 @@ function onKey(e) {
   else if (key === 'ArrowLeft') go(-1);
   else if (key === 'Home') go(-index);
   else if (key === 'End') go(order.length);
-  else if (key === 'i') { if (!im.saved) ignoreAndMove(im.name); }
+  else if (key === 'i') { if (!im.draft?.rating) ignoreAndMove(im.name); }
   else if (key === 'f') toggleFit();
   else if (key === 'v') variationsOf(im);
   else if (key === 'r') remixOf(im);

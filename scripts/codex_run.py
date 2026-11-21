@@ -96,6 +96,25 @@ EXTREMES = {
 AXIS = {'light': 'light', 'framing': 'composition', 'palette': 'palette', 'mood': 'mood'}  # extreme -> template slot
 
 
+def lean_weights(style, taste):
+    try:
+        from leaning import weights
+        return weights(style, taste)
+    except Exception:   # no ratings file yet, or a bad row: pick evenly rather than fail the run
+        return {}
+
+
+def spread(rnd, w, length):
+    """A sequence of option numbers: weighted picks, each pick cutting that option's weight to a third, so a batch
+    still varies (with even weights: nearly every option once before a repeat) while liked options come up more."""
+    w, out = list(w), []
+    for _ in range(length):
+        i = rnd.choices(range(len(w)), weights=w)[0] if len(w) > 1 else 0
+        out.append(i)
+        w[i] /= 3
+    return out
+
+
 def compose(a):
     """Short prompt: ratio + subject + one style block from the generated taste file.
     With --mix or --extreme, a.change records what was picked (e.g. "mix l2 c0 m3 p1 x:light1")."""
@@ -109,22 +128,28 @@ def compose(a):
         opts = EXTREMES[a.extreme]
         i = (rnd or random.Random()).randrange(len(opts))
         wild = f'Wildcard: push the {a.extreme} to an extreme: {opts[i]}. Keep everything else in this style.'
+    leaned = False
     if st.get('axes') and (rnd or a.extreme):
+        # Leaning (21 Nov 2026): options Marc rated up weigh more, rated down less (scripts/leaning.py).
+        w = {} if a.no_lean else lean_weights(a.style, taste)
+        leaned = any(abs(x - 1) > 1e-9 for ws in w.values() for x in ws if len(ws) > 1)
         if rnd and a.slot is not None:
-            # spread: one shuffled order per axis for the whole style (same seed), image K takes option K of each,
-            # so the images of a batch never repeat a light, framing, mood or palette until the options run out
+            # spread: one order per axis for the whole style (same seed); image K takes entry K of each. Each pick
+            # halves that option's weight for the next, so a batch still varies, but liked options come up more
+            # often and disliked ones less (with no ratings: every option once before any repeats, as before).
             srnd = random.Random(f'{a.mix}-{a.style}')
-            order = {k: srnd.sample(range(len(v)), len(v)) for k, v in st['axes'].items()}
-            pick = {k: order[k][a.slot % len(order[k])] for k in order}
+            order = {k: spread(srnd, w.get(k) or [1.0] * len(v), a.slot + 1) for k, v in st['axes'].items()}
+            pick = {k: order[k][a.slot] for k in order}
         else:
-            pick = {k: (rnd.randrange(len(v)) if rnd else (a.look or 0) % len(v)) for k, v in st['axes'].items()}
+            pick = {k: (rnd.choices(range(len(v)), weights=(w.get(k) or [1.0] * len(v)))[0] if rnd else (a.look or 0) % len(v))
+                    for k, v in st['axes'].items()}
         fill = {k: st['axes'][k][i] for k, i in pick.items()}
         slot = AXIS.get(a.extreme)
         if slot:  # the wildcard replaces its own axis, so the prompt never asks for two lights at once
             fill[slot], wild = wild, ''
             pick.pop(slot)
         block = st['template'].format(**fill)
-        tags = (['mix'] if rnd else []) + [f'{k[0]}{i}' for k, i in pick.items()]  # l(ight) c(omposition) m(ood) p(alette)
+        tags = (['mix'] if rnd else []) + (['lean'] if leaned else []) + [f'{k[0]}{i}' for k, i in pick.items()]  # l(ight) c(omposition) m(ood) p(alette)
     else:
         looks = st.get('looks') or [st['prompt']]
         block = looks[a.look % len(looks)] if a.look is not None else st['prompt']
@@ -223,6 +248,7 @@ if __name__ == '__main__':
     g.add_argument('--mix', help='seed: pick light, framing, mood and palette each on their own')
     g.add_argument('--extreme', choices=list(EXTREMES), help='wildcard: push one dimension to an extreme')
     g.add_argument('--print', action='store_true', help='only print the prompt and change; no Codex run')
+    g.add_argument('--no-lean', action='store_true', help='pick options evenly, ignoring the ratings (scripts/leaning.py)')
     g.add_argument('--ref', default='')
     g.add_argument('--style', default='')
     g.add_argument('--mode', default='test')

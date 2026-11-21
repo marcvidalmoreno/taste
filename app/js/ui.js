@@ -45,13 +45,11 @@ export const RATINGS = {
 export const RATING_LABELS = { ...RATINGS, almost: { label: 'Almost (old)', glyph: 'A' } };
 export const ratingForKey = (k) => Object.keys(RATINGS).find((r) => RATINGS[r].key === k || RATINGS[r].alt === k);
 
-// Small 👍 / 👎 badge. Dashed = draft, solid = saved (same shape, the fill says how final it is).
+// Small 👍 / 👎 badge on a marked image (every mark is saved at once since 21 Nov 2026).
 export function markBadge(im) {
   const r = im.saved?.rating || im.draft?.rating;
   if (!r) return null;
-  const saved = !!im.saved;
-  return h('span', { class: `mark ${r}${saved ? ' saved' : ''}`,
-    title: `${RATING_LABELS[r].label}${saved ? ' (saved)' : ' (draft, not saved yet)'}` }, RATING_LABELS[r].glyph);
+  return h('span', { class: `mark ${r} saved`, title: `${RATING_LABELS[r].label} (saved)` }, RATING_LABELS[r].glyph);
 }
 
 // A key press in a text field is typing, not a shortcut.

@@ -21,15 +21,26 @@ HEADER = ['date', 'batch', 'number', 'name', 'style', 'mode', 'change', 'rating'
 # what Marc types. Older rows may also hold 'almost' (RATINGS_SEEN, for reading and counting only).
 RATINGS_ALLOWED = ('keep', 'no')
 RATINGS_SEEN = ('keep', 'no', 'almost')
+# Since 21 Nov 2026 the web app saves each mark at once and a mark can change: the latest row for an image wins,
+# and 'cleared' means the mark was taken back. Every reader goes through latest() / since_last().
 ALIASES = {'up': 'keep', 'down': 'no', 'keep': 'keep', 'no': 'no', '+': 'keep', '-': 'no'}
 DUE = 20
 
 
+def latest(rows):
+    """[(row number, row)]: the latest row per image, cleared marks dropped, in file order."""
+    last = {}
+    for i, r in enumerate(rows):
+        last[(r['batch'], r['name'])] = (i, r)
+    return sorted((x for x in last.values() if x[1]['rating'] != 'cleared'), key=lambda x: x[0])
+
+
 def since_last():
+    """Images whose latest mark came after the last distil (a re-mark counts once, with its new value)."""
     if not RATINGS.exists():
         return []
     done = json.load(open(STATE))['rows'] if STATE.exists() else 0
-    return list(csv.DictReader(open(RATINGS, encoding='utf-8')))[done:]
+    return [r for i, r in latest(list(csv.DictReader(open(RATINGS, encoding='utf-8')))) if i >= done]
 
 
 def batch_images(batch):
@@ -46,13 +57,13 @@ def batch_runs(batch):
     return {r['name']: r for r in csv.DictReader(open(RUNS, encoding='utf-8')) if r['batch'] == batch}
 
 
-def append_ratings(batch, marks):
+def append_ratings(batch, marks, allow_clear=False):
     """Append ratings to ratings.csv. marks: [(name, rating, why), ...]. Returns the rows written.
-    Checks everything first, so a bad mark writes nothing."""
+    Checks everything first, so a bad mark writes nothing. allow_clear: the web app may write 'cleared'."""
     names, runs = batch_images(batch), batch_runs(batch)
     rows = []
     for name, rating, why in marks:
-        if rating not in RATINGS_ALLOWED:
+        if rating not in RATINGS_ALLOWED and not (allow_clear and rating == 'cleared'):
             raise ValueError(f'bad rating "{rating}" for {name}: use up or down')
         if name not in names:
             raise ValueError(f'no image "{name}" in batch {batch}')

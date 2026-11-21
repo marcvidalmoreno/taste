@@ -91,6 +91,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
 | **Batch with fresh subjects, mixed looks and one wildcard per style** | Claude writes `generated/codex/<batch>/subjects.json` (`{style: [subjects]}`), then `.venv/Scripts/python -I scripts/batch.py --out generated/codex/<batch> --subjects generated/codex/<batch>/subjects.json [--styles a,b] [--dry-run]` |
 | Contact sheet of a batch | `.venv/Scripts/python -I scripts/sheet.py generated/codex/<batch>` |
+| How a style's next runs lean (from the thumbs) | `.venv/Scripts/python -I scripts/leaning.py <style>` |
 | Rate (numbers from the sheet) | `.venv/Scripts/python -I scripts/rate.py <batch> 1=up 2=down:too-busy 3=down:dark` |
 | Ratings since the last distil | `.venv/Scripts/python -I scripts/rate.py status` |
 | Distil (every ~20 ratings) | `.venv/Scripts/python -I scripts/distil.py`, Claude proposes style edits, I approve, `build_taste.py`, then `distil.py --mark` |
@@ -113,6 +114,18 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Thumbs count at once and steer the style. Web app: Up / Down is saved the moment you press it
+  (no drafts, no "Save ratings" step; the save bar and review dialog are gone) and can be changed or taken back any
+  time: `ratings.csv` stays append-only, the latest row per image wins, `cleared` means taken back (`rate.latest`,
+  `rate.since_last`, so distil and the Overview count each image once). The 40 marks waiting as drafts were saved
+  on start (copy: `generated/codex/app-drafts.before-autosave.json`). New `scripts/leaning.py`: each mark moves the
+  weight of the light, framing, mood, palette (and detail) options its prompt used, matched by text;
+  `codex_run.py --mix` picks options by these weights (liked about 1.6× as often in a 4-image batch, disliked about
+  half, every option keeps a chance; `--no-lean` to switch off; "lean" in the change column), and Codex's fresh
+  subjects go further from liked subjects and away from disliked ones. The viewer says what a mark moves; the Taste
+  page shows "How new runs lean" per style. Distil stays (written edits to the style; the leaning only re-weights
+  options). Viewer: an image outside the current filter steps through the whole batch. Run chip stays one line.
+  Undo: `git revert` this commit (the 40 saved drafts stay in ratings.csv; the copy has them).
 - **21 Nov 2026** – Web app: **Change the style** from wherever you see its images (viewer key E, gallery large view,
   a single-style batch, each style on the Taste page). Write what should change ("fewer elements, less
   repetition"); Codex proposes the smallest edit to the style's fields (`codex_text.py style`, read-only, ~15 s),

@@ -4,6 +4,7 @@ export const store = {
   data: null,      // GET /api/batch/<batch>: summary + items
   show: 'to-rate', // grid filter
   styles: {},      // key -> {name, palette, description}
+  justRated: new Set(),  // marked since the batch was opened: kept in the "To rate" grid until it is read again
 };
 
 export const item = (name) => store.data?.items.find((im) => im.name === name);
@@ -11,12 +12,13 @@ export const item = (name) => store.data?.items.find((im) => im.name === name);
 export const kindOf = (im) => im.change || (im.mode === 'text' ? 'from text' : im.mode) || '';
 export const styleName = (key) => store.styles[key]?.name || key || 'no style';
 
-// What the grid shows under each filter. Drafts are still "to rate": nothing is final until saved.
+// What the grid shows under each filter. An image marked while the batch is open stays under "To rate" too,
+// so the grid doesn't reflow under the pointer; it moves to "Rated" the next time the batch is opened.
 export const FILTERS = {
-  'to-rate': { label: 'To rate', test: (im) => im.status === 'new' || im.status === 'draft',
+  'to-rate': { label: 'To rate', test: (im) => im.status === 'new' || store.justRated.has(im.name),
                empty: 'Nothing left to rate in this batch.' },
   rated: { label: 'Rated', test: (im) => im.status === 'rated',
-           empty: 'No saved ratings yet. Marks become ratings when you save the batch.' },
+           empty: 'No ratings yet. Press Up or Down on an image: it counts at once.' },
   ignored: { label: 'Ignored', test: (im) => im.status === 'ignored',
              empty: 'No ignored images. Press I on an image to hide it from the grid.' },
 };

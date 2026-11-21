@@ -32,6 +32,8 @@ Medium: {medium}
 Subjects that fit (examples, do not repeat them): {examples}
 Never: {avoid}
 Already used recently (do not repeat or closely echo): {recent}
+Marc rated these up (go further in their direction, new scenes, not copies): {liked}
+Marc rated these down (steer away from what they have in common): {disliked}
 {hint}
 Write {n} new subjects for this style. Each one: a concrete scene in 8-20 words, different from the others in place,
 scale and main shape. No text, letters, logos, brands, real named people or characters from films, games or comics.
@@ -141,10 +143,18 @@ def subjects(a):
         pool = list(s.get('subjects') or ['a quiet scene that suits the style'])
         random.shuffle(pool)
         return {'subjects': [f'{pool[i % len(pool)]} (dry run)' for i in range(a.n)], 'seconds': 0, 'dry_run': True}
+    try:   # what Marc's thumbs said about earlier subjects of this style (scripts/leaning.py)
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        from leaning import leaning
+        lean = leaning(a.style)
+    except Exception:
+        lean = {}
     text = SUBJECTS.format(name=s.get('name', a.style), description=s.get('description', ''),
                            medium=s.get('camera_or_medium', ''), examples='; '.join(s.get('subjects') or []),
                            avoid='; '.join(s.get('avoid') or []) or 'nothing listed',
                            recent='; '.join(recent_subjects(a.style)) or 'none yet',
+                           liked='; '.join(lean.get('liked_subjects') or []) or 'none yet',
+                           disliked='; '.join(lean.get('disliked_subjects') or []) or 'none yet',
                            hint=f'Marc asks for: {a.hint}\n' if a.hint else '', n=a.n)
     answer, secs = ask(f'subjects:{a.style}', text)
     got = [clean(x, 200) for x in parse_json(answer).get('subjects', []) if str(x).strip()]

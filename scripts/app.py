@@ -31,8 +31,8 @@ Runs (21 Nov 2026): one queue, one image run at a time. New runs (batch.py), sin
 (run_list.py) and variations (variations.py) are queued from the page; a run started from chat holds the queue
 until it ends. Codex also writes subjects and rewrites prompts (codex_text.py, read-only text jobs).
 
-Draft, then save: marks are drafts until "Save ratings" appends them to ratings.csv in one go.
-Saved ratings are read-only here, because distil.py remembers its place by row count.
+Marks are saved at once (21 Nov 2026): each Up / Down / take-back appends a row to ratings.csv, the latest row per
+image wins (rate.latest). app-drafts.json is only read once, to save marks left from before.
 """
 import argparse, csv, json, os, sys, threading, webbrowser
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -75,10 +75,10 @@ def write_json(path, data):
 
 
 def saved_ratings():
-    """ratings.csv as {(batch, name): row}. A later row for the same image wins."""
+    """ratings.csv as {(batch, name): row}: the latest mark per image, cleared marks left out."""
     if not rate.RATINGS.exists():
         return {}
-    return {(r['batch'], r['name']): r for r in csv.DictReader(open(rate.RATINGS, encoding='utf-8'))}
+    return {(r['batch'], r['name']): r for _, r in rate.latest(list(csv.DictReader(open(rate.RATINGS, encoding='utf-8'))))}
 
 
 # ---------------------------------------------------------------- batches and images
@@ -99,14 +99,14 @@ def batch_images(batch):
     status: 'rated' (saved, read-only) > 'ignored' > 'draft' (marked, not saved) > 'new'."""
     runs = rate.batch_runs(batch)
     saved = saved_ratings()
-    drafts = read_json(DRAFTS, {}).get(batch, {})
     ignored = set(read_json(IGNORED, {}).get(batch, []))
     out = []
     for i, name in enumerate(rate.batch_images(batch), 1):
         run = runs.get(name, {})
         s = saved.get((batch, name))
-        marked = (drafts.get(name) or {}).get('rating')  # a "why" alone is kept, but is not a draft yet
-        status = 'rated' if s else 'ignored' if name in ignored else 'draft' if marked else 'new'
+        # One mark per image, saved at once (21 Nov 2026): "draft" is the mark the page shows and changes,
+        # "saved" stays empty (nothing is read-only any more). Old drafts are saved on start (migrate_drafts).
+        status = 'rated' if s else 'ignored' if name in ignored else 'new'
         out.append({
             'name': name, 'file': f'{name}.png', 'number': i, 'status': status,
             'mtime': int((BASE / batch / f'{name}.png').stat().st_mtime),
@@ -114,8 +114,8 @@ def batch_images(batch):
             'seed': run.get('seed', ''), 'prompt': run.get('prompt', ''),
             'width': run.get('width', ''), 'height': run.get('height', ''),
             'date': run.get('date', ''), 'time': run.get('time', ''), 'seconds': run.get('seconds', ''),
-            'draft': drafts.get(name),
-            'saved': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
+            'draft': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
+            'saved': None,
         })
     return out
 
@@ -700,6 +700,28 @@ def undo_style_edit(eid):
     return rec
 
 
+def migrate_drafts():
+    """Marks made before 21 Nov 2026 waited as drafts until "Save ratings". Marks are saved at once now: save the old
+    ones on start (not ignored, not rated already), keep a copy of the drafts file, then empty it."""
+    drafts = read_json(DRAFTS, {})
+    if not drafts:
+        return
+    saved, ignored, n = saved_ratings(), read_json(IGNORED, {}), 0
+    for batch, marks in drafts.items():
+        if not is_batch(batch):
+            continue
+        names = rate.batch_images(batch)
+        todo = [(name, d['rating'], d.get('why', '')) for name, d in sorted(marks.items())
+                if d.get('rating') in rate.RATINGS_ALLOWED and name in names and (batch, name) not in saved
+                and name not in ignored.get(batch, [])]
+        if todo:
+            rate.append_ratings(batch, todo)
+            n += len(todo)
+    write_json(DRAFTS.with_name('app-drafts.before-autosave.json'), drafts)
+    write_json(DRAFTS, {})
+    print(f'saved {n} marks that were waiting as drafts (copy: app-drafts.before-autosave.json)')
+
+
 # ---------------------------------------------------------------- HTTP
 
 class ApiError(Exception):
@@ -716,7 +738,8 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/batches'): 'get_batches',
         ('GET', 'api/batch'): 'get_batch',
         ('GET', 'api/styles'): 'get_styles',
-        ('PUT', 'api/draft'): 'put_draft',
+        ('PUT', 'api/mark'): 'put_mark',
+        ('GET', 'api/leaning'): 'get_leaning',
         ('POST', 'api/ignore'): 'post_ignore',
         ('POST', 'api/save'): 'post_save',
         ('GET', 'api/allowance'): 'get_allowance',
@@ -773,7 +796,7 @@ class Handler(BaseHTTPRequestHandler):
         if not is_batch(batch) or name not in rate.batch_images(batch):
             raise ApiError(404, f'no image "{name}" in batch "{batch}"')
         if (batch, name) in saved_ratings():
-            raise ApiError(409, 'this rating is saved already; saved ratings are read-only')
+            raise ApiError(409, 'this image is rated: take the mark back first')
         return batch, name
 
     def send(self, status, body, ctype='application/json', cache=None):
@@ -850,24 +873,38 @@ class Handler(BaseHTTPRequestHandler):
                 'children': children, 'failed': failed_images(batch, {im['name'] for im in images}),
                 'path': str(BASE / batch), 'rel_path': f'generated/codex/{batch}'}
 
-    def put_draft(self):
-        """Set or clear one draft: {batch, name, rating: keep (up)|no (down)|null, why}."""
+    def put_mark(self):
+        """Mark one image, saved at once: {batch, name, rating: keep (up) | no (down) | null (take back), why}.
+        Appends a row to ratings.csv (the latest row per image wins) and says which parts of the style's prompt the
+        mark moves (scripts/leaning.py), so the page can tell Marc how new runs will lean."""
         body = self.read_body()
-        batch, name = self.image_from(body)
+        batch, name = str(body.get('batch', '')), str(body.get('name', ''))
+        if not is_batch(batch) or name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in batch "{batch}"')
         rating, why = body.get('rating'), ' '.join(str(body.get('why') or '').split())[:300]
         if rating not in (None, *rate.RATINGS_ALLOWED):
             raise ApiError(400, 'rating must be keep (up), no (down) or null')
         with LOCK:
-            drafts = read_json(DRAFTS, {})
-            mine = drafts.setdefault(batch, {})
-            if rating is None and not why:
-                mine.pop(name, None)
-            else:
-                mine[name] = {'rating': rating, 'why': why}
-            if not mine:
-                drafts.pop(batch)
-            write_json(DRAFTS, drafts)
-        return {'ok': True}
+            if name in read_json(IGNORED, {}).get(batch, []):
+                raise ApiError(409, 'this image is ignored: restore it first')
+            now = saved_ratings().get((batch, name))
+            if rating is None:
+                if now:
+                    rate.append_ratings(batch, [(name, 'cleared', '')], allow_clear=True)
+            elif not now or now['rating'] != rating or now['why'] != why:
+                rate.append_ratings(batch, [(name, rating, why)])
+        run = rate.batch_runs(batch).get(name, {})
+        from leaning import matched_axes
+        return {'ok': True, 'style': run.get('style', ''), 'moves': matched_axes(run.get('style', ''), run.get('prompt', '')),
+                'since_last': len(rate.since_last()), 'due': rate.DUE}
+
+    def get_leaning(self, style=''):
+        """What the ratings say per option of each style's prompt, and liked / disliked subjects."""
+        from leaning import leaning, latest_marks
+        taste = read_json(ROOT / 'taste' / 'taste.json', {}).get('styles', {})
+        marks = latest_marks()
+        keys = [style] if style else sorted(taste)
+        return {'leaning': {k: leaning(k, taste, marks) for k in keys if k in taste}}
 
     def post_ignore(self):
         """Hide or show one image: {batch, name, ignored: true|false}. The file stays on disk."""
@@ -1068,15 +1105,16 @@ class Handler(BaseHTTPRequestHandler):
         done = state.get('rows', 0)
         per = collections.defaultdict(lambda: {'all': {'keep': 0, 'almost': 0, 'no': 0},
                                                'since': {'keep': 0, 'almost': 0, 'no': 0}})
-        for i, r in enumerate(rows):
+        marks = rate.latest(rows)   # latest mark per image: a changed mark counts once
+        for i, r in marks:
             if r['rating'] in rate.RATINGS_SEEN:
                 per[r['style'] or '(no style)']['all'][r['rating']] += 1
                 if i >= done:
                     per[r['style'] or '(no style)']['since'][r['rating']] += 1
-        # Unsaved = what "Save ratings" would write: marked, not ignored, not saved already.
-        unsaved = {b: sum(1 for im in batch_images(b) if im['status'] == 'draft')
-                   for b in read_json(DRAFTS, {}) if is_batch(b)}
-        return {'styles': per, 'total': len(rows), 'since_last': max(0, len(rows) - done), 'due': rate.DUE,
+        unsaved = {}
+        rows = [r for _, r in marks]
+        done_n = sum(1 for i, _ in marks if i < done)
+        return {'styles': per, 'total': len(rows), 'since_last': len(rows) - done_n, 'due': rate.DUE,
                 'marked': state.get('marked'),
                 'unsaved': {b: n for b, n in unsaved.items() if n},
                 'ignored': sum(len(v) for v in read_json(IGNORED, {}).values())}
@@ -1137,6 +1175,7 @@ def main():
             continue
     else:
         sys.exit(f'no free port between {a.port} and {a.port + 9}')
+    migrate_drafts()
     global QUEUE_FILE
     if DRY_RUN:   # its own queue: a dry-run item must never become a real run after a restart
         QUEUE_FILE = BASE / 'app-queue.dry.json'

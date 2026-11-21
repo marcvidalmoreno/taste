@@ -23,7 +23,6 @@ export async function renderOverview(view) {
       h('p', {}, `${plural(o.total, 'saved rating')} in total`)),
     h('div', { class: 'overview' },
       distilCard(o),
-      unsavedCard(o),
       notes,
       chartCard(o, all, draw)));
   draw();
@@ -53,18 +52,6 @@ function distilCard(o) {
       e.target.removeAttribute('aria-busy');
     } }, 'Preview the distil summary'),
     out);
-}
-
-function unsavedCard(o) {
-  const entries = Object.entries(o.unsaved);
-  const n = entries.reduce((s, [, k]) => s + k, 0);
-  return h('article', { class: 'card' },
-    h('h2', {}, 'Not saved yet'),
-    n ? [h('p', { class: 'big' }, plural(n, 'mark')),
-      h('p', { class: 'muted small' }, 'Drafts count only once saved. Open a batch to review and save:'),
-      h('ul', { class: 'plain' }, entries.map(([b, k]) => h('li', {}, h('a', { href: batchHref(b) }, batchTitle(b)), ` · ${k}`)))]
-      : [h('p', { class: 'big' }, 'Nothing'), h('p', { class: 'muted small' }, 'Every mark is saved.')],
-    o.ignored > 0 && h('p', { class: 'muted small' }, `${plural(o.ignored, 'image')} ignored (left out of ratings).`));
 }
 
 function chartCard(o, all, redraw) {

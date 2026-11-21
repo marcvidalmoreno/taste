@@ -583,3 +583,15 @@ dialog.style-edit article { max-width: 46rem; }
 .style-edits li { margin: 0 0 .5rem; }
 .style-edits .is-undone { opacity: .55; }
 .edit-line { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+
+/* 13. Leaning: how the thumbs steer a style's next runs (21 Nov 2026) ------------------------------ */
+.leaning { margin: .25rem 0 .5rem; }
+.lean-list { display: grid; gap: .3rem; margin: .5rem 0; }
+.lean-list li { display: grid; grid-template-columns: 9rem 1fr auto; gap: .75rem; align-items: baseline; font-size: .88rem; margin: 0; }
+.lean-odds { font-variant-numeric: tabular-nums; color: var(--pico-muted-color); }
+.lean-list li.up .lean-odds { color: var(--text); font-weight: 600; }
+/* The run chip stays one line: the detail part truncates, and goes on narrow windows */
+.job-chip { white-space: nowrap; max-width: min(34rem, 45vw); }
+.job-chip > a { min-width: 0; overflow: hidden; }
+.job-chip .label { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1000px) { .job-chip .label .muted { display: none; } }
