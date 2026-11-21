@@ -110,6 +110,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – New style `kalahari-documentary` from the 95 Kalahari documentary photos of the 19 Nov collection
+  (local only): golden-hour and firelight portraits, hunters in single file, red sand; adults only, no nudity, no
+  real named people. Palette measured. 30 styles. Undo: `git revert` this commit, then `build_taste.py .`
 - **21 Nov 2026** – Style tweaks from Marc's feedback on the 20 Nov round: cyberpunk poster less pink and more
   varied (acid green / amber light, a red-orange sun, a toxic-green palette, top-down and close-up compositions,
   avoid pink as the main colour); fractal worlds purely abstract (no cities, objects or plants); iridescent abstract

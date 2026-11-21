@@ -736,6 +736,46 @@
     ]
    }
   },
+  "kalahari-documentary": {
+   "name": "Kalahari documentary",
+   "prompt": "Documentary photography of hunter-gatherer life in the Kalahari: weathered faces in close portrait, adults in leather garments and bead ornaments, hunters with bows walking in single file through dry grass, firelight gatherings, red sand and thorn trees; warm, close and dignified. Light: low golden-hour sun from the side, warm skin tones, long shadows. Composition: a tight portrait, one face filling the frame, eyes to the camera. Medium: documentary photography, 35mm or 85mm lens, natural light, shallow depth of field, fine film grain. Mood: dignified, calm, intimate. Detail: deep skin texture and wrinkles, leather and ostrich-eggshell beads, red sand dust, dry golden grass, sharp eyes and soft background. Palette: #2d1e18, #674b3c, #9b7b63, #c4ae96, #e0e1dd, #1d6299, #a15f35. Avoid: nudity; children; staged tourist scenes; costume or caricature; exoticising or mocking poses; watermarks; readable text; portraits of real, named people. No text, no logos, no watermark.",
+   "subjects": [
+    "an elder with a deeply lined face, looking into the camera at golden hour",
+    "three hunters with bows walking in single file through tall grass",
+    "a group of adults laughing around a night fire",
+    "a woman making an ostrich-eggshell bead necklace in the shade"
+   ],
+   "looks": [
+    "Documentary photography of hunter-gatherer life in the Kalahari: weathered faces in close portrait, adults in leather garments and bead ornaments, hunters with bows walking in single file through dry grass, firelight gatherings, red sand and thorn trees; warm, close and dignified. Light: low golden-hour sun from the side, warm skin tones, long shadows. Composition: a tight portrait, one face filling the frame, eyes to the camera. Medium: documentary photography, 35mm or 85mm lens, natural light, shallow depth of field, fine film grain. Mood: dignified, calm, intimate. Detail: deep skin texture and wrinkles, leather and ostrich-eggshell beads, red sand dust, dry golden grass, sharp eyes and soft background. Palette: #2d1e18, #674b3c, #9b7b63, #c4ae96, #e0e1dd, #1d6299, #a15f35. Avoid: nudity; children; staged tourist scenes; costume or caricature; exoticising or mocking poses; watermarks; readable text; portraits of real, named people. No text, no logos, no watermark.",
+    "Documentary photography of hunter-gatherer life in the Kalahari: weathered faces in close portrait, adults in leather garments and bead ornaments, hunters with bows walking in single file through dry grass, firelight gatherings, red sand and thorn trees; warm, close and dignified. Light: night firelight on faces, deep darkness around. Composition: a line of hunters walking away through tall grass. Medium: documentary photography, 35mm or 85mm lens, natural light, shallow depth of field, fine film grain. Mood: warm, communal, joyful. Detail: deep skin texture and wrinkles, leather and ostrich-eggshell beads, red sand dust, dry golden grass, sharp eyes and soft background. Palette: #2d1e18, #674b3c, #9b7b63, #c4ae96, #e0e1dd, #1d6299, #a15f35. Avoid: nudity; children; staged tourist scenes; costume or caricature; exoticising or mocking poses; watermarks; readable text; portraits of real, named people. No text, no logos, no watermark.",
+    "Documentary photography of hunter-gatherer life in the Kalahari: weathered faces in close portrait, adults in leather garments and bead ornaments, hunters with bows walking in single file through dry grass, firelight gatherings, red sand and thorn trees; warm, close and dignified. Light: hard midday light, pale grass and a deep blue sky. Composition: a small group around a fire, hands and faces close. Medium: documentary photography, 35mm or 85mm lens, natural light, shallow depth of field, fine film grain. Mood: quiet, vast, timeless. Detail: deep skin texture and wrinkles, leather and ostrich-eggshell beads, red sand dust, dry golden grass, sharp eyes and soft background. Palette: #2d1e18, #674b3c, #9b7b63, #c4ae96, #e0e1dd, #1d6299, #a15f35. Avoid: nudity; children; staged tourist scenes; costume or caricature; exoticising or mocking poses; watermarks; readable text; portraits of real, named people. No text, no logos, no watermark.",
+    "Documentary photography of hunter-gatherer life in the Kalahari: weathered faces in close portrait, adults in leather garments and bead ornaments, hunters with bows walking in single file through dry grass, firelight gatherings, red sand and thorn trees; warm, close and dignified. Light: soft dusk, a sunset glow behind silhouettes. Composition: one figure small against the wide flat desert. Medium: documentary photography, 35mm or 85mm lens, natural light, shallow depth of field, fine film grain. Mood: focused, alert, the hunt. Detail: deep skin texture and wrinkles, leather and ostrich-eggshell beads, red sand dust, dry golden grass, sharp eyes and soft background. Palette: #2d1e18, #674b3c, #9b7b63, #c4ae96, #e0e1dd, #1d6299, #a15f35. Avoid: nudity; children; staged tourist scenes; costume or caricature; exoticising or mocking poses; watermarks; readable text; portraits of real, named people. No text, no logos, no watermark."
+   ],
+   "template": "Documentary photography of hunter-gatherer life in the Kalahari: weathered faces in close portrait, adults in leather garments and bead ornaments, hunters with bows walking in single file through dry grass, firelight gatherings, red sand and thorn trees; warm, close and dignified. {light} {composition} Medium: documentary photography, 35mm or 85mm lens, natural light, shallow depth of field, fine film grain. {mood} Detail: deep skin texture and wrinkles, leather and ostrich-eggshell beads, red sand dust, dry golden grass, sharp eyes and soft background. {palette} Avoid: nudity; children; staged tourist scenes; costume or caricature; exoticising or mocking poses; watermarks; readable text; portraits of real, named people. No text, no logos, no watermark.",
+   "axes": {
+    "light": [
+     "Light: low golden-hour sun from the side, warm skin tones, long shadows.",
+     "Light: night firelight on faces, deep darkness around.",
+     "Light: hard midday light, pale grass and a deep blue sky.",
+     "Light: soft dusk, a sunset glow behind silhouettes."
+    ],
+    "composition": [
+     "Composition: a tight portrait, one face filling the frame, eyes to the camera.",
+     "Composition: a line of hunters walking away through tall grass.",
+     "Composition: a small group around a fire, hands and faces close.",
+     "Composition: one figure small against the wide flat desert."
+    ],
+    "mood": [
+     "Mood: dignified, calm, intimate.",
+     "Mood: warm, communal, joyful.",
+     "Mood: quiet, vast, timeless.",
+     "Mood: focused, alert, the hunt."
+    ],
+    "palette": [
+     "Palette: #2d1e18, #674b3c, #9b7b63, #c4ae96, #e0e1dd, #1d6299, #a15f35."
+    ]
+   }
+  },
   "microscope-rocks": {
    "name": "Microscope rocks",
    "prompt": "Thin sections of rock under a polarising microscope: shattered mosaics of crystals in electric interference colours, cracks and grain boundaries. Light: transmitted polarised light, glowing colours against black extinction. Composition: all-over, edge to edge, no horizon; a mosaic of grains, sometimes one large crystal as focus. Medium: photomicrograph of a petrographic thin section, crossed polarisers. Mood: hidden, vivid, scientific, abstract. Detail: sharp crystal edges, fine cleavage lines, rainbow interference bands, dark cracks. Palette: #1d191b, #514a4c, #a46e40, #458ba0, #bbb895, #aa6436, #2c7ea2. Avoid: labels and scale bars; blur; 3D render look. No text, no logos, no watermark.",
