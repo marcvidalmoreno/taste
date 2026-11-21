@@ -110,6 +110,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – New [`docs/local-route.md`](docs/local-route.md): plan for a local, unfiltered image model on Marc's
+  personal PC (set-up steps, limits, what Claude Code builds there). Undo: `git revert` this commit.
 - **21 Nov 2026** – New style `kalahari-documentary` from the 95 Kalahari documentary photos of the 19 Nov collection
   (local only): golden-hour and firelight portraits, hunters in single file, red sand; adults only, no nudity, no
   real named people. Palette measured. 30 styles. Undo: `git revert` this commit, then `build_taste.py .`
