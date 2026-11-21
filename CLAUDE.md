@@ -17,6 +17,9 @@ Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, n
   Marc applies in the page; that apply is his OK. The app rewrites the style file, runs `build_taste.py` and logs
   before / after in `generated/codex/style-edits.json`, but never commits. When Marc says "commit my style edits":
   review `git diff taste/`, add a changelog entry from that log, commit and push.
+- Distil runs in the web app too (Codex proposes per style, Marc applies; 21 Nov 2026). "Distil my ratings" in chat
+  still works the old way, and when Codex proposals miss what the images show, that is the moment to offer it
+  (parked options 2 and 3: the "taste – distil automation" doc).
 - "Process my app notes": `scripts/notes.py` lists the notes Marc left in the web app; look at what each points
   at, propose the style edits as one set, apply after his OK, then answer each with `notes.py done <id> "..."`.
 - Files are the hand-off: images, `generated/codex/runs.csv`, `generated/codex/ratings.csv` (all git-ignored).

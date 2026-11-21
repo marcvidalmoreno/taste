@@ -5,6 +5,9 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_text.py rewrite --prompt "<old prompt>" --change "<what should change>"
         [--keep subject,palette,composition,light]
   .venv/Scripts/python -I scripts/codex_text.py style --style <style> --change "<what should change>"
+  .venv/Scripts/python -I scripts/codex_text.py distil --style <style> --ratings <ratings.json>
+        # ratings.json: [{"rating": "keep"|"no", "why": "...", "change": "...", "prompt": "..."}], the ratings of this
+        # style since the last distil; answers like style (a proposal), or {"changes": {}} when nothing should change
   add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
 
 Prints one JSON object on stdout: {"subjects": [...]}, {"prompt": "...", "summary": "..."} or, for style,
@@ -93,12 +96,12 @@ def recent_subjects(style, limit=40):
     return list(dict.fromkeys(reversed(out)))[:limit]
 
 
-def ask(task, text):
+def ask(task, text, effort='low'):
     """One codex exec, read-only, empty folder. Returns (answer text, seconds)."""
     WORK.mkdir(parents=True, exist_ok=True)
     out = WORK / f'answer-{int(time.time() * 1000)}.txt'
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'read-only',
-           '-c', 'model_reasoning_effort="low"', '-o', str(out)]
+           '-c', f'model_reasoning_effort="{effort}"', '-o', str(out)]
     start = time.time()
     res = subprocess.run(cmd, input=text, cwd=WORK, capture_output=True, text=True, encoding='utf-8',
                          errors='replace', timeout=300)
@@ -176,6 +179,64 @@ def rewrite(a):
     return {'prompt': prompt, 'summary': clean(d.get('summary', ''), 160), 'seconds': secs}
 
 
+DISTIL = """You keep the written description of one visual style that an image model follows. Do not run commands,
+do not read or write files. Answer with JSON only.
+
+The style now (JSON):
+{style}
+
+Marc rated {n} images made with it since the last review ({ups} up, {downs} down). Each line: his thumb, his words
+if any, what was picked for that image ("mix l2 c0 m3 p1" = option numbers of light, composition, mood, palette;
+"x:" = one part pushed to an extreme; "lean" = picked by earlier ratings), and the prompt:
+{ratings}
+
+Find what the ups share and what the downs share. Propose the smallest edits to the style that would give more of
+the first and less of the second in every future image: sharpen or replace an option that keeps getting thumbs down,
+add a "prefer" line for what the ups share, an "avoid" line for what the downs share. Keep each field's type (lists
+stay lists of short phrases), plain concrete language, no text, logos, real named people or named artists. If the
+ratings are too few or too mixed to say anything, change nothing.
+Answer exactly: {{"changes": {{"<field>": <new value>, ...}}, "summary": "<what the ratings say and what you changed, under 30 words>"}}"""
+
+
+def validated(now, d):
+    """Only real, well-typed edits of the editable fields."""
+    out = {}
+    for k, v in (d.get('changes') or {}).items():
+        if k not in EDITABLE:
+            continue
+        if isinstance(v, list):
+            v = [clean(x, 300) for x in v if clean(x, 300)]
+            if not v or (k in now and isinstance(now[k], str) and k != 'texture_detail'):
+                continue
+        elif isinstance(v, str):
+            v = clean(v, 1200)
+            if not v or (k in now and isinstance(now[k], list)):
+                continue
+        else:
+            continue
+        if v != now.get(k):
+            out[k] = v
+    return out
+
+
+def distil(a):
+    s = style_info(a.style)
+    now = {k: s[k] for k in EDITABLE if k in s}
+    rows = json.load(open(a.ratings, encoding='utf-8'))
+    ups = sum(1 for r in rows if r.get('rating') == 'keep')
+    downs = sum(1 for r in rows if r.get('rating') == 'no')
+    if a.dry_run:
+        return {'changes': {'prefer': list(s.get('prefer') or []) + [f'dry run: {ups} up, {downs} down']},
+                'summary': f'dry run: {ups} up, {downs} down; a stand-in line added to lean towards', 'seconds': 0, 'dry_run': True}
+    lines = '\n'.join(f"- {'UP' if r.get('rating') == 'keep' else 'DOWN'}"
+                      + (f" ({clean(r.get('why'), 200)})" if r.get('why') else '')
+                      + f" [{clean(r.get('change'), 80) or '-'}] {clean(r.get('prompt'), 900)}" for r in rows[-24:])
+    answer, secs = ask(f'distil:{a.style}', DISTIL.format(style=json.dumps(now, indent=1, ensure_ascii=False), n=len(rows),
+                                                         ups=ups, downs=downs, ratings=lines), effort='medium')
+    d = parse_json(answer)
+    return {'changes': validated(now, d), 'summary': clean(d.get('summary', ''), 300), 'seconds': secs}
+
+
 def style_edit(a):
     s = style_info(a.style)
     now = {k: s[k] for k in EDITABLE if k in s}
@@ -224,7 +285,11 @@ if __name__ == '__main__':
     e.add_argument('--style', required=True)
     e.add_argument('--change', required=True)
     e.add_argument('--dry-run', action='store_true')
+    t = sub.add_parser('distil')
+    t.add_argument('--style', required=True)
+    t.add_argument('--ratings', required=True)
+    t.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
     a.n = max(1, min(12, getattr(a, 'n', 4)))
-    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit}[a.cmd]
+    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil}[a.cmd]
     print(json.dumps(run(a), ensure_ascii=False))

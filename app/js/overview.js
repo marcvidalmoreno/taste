@@ -41,8 +41,9 @@ function distilCard(o) {
         h('i', { style: { width: Math.min(100, (n / o.due) * 100) + '%' } })),
       h('span', { class: 'num' }, `${n} / ${o.due}`)),
     h('p', { class: 'muted small' }, o.marked ? `Ratings since the last distil (marked ${o.marked}).` : 'No distil yet: every rating counts.'),
-    h('p', { class: 'small' }, 'To distil, ask Claude Code to "distil my ratings": it reads the summary, proposes style edits, and you approve them.'),
-    n > 0 && h('button', { class: 'secondary outline', onClick: async (e) => {
+    h('p', { class: 'small' }, 'Codex reads the new ratings per style and proposes edits; you apply them style by style.'),
+    n > 0 && h('a', { href: '#/distil', role: 'button', class: due ? '' : 'secondary outline' }, due ? 'Review the distil' : 'Distil now'), ' ',
+    n > 0 && h('button', { class: 'ghost small', onClick: async (e) => {
       e.target.setAttribute('aria-busy', 'true');
       try {
         const r = await api('distil');

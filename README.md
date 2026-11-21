@@ -94,7 +94,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 | How a style's next runs lean (from the thumbs) | `.venv/Scripts/python -I scripts/leaning.py <style>` |
 | Rate (numbers from the sheet) | `.venv/Scripts/python -I scripts/rate.py <batch> 1=up 2=down:too-busy 3=down:dark` |
 | Ratings since the last distil | `.venv/Scripts/python -I scripts/rate.py status` |
-| Distil (every ~20 ratings) | `.venv/Scripts/python -I scripts/distil.py`, Claude proposes style edits, I approve, `build_taste.py`, then `distil.py --mark` |
+| Distil (every ~20 ratings) | In the web app: Overview → **Distil** (Codex proposes, you apply). By hand: `.venv/Scripts/python -I scripts/distil.py`, Claude proposes, `build_taste.py`, then `distil.py --mark` |
 | Allowance now | `.venv/Scripts/python -I scripts/codex_run.py read` |
 
 Variations change one thing each: palette, subject, composition (and mood with `--n 4`). The seed is attached as a
@@ -114,6 +114,14 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Distil in the app ("option 1"; options 2 and 3, scheduled Claude and fully automatic, are parked
+  in a doc). New **Distil** page (`#/distil`, from the Overview card): one button asks Codex about every style with
+  2+ ratings since the last distil (`codex_text.py distil`, medium reasoning, 3 at a time, about 10–30 s each). Each
+  style's card shows the images rated (ups and downs, with the why), Codex's reading and its proposed edit field by
+  field; untick, Apply (undoable, logged in `style-edits.json`) or Skip; "No change needed" when the ratings are too
+  few or mixed. "Mark the distil done" runs `distil.py --mark` from the page (Marc's call; not in dry-run mode).
+  Proposals live in `generated/codex/distil-run.json`, so they survive closing the page or a restart. The router
+  now matches the longest path first. Undo: `git revert` this commit.
 - **21 Nov 2026** – Thumbs count at once and steer the style. Web app: Up / Down is saved the moment you press it
   (no drafts, no "Save ratings" step; the save bar and review dialog are gone) and can be changed or taken back any
   time: `ratings.csv` stays append-only, the latest row per image wins, `cleared` means taken back (`rate.latest`,

@@ -23,6 +23,7 @@ Files this server reads or writes (all in generated/codex/)
   <batch>/run.json     what a run started here was, where it came from and how it was set (written)
   app-queue.json       runs waiting (written; app-queue.dry.json with --dry-run, so a test never runs for real)
   claude-notes.json    notes for Claude Code (written here, answered with scripts/notes.py)
+  distil-run.json      the current distil round: Codex's proposal per style and what Marc decided (written)
   style-edits.json     style edits made here: before / after of each, for Undo (written; the style file itself is
                        taste/styles/<style>.json, rewritten in the repo's format, then build_taste.py)
   .progress.json       live progress of the running run (read; written by the run scripts)
@@ -722,6 +723,85 @@ def migrate_drafts():
     print(f'saved {n} marks that were waiting as drafts (copy: app-drafts.before-autosave.json)')
 
 
+# -- distil in the app (21 Nov 2026, "option 1"): Codex proposes per style from the ratings since the last distil,
+# Marc reviews and applies style by style, then marks the distil done. Proposals live in distil-run.json, so they
+# survive closing the page or restarting the app. Options 2 (scheduled Claude) and 3 (automatic) are parked.
+
+DISTIL_RUN = BASE / 'distil-run.json'
+DISTIL_MIN = 2          # ratings a style needs since the last distil before Codex is asked about it
+_DLOCK = threading.Lock()
+_DRUN = {}              # the current round, in memory once loaded: the worker threads and Marc's decisions share it
+
+
+def current_run():
+    if 'run' not in _DRUN:
+        _DRUN['run'] = read_json(DISTIL_RUN, None)
+    return _DRUN['run']
+
+
+def distil_since():
+    """{style: {'n', 'up', 'down', 'images': [{batch, name, rating, why}]}} for the ratings since the last distil."""
+    out = {}
+    for r in rate.since_last():
+        if r['rating'] not in ('keep', 'no'):
+            continue
+        d = out.setdefault(r['style'] or '(no style)', {'n': 0, 'up': 0, 'down': 0, 'images': []})
+        d['n'] += 1
+        d['up' if r['rating'] == 'keep' else 'down'] += 1
+        d['images'].append({'batch': r['batch'], 'name': r['name'], 'rating': r['rating'], 'why': r['why']})
+    return out
+
+
+def distil_state():
+    run = current_run()
+    st = read_json(rate.STATE, {})
+    since = distil_since()
+    return {'run': run, 'since': since, 'total': sum(d['n'] for d in since.values()), 'due': rate.DUE,
+            'marked': st.get('marked'), 'min': DISTIL_MIN, 'dry_run': DRY_RUN}
+
+
+def _save_run(run):
+    with _DLOCK:
+        write_json(DISTIL_RUN, run)
+
+
+def start_distil(styles):
+    """Ask Codex about each style (3 at a time). Each style's card fills in as its answer arrives."""
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    since = distil_since()
+    run = {'started': time.strftime('%Y-%m-%d %H:%M'), 'running': True, 'finished': None,
+           'styles': {s: {'status': 'waiting', 'n': since[s]['n'], 'up': since[s]['up'], 'down': since[s]['down']} for s in styles}}
+    _DRUN['run'] = run
+    _save_run(run)
+    SPECS.mkdir(parents=True, exist_ok=True)
+    rows = [r for r in rate.since_last() if r['rating'] in ('keep', 'no')]
+
+    def one(style):
+        card = run['styles'][style]
+        card['status'] = 'thinking'
+        _save_run(run)
+        try:
+            f = SPECS / f'distil-{style}.json'
+            write_json(f, [{k: r[k] for k in ('rating', 'why', 'change', 'prompt')} for r in rows if r['style'] == style])
+            r = text_job('distil', '--style', style, '--ratings', str(f))
+            f.unlink(missing_ok=True)
+            now = style_file(style)
+            card.update(status='ready' if r['changes'] else 'nothing', summary=r.get('summary', ''),
+                        changes=r['changes'], before={k: now.get(k) for k in r['changes']}, seconds=r.get('seconds'))
+        except Exception as e:  # one style failing never stops the others
+            card.update(status='failed', error=str(e)[:300])
+        _save_run(run)
+
+    def all_of_them():
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            list(pool.map(one, styles))
+        run.update(running=False, finished=time.strftime('%Y-%m-%d %H:%M'))
+        _save_run(run)
+    threading.Thread(target=all_of_them, daemon=True).start()
+    return run
+
+
 # ---------------------------------------------------------------- HTTP
 
 class ApiError(Exception):
@@ -759,6 +839,10 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/style/apply'): 'post_style_apply',
         ('POST', 'api/style/undo'): 'post_style_undo',
         ('GET', 'api/style/edits'): 'get_style_edits',
+        ('GET', 'api/distil/state'): 'get_distil_state',
+        ('POST', 'api/distil/run'): 'post_distil_run',
+        ('POST', 'api/distil/decide'): 'post_distil_decide',
+        ('POST', 'api/distil/mark'): 'post_distil_mark',
         ('GET', 'api/job'): 'get_job',
         ('GET', 'api/overview'): 'get_overview',
         ('GET', 'api/distil'): 'get_distil',
@@ -819,7 +903,7 @@ class Handler(BaseHTTPRequestHandler):
             path = unquote(urlparse(self.path).path).strip('/')
             parts = path.split('/')
             # 1. API
-            for (m, prefix), fn in self.ROUTES.items():
+            for (m, prefix), fn in sorted(self.ROUTES.items(), key=lambda kv: -len(kv[0][1])):   # longest path first
                 if m == method and (path == prefix or path.startswith(prefix + '/')):
                     args = [p for p in path[len(prefix):].split('/') if p]
                     return self.send(200, getattr(self, fn)(*args))
@@ -1094,6 +1178,63 @@ class Handler(BaseHTTPRequestHandler):
         edits = [e for e in read_json(STYLE_EDITS, []) if not style or e['style'] == style]
         return {'edits': list(reversed(edits))[:30]}
 
+    def get_distil_state(self):
+        return distil_state()
+
+    def post_distil_run(self):
+        """Ask Codex for proposals: {styles: [...]} or every style with DISTIL_MIN+ ratings since the last distil."""
+        body = self.read_body()
+        run = current_run()
+        if run and run.get('running'):
+            raise ApiError(409, 'Codex is still working on the last request')
+        since = distil_since()
+        styles = [s for s in (body.get('styles') or sorted(since, key=lambda k: -since[k]['n']))
+                  if s in since and since[s]['n'] >= DISTIL_MIN and (ROOT / 'taste' / 'styles' / f'{s}.json').exists()]
+        if not styles:
+            raise ApiError(400, f'no style has {DISTIL_MIN} or more ratings since the last distil')
+        start_distil(styles)
+        return distil_state()
+
+    def post_distil_decide(self):
+        """Apply (with the fields Marc kept) or skip one style's proposal: {style, action: apply|skip, changes}."""
+        body = self.read_body()
+        style, action = str(body.get('style', '')), body.get('action')
+        run = current_run()
+        card = (run or {}).get('styles', {}).get(style)
+        if not card or card.get('status') not in ('ready', 'nothing', 'failed'):
+            raise ApiError(409, 'no proposal waiting for this style')
+        if action == 'apply':
+            rec = apply_style_edit(style, body.get('changes'), f'distil {run["started"][:10]}', card.get('summary', ''),
+                                   None, 'distil')
+            card.update(status='applied', edit=rec['id'])
+        elif action == 'skip':
+            card['status'] = 'skipped'
+        else:
+            raise ApiError(400, 'action: apply or skip')
+        _save_run(run)
+        return distil_state()
+
+    def post_distil_mark(self):
+        """Mark the distil done (distil.py --mark): the next one starts after the ratings so far. Marc's call."""
+        import subprocess
+        self.read_body()
+        if DRY_RUN:
+            raise ApiError(409, 'dry run: the distil is not marked (start the app without --dry-run to mark it)')
+        if (current_run() or {}).get('running'):
+            raise ApiError(409, 'Codex is still working: wait for the last proposals first')
+        r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'distil.py'), '--mark'], cwd=ROOT, capture_output=True,
+                           text=True, encoding='utf-8', errors='replace', timeout=60)
+        if r.returncode:
+            raise ApiError(500, (r.stderr or r.stdout).strip()[-300:])
+        run = current_run()
+        if run and run.get('running'):
+            raise ApiError(409, 'Codex is still working: wait for the last proposals first')
+        if run:   # keep a copy of the last round, then start clean
+            write_json(BASE / 'distil-run.last.json', run)
+        DISTIL_RUN.unlink(missing_ok=True)
+        _DRUN['run'] = None
+        return distil_state()
+
     def get_job(self):
         return job_state()
 
@@ -1120,7 +1261,7 @@ class Handler(BaseHTTPRequestHandler):
                 'ignored': sum(len(v) for v in read_json(IGNORED, {}).values())}
 
     def get_distil(self):
-        """What distil.py prints now. Read-only: --mark is never run from here."""
+        """What distil.py prints now (the summary); the Distil page has the proposals and the mark."""
         import subprocess
         r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'distil.py')], cwd=ROOT, capture_output=True,
                            text=True, encoding='utf-8', errors='replace', timeout=60)
@@ -1176,9 +1317,10 @@ def main():
     else:
         sys.exit(f'no free port between {a.port} and {a.port + 9}')
     migrate_drafts()
-    global QUEUE_FILE
-    if DRY_RUN:   # its own queue: a dry-run item must never become a real run after a restart
+    global QUEUE_FILE, DISTIL_RUN
+    if DRY_RUN:   # its own queue and distil round: a dry-run item must never become real after a restart
         QUEUE_FILE = BASE / 'app-queue.dry.json'
+        DISTIL_RUN = BASE / 'distil-run.dry.json'
     QUEUE[:] = [q for q in read_json(QUEUE_FILE, []) if isinstance(q, dict) and q.get('id')]
     threading.Thread(target=worker, daemon=True).start()
     url = f'http://127.0.0.1:{port}/'

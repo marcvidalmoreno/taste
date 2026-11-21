@@ -595,3 +595,29 @@ dialog.style-edit article { max-width: 46rem; }
 .job-chip > a { min-width: 0; overflow: hidden; }
 .job-chip .label { overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 1000px) { .job-chip .label .muted { display: none; } }
+
+/* 14. Distil page (21 Nov 2026) --------------------------------------------------------------------- */
+.distil-page .lead-note { max-width: 48rem; }
+.distil-progress { display: flex; align-items: center; gap: .5rem; }
+.distil-cards { display: grid; gap: 1rem; margin-bottom: 6rem; }
+.distil-card { margin: 0; }
+.distil-card.is-applied, .distil-card.is-skipped { opacity: .65; }
+.distil-card-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .6rem; padding: 0; background: none; border: 0; }
+.distil-card-head h2 { margin: 0; font-size: 1.05rem; color: var(--text); font-weight: 600; }
+.distil-card-head .swatches { margin: 0; }
+.status-pill { margin-left: auto; font-size: .8rem; padding: .1rem .6rem; border-radius: 99px; border: 1px solid var(--line); color: var(--pico-muted-color); }
+.status-pill.ready { background: #e4e4e4; color: #111; border-color: #e4e4e4; font-weight: 600; }
+.status-pill.applied { color: var(--text); border-color: #5a5a5a; }
+.distil-imgs { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0 0 .75rem; }
+.distil-imgs li { list-style: none; margin: 0; width: 132px; }
+.distil-imgs a { position: relative; display: block; }
+.distil-imgs img { width: 132px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 4px; display: block; background: var(--frame); }
+.distil-imgs .mark { top: .3rem; left: .3rem; width: 1.3rem; height: 1.3rem; font-size: .65rem; }
+.distil-imgs small { display: block; font-size: .75rem; color: var(--pico-muted-color); line-height: 1.3; margin-top: .2rem; }
+.distil-actions { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-top: .5rem; }
+.distil-actions > a { margin-left: auto; }
+.distil-preview li { margin-bottom: .2rem; }
+.distil-foot { position: sticky; bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+               padding: .6rem .6rem .6rem 1.1rem; background: #262626; border: 1px solid #3a3a3a; border-radius: var(--radius);
+               box-shadow: 0 8px 28px rgba(0, 0, 0, .5); margin-top: 1.5rem; }
+.distil-foot button { margin: 0; width: auto; }
