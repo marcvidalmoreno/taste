@@ -1,5 +1,6 @@
 <!-- About page, loaded into #view by js/about.js. Plain HTML so it is easy to edit by hand.
      DRAFT written by Claude Code on 14 Nov 2026 from the README, the repo CLAUDE.md and the git history;
+     brought up to date on 21 Nov 2026 (thumbs, runs from the page, change the style, suggestions);
      waiting for Marc's review. Remove the .draft-note paragraph once approved. -->
 <hgroup class="page-head">
   <h1>About</h1>
@@ -44,6 +45,15 @@
       reason, save, start variations, see ratings per style.</li>
     <li><time>14 Nov 2026</time> <strong>Gallery, Taste and About pages.</strong> Everything I've made in one place,
       and the styles shown with my own images as examples.</li>
+    <li><time>15–19 Nov 2026</time> <strong>More collections, more variety.</strong> New styles from my ART folder
+      and later collections, a few dropped again after testing, and several looks per style (light, framing, mood)
+      so images in one style stop looking alike.</li>
+    <li><time>18 Nov 2026</time> <strong>Thumbs.</strong> Rating became thumbs up or down, with an optional why,
+      instead of keep / almost / no.</li>
+    <li><time>21 Nov 2026</time> <strong>The app is the interface.</strong> Runs start from the page and wait in one
+      queue; remix and variations from any image; a thumb counts the moment I press it and steers the style's next
+      runs; I can change a style from wherever I see its images; and every 20 ratings Codex suggests style edits
+      that I apply or skip. Claude and Codex do the rest out of sight.</li>
   </ol>
 </section>
 
@@ -52,13 +62,19 @@
   <ol>
     <li><strong>Styles.</strong> Each style is one JSON file in <code>taste/styles/</code>.
       <code>build_taste.py</code> turns them into short prompt blocks in <code>taste/taste.json</code>.</li>
-    <li><strong>Generate.</strong> <code>codex_run.py</code> starts one fresh <code>codex exec</code> per image with
-      a style and a subject. Native size is 1672 × 941, about a minute and ~95k tokens per image (mostly cached).</li>
-    <li><strong>Vary.</strong> <code>variations.py</code> changes one thing at a time: palette, subject,
-      composition or mood. The seed goes in as a reference.</li>
-    <li><strong>Rate.</strong> In this app or with <code>rate.py</code>: thumbs up or down, with a short why.</li>
-    <li><strong>Distil.</strong> About every 20 ratings, <code>distil.py</code> sums up what the ratings say per
-      style; Claude Code proposes edits to the style files, I approve each one, and the prompts are rebuilt.</li>
+    <li><strong>Generate.</strong> I start a run on the New run page; it joins one queue. <code>codex_run.py</code>
+      starts one fresh <code>codex exec</code> per image with a style and a subject (Codex writes fresh subjects
+      when I leave them empty). About a minute and ~95k tokens per image (mostly cached).</li>
+    <li><strong>Vary and remix.</strong> Variations change one thing at a time: palette, subject, composition or
+      mood, with the image as a reference. A remix changes what I say; Codex rewrites the prompt and I read it first.</li>
+    <li><strong>Rate.</strong> Thumbs up or down, with a short why. A thumb is saved at once and can be taken back.
+      Each one re-weights the style's options (<code>leaning.py</code>), so new runs lean toward what I liked;
+      the Taste page shows how.</li>
+    <li><strong>Change a style.</strong> From any image, the Gallery or the Taste page: I say what should change,
+      Codex proposes the smallest edit, I untick what I don't want and apply. Or I add my own words as a
+      "lean towards" or an "avoid" line. Every edit can be undone.</li>
+    <li><strong>Suggestions.</strong> Every 20 ratings Codex reads the latest thumbs and whys and suggests edits
+      per style. A chip in the header says when one waits; I apply or skip each one.</li>
   </ol>
   <p>The app is plain HTML, CSS (Pico.css) and JavaScript modules, served by a small Python server on
     127.0.0.1 only. No framework, no build step. Images, ratings and logs stay in <code>generated/codex/</code>,
@@ -72,13 +88,17 @@
     <dd>Colour clustering was quick but wrong two times out of three. Tagging by eye took longer and gives styles
       I recognise as mine. Tools still offer a top-3 guess, and I confirm it.</dd>
     <dt>Codex for images, Claude Code for the taste</dt>
-    <dd>One tool generates, the other one thinks. Codex never edits a style file; Claude Code never edits one
-      without my OK. Files are the hand-off between them.</dd>
+    <dd>One tool generates, the other one thinks. Codex makes the images and drafts text (subjects, prompts,
+      style proposals) but never edits a style file itself; a style changes only when I press Apply, or when I OK
+      Claude Code's set of edits in chat. Files are the hand-off between them.</dd>
     <dt>One change per variation</dt>
     <dd>If a variation changes palette and subject at once, I can't tell which one I liked. One change, one lesson.</dd>
-    <dt>Draft, then save</dt>
-    <dd>Marks stay drafts until I save them. Saved ratings are read-only, because the distil step counts rows to
-      know where it stopped.</dd>
+    <dt>Every mark counts at once</dt>
+    <dd>Until 21 Nov marks were drafts until I pressed Save. Now a thumb is saved the moment I press it and pressing
+      it again takes it back: one step less, and nothing lost if I close the tab.</dd>
+    <dt>The app is the interface</dt>
+    <dd>I give feedback where I feel it, on the image or the style, as a thumb, a remix or a few words. No
+      scripts or chat steps on my side; Claude and Codex pick it up from the files.</dd>
     <dt>Local first</dt>
     <dd>The wallpapers and every reference image stay private. The app listens on this machine only.</dd>
     <dt>Measure the allowance, don't guess it</dt>
@@ -91,10 +111,11 @@
   <h2>How we work</h2>
   <p>Three of us, each with a clear job:</p>
   <ul>
-    <li><strong>Me:</strong> I look, rate and decide. Every style edit needs my OK.</li>
-    <li><strong>Claude Code:</strong> owns the taste files, reads my ratings, proposes edits, builds the tools and
-      this app, and writes a changelog entry with an undo line for every change.</li>
-    <li><strong>Codex CLI:</strong> makes the images, one fresh run per image, and nothing else.</li>
+    <li><strong>Me:</strong> I look, rate and decide, in this app. Every style edit needs my OK.</li>
+    <li><strong>Claude Code:</strong> owns the taste files, reads my notes and ratings, proposes edits, builds the
+      tools and this app, commits my style edits, and writes a changelog entry with an undo line for every change.</li>
+    <li><strong>Codex CLI:</strong> makes the images, one fresh run per image, and drafts subjects, remix prompts
+      and style suggestions for me to read. It never changes a style on its own.</li>
   </ul>
   <p>The rules for Claude Code are in the repo's <code>CLAUDE.md</code>: stop and report after one failed retry,
     ask before spending a large share of the allowance, check every push for private data.</p>

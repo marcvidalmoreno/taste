@@ -114,6 +114,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – About page brought up to date: history up to today (thumbs, the app as the interface), How it
+  works with runs from the page, leaning, change the style and suggestions; "Draft, then save" replaced by "Every
+  mark counts at once" and "The app is the interface"; Codex's text jobs named in "How we work". Still marked as a
+  draft for Marc's review. Undo: `git revert` this commit.
 - **21 Nov 2026** – Tech out of sight (Marc: feedback happens in the app, Claude and Codex orchestrate the rest):
   the distil runs by itself every 20 ratings (`maybe_auto_distil`, after a thumb and on start; never in dry run);
   a calm **"N style suggestions"** chip in the header appears only when one waits; the page is now
