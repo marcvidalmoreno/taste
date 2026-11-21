@@ -1,0 +1,528 @@
+<!-- Guide page, loaded into #view by js/about.js (renderGuide). Plain HTML so it is easy to edit by hand.
+     Everything the web app can do, page by page, plus use cases. KEEP IT CURRENT: every change to the app that
+     adds, removes or renames something Marc can see or do updates this file in the same commit (repo CLAUDE.md,
+     "Every change"), and the "Last updated" date below. -->
+<hgroup class="page-head">
+  <h1>Guide</h1>
+  <p>Everything you can do in the app, page by page, and how to do the common things.</p>
+</hgroup>
+
+<p class="muted small">Last updated 21 Nov 2026. This guide changes with the app.</p>
+
+<nav class="about-toc" aria-label="On this page">
+  <a href="#/guide/start">Start here</a>
+  <a href="#/guide/header">Header</a>
+  <a href="#/guide/batches">Batches</a>
+  <a href="#/guide/batch">A batch</a>
+  <a href="#/guide/viewer">Large view</a>
+  <a href="#/guide/rate">Rating</a>
+  <a href="#/guide/newrun">New run</a>
+  <a href="#/guide/queue">Runs and queue</a>
+  <a href="#/guide/remix">Remix</a>
+  <a href="#/guide/variations">Variations</a>
+  <a href="#/guide/gallery">Gallery</a>
+  <a href="#/guide/taste">Taste</a>
+  <a href="#/guide/change">Change a style</a>
+  <a href="#/guide/suggestions">Suggestions</a>
+  <a href="#/guide/notes">Notes for Claude</a>
+  <a href="#/guide/overview">Overview</a>
+  <a href="#/guide/cost">Allowance</a>
+  <a href="#/guide/keys">All keys</a>
+  <a href="#/guide/cases">Use cases</a>
+  <a href="#/guide/undo">Behind the scenes and undo</a>
+</nav>
+
+<div class="about guide">
+
+<section id="guide-start">
+  <h2>Start here</h2>
+  <p>The app is where you look at images, react to them and shape your styles. Every thumb, remix or style change
+    feeds the written styles that each new image is built from. It runs on your laptop only, at
+    <code>http://127.0.0.1:8777</code>; to open it, tell Claude "open taste".</p>
+  <p>Three things hold everywhere:</p>
+  <ul>
+    <li><strong>Everything counts at once.</strong> A thumb is saved the moment you press it. There is no Save
+      button, and pressing the same thumb again takes it back.</li>
+    <li><strong>Nothing spends until you say so.</strong> Runs, remixes and variations show what they cost in Codex
+      allowance before you press Start or Make.</li>
+    <li><strong>Every style change can be undone.</strong> From the message right after, or later from the style's
+      card on the Taste page.</li>
+  </ul>
+  <p>The loop, in one line: <em>make images → react → the style learns → make better images</em>.</p>
+</section>
+
+<section id="guide-header">
+  <h2>Header</h2>
+  <p>Always at the top, on every page:</p>
+  <table>
+    <thead><tr><th>Link</th><th>Goes to</th></tr></thead>
+    <tbody>
+      <tr><td><strong>taste</strong> / <strong>Batches</strong></td><td>The home page: what is being made, and every batch.</td></tr>
+      <tr><td><strong>Overview</strong></td><td>Ratings per style, the next suggestion round, your notes for Claude.</td></tr>
+      <tr><td><strong>Gallery</strong></td><td>Every image ever made, to browse.</td></tr>
+      <tr><td><strong>Taste</strong></td><td>The styles themselves, with your images as examples.</td></tr>
+      <tr><td><strong>Guide</strong></td><td>This page.</td></tr>
+      <tr><td><strong>About</strong></td><td>Why the project exists.</td></tr>
+      <tr><td><strong>New run</strong></td><td>Start making images.</td></tr>
+    </tbody>
+  </table>
+  <p>Two chips appear next to the links only when something needs your eye:</p>
+  <ul>
+    <li><strong>Run chip</strong>, while images are being made: "Making 2 of 8", the image being made, the time so far
+      and how many runs wait. Click it to open the batch; <strong>Log</strong> opens the live log and the queue.
+      The browser tab title shows the progress too (for example "2/8 · Batches").</li>
+    <li><strong>Suggestions chip</strong>, for example "2 style suggestions": Codex has edits waiting for you. Click it
+      to read them.</li>
+  </ul>
+</section>
+
+<section id="guide-batches">
+  <h2>Batches (home page)</h2>
+  <p>A batch is one folder of images made together. This page lists them all, newest first, grouped by day
+    (Today, Yesterday, then dates). The heading says how many images are left to rate.</p>
+  <h3>Now and next</h3>
+  <p>At the top while something is running, or for 30 minutes after it finished:</p>
+  <ul>
+    <li>A card with <strong>Now</strong> or <strong>Just finished</strong>, the kind of run, its name, a progress bar
+      and the subject being made.</li>
+    <li>Buttons: <strong>Open</strong> (or <strong>Rate them</strong> when done), <strong>Log</strong>, and
+      <strong>Stop</strong> while running.</li>
+    <li><strong>Next</strong>: the runs waiting in the queue, each with <strong>Remove</strong>.</li>
+  </ul>
+  <h3>Finding a batch</h3>
+  <ul>
+    <li><strong>Search</strong> by batch name or style.</li>
+    <li><strong>Kind</strong>: All, Batches, Variations &amp; remixes, Single, each with a count.</li>
+    <li><strong>Only with images to rate</strong> hides finished batches.</li>
+  </ul>
+  <p>The filters are remembered while the tab is open, so coming back from a batch finds the list as you left it.</p>
+  <h3>Each row</h3>
+  <p>A strip of thumbnails, the name, the kind, date, number of images and styles, and on the right what is left:
+    "4 to rate", "rated", "making now", or "2 ignored". The whole row is one click.</p>
+</section>
+
+<section id="guide-batch">
+  <h2>A batch</h2>
+  <p>Click a row to open the batch: a grid of thumbnails and everything about how they were made.</p>
+  <h3>Filters</h3>
+  <ul>
+    <li><strong>To rate</strong>: images without a thumb. Images you rate during this visit stay here, so nothing jumps
+      under your cursor; they move to Rated next time you open the batch.</li>
+    <li><strong>Rated</strong>: images with a thumb.</li>
+    <li><strong>Ignored</strong>: images you hid.</li>
+  </ul>
+  <h3>Folder line</h3>
+  <ul>
+    <li>Where the images are on disk, with <strong>Copy path</strong> and <strong>Open folder</strong>.</li>
+    <li><strong>Change the style…</strong> when the batch has one style.</li>
+    <li><strong>New run with this style</strong> (or these styles): opens New run with them picked.</li>
+  </ul>
+  <h3>Where it came from and where it went</h3>
+  <ul>
+    <li><strong>Made from</strong>: for a remix or variations, the original image with a link back, and what you asked
+      for.</li>
+    <li><strong>How it was made</strong> (folded): when and from where it started, styles, shape, wildcard, changes,
+      the subjects per style and any direction you gave.</li>
+    <li><strong>Made from images here</strong>: remixes and variations made from this batch, with links.</li>
+  </ul>
+  <h3>Tiles</h3>
+  <ul>
+    <li>Each tile shows the number, the style and the kind of change. A thumb badge shows once it is rated, and your
+      why appears under it.</li>
+    <li><strong>Up</strong> and <strong>Down</strong> buttons under each tile let you rate without opening the image.</li>
+    <li>While a run is making this batch, <strong>placeholder tiles</strong> say "Making…" (with the subject) or
+      "Waiting", and turn into images as they land.</li>
+    <li>A <strong>No image</strong> tile means the image was blocked by the filter or Codex timed out:
+      <strong>Retry once</strong> or <strong>Copy prompt</strong>.</li>
+    <li>For variations, a <strong>Seed</strong> tile shows the original first.</li>
+  </ul>
+  <p>Keyboard in the grid: arrow keys move between tiles, <kbd>U</kbd> / <kbd>D</kbd> rate the focused one,
+    <kbd>I</kbd> ignores it, <kbd>Enter</kbd> opens it.</p>
+</section>
+
+<section id="guide-viewer">
+  <h2>Large view</h2>
+  <p>Click any tile. The image fills the left, a panel on the right holds everything about it. Browser Back or
+    <kbd>Esc</kbd> closes it.</p>
+  <h3>Top bar</h3>
+  <p>Back to the batch, "3 of 12", "Hold S to see the seed" (variations only), and <strong>Fit</strong> /
+    <strong>1 : 1</strong> to see real pixels (clicking the image does the same). ‹ and › step through the images.</p>
+  <h3>Panel, top to bottom</h3>
+  <ol>
+    <li><strong>Number, style and kind.</strong></li>
+    <li><strong>Thumbs and why</strong>, with a line saying what your thumb did (see Rating).</li>
+    <li><strong>Actions</strong>: Remix… (<kbd>R</kbd>), Variations… (<kbd>V</kbd>), Change the style… (<kbd>E</kbd>),
+      Note for Claude… (<kbd>C</kbd>), and Ignore (<kbd>I</kbd>) or Restore when it has no thumb.</li>
+    <li><strong>Details</strong>: style with its palette, the change (for variations), how it was made, what was
+      made from it (links), the seed, the size, when and how long it took.</li>
+    <li><strong>Prompt</strong>, the exact text sent to Codex, with <strong>Copy</strong>.</li>
+  </ol>
+  <p>Hold <kbd>S</kbd> on a variation: the original replaces the image until you let go. Flicking between the two in
+    place makes the difference jump out, better than looking left and right.</p>
+</section>
+
+<section id="guide-rate">
+  <h2>Rating</h2>
+  <table>
+    <thead><tr><th>Action</th><th>How</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Thumb up</strong></td><td><kbd>U</kbd> or the Up button</td>
+        <td>Saved at once. New runs of this style lean toward this image's light, framing, mood, palette and detail,
+          and Codex writes new subjects in the direction of its subject.</td></tr>
+      <tr><td><strong>Thumb down</strong></td><td><kbd>D</kbd> or the Down button</td>
+        <td>Saved at once. New runs lean away from the same parts.</td></tr>
+      <tr><td><strong>Take it back</strong></td><td>Press the same thumb again</td><td>The mark is gone.</td></tr>
+      <tr><td><strong>Why</strong></td><td><kbd>Enter</kbd>, type, <kbd>Enter</kbd></td>
+        <td>A few words on what you like or dislike, saved a second after you stop typing. The second
+          <kbd>Enter</kbd> also moves to the next image. Suggestions read these words, so a why on a Down helps most.</td></tr>
+      <tr><td><strong>Ignore</strong></td><td><kbd>I</kbd></td>
+        <td>Hides a broken or irrelevant image and leaves it out of ratings. The message offers Undo; Restore it from
+          the Ignored filter. Take a thumb back before ignoring.</td></tr>
+    </tbody>
+  </table>
+  <p>After a thumb, the panel tells you what moved, for example: "New runs lean toward this image's light, framing
+    and mood, and its subject." Older ratings from before 18 Nov may show as "Almost (old)".</p>
+</section>
+
+<section id="guide-newrun">
+  <h2>New run</h2>
+  <p>Click <strong>New run</strong> in the header, or "New run" / "One image" on a style card or a batch. The
+    form is remembered if you leave the page. On the right, <strong>This run</strong> stays in view: what will be
+    made, what it costs and the Start button.</p>
+  <h3>Batch</h3>
+  <ol>
+    <li><strong>Styles</strong>: click one or more (filter by name; Clear resets).</li>
+    <li><strong>Images</strong>: how many per style (1–8) and the <strong>shape</strong>: Mixed (wide, portrait,
+      square in turn, to see how a style holds up in each), Wide (16:9, desktop and Teams), Portrait (4:5, LinkedIn
+      and phones) or Square (1:1).</li>
+    <li><strong>Wildcard</strong> (on by default, from 2 per style): the last image of each style pushes one thing
+      to an extreme: light, framing, palette, scale, detail or mood.</li>
+    <li><strong>Subjects</strong>, one card per style:
+      <ul>
+        <li>Write one subject per line. Empty lines are written by Codex when the run starts (about 15 s per style),
+          avoiding subjects used before.</li>
+        <li><strong>Direction for Codex</strong>: a hint like "winter, at night" for the subjects it writes.</li>
+        <li><strong>Write N now</strong>: Codex writes them now so you can read and edit them first.</li>
+        <li><strong>Use examples</strong>: fills the empty lines with the style's own example subjects.</li>
+        <li>The card says how many are written and how many Codex will add.</li>
+      </ul></li>
+    <li><strong>Name</strong> (optional): becomes the folder name after the date.</li>
+  </ol>
+  <h3>One image</h3>
+  <ol>
+    <li>Pick a <strong>style</strong> (its palette and description show).</li>
+    <li>Write the <strong>subject</strong>, or pick one of the style's example subjects.</li>
+    <li>How many (1–4; same prompt, Codex varies the result) and the shape.</li>
+  </ol>
+  <h3>Before you start</h3>
+  <ul>
+    <li><strong>Preview the prompts (free)</strong> (batch only): the exact prompts, without running Codex. Rows marked
+      "example subject" get a fresh subject when the run starts.</li>
+    <li>The cost block shows images, minutes and allowance (see Allowance).</li>
+    <li><strong>Start · make N images</strong>, or <strong>Add to queue</strong> when a run is busy.
+      <kbd>Ctrl</kbd> + <kbd>Enter</kbd> does the same.</li>
+  </ul>
+  <p>After Start you go to Batches; the batch opens by itself when its folder appears. Subjects and name are cleared,
+    styles and settings are kept for next time.</p>
+</section>
+
+<section id="guide-queue">
+  <h2>Runs and queue</h2>
+  <ul>
+    <li>Runs go <strong>one at a time</strong>: batches, single images, remixes, variations and retries all wait in
+      one queue. Runs started from chat show here too.</li>
+    <li>Watch progress in the header chip, the tab title, the Now and next card, and the placeholder tiles in the
+      batch.</li>
+    <li><strong>Log</strong>: the live output of the run and the queue below it.</li>
+    <li><strong>Stop</strong>: asks first; the image being made is lost, the ones already made stay.</li>
+    <li><strong>Remove</strong>: takes a waiting run out of the queue.</li>
+    <li>When a run ends you get a message with <strong>Rate them</strong> or <strong>See them</strong>, and a desktop
+      notice if you allowed it (the browser asks the first time).</li>
+  </ul>
+</section>
+
+<section id="guide-remix">
+  <h2>Remix</h2>
+  <p>A new image from one you made, changed the way you say. Large view → <strong>Remix…</strong> or <kbd>R</kbd>.</p>
+  <ol>
+    <li><strong>What should change?</strong> Write it, or click quick picks: seen from far above, a closer view, wider
+      with more empty space, at night, warmer light, less busy, no people, more saturated colour, calmer mood.</li>
+    <li><strong>Must stay the same</strong> (optional): Subject, Palette, Composition, Light, Medium.</li>
+    <li><strong>Send this image along as a reference</strong>: on, the result stays close; off, only the prompt
+      counts and there is more freedom.</li>
+    <li><strong>Write the new prompt</strong>: Codex rewrites it (about 15 s, nothing spent). Or
+      <strong>Edit the prompt myself</strong>.</li>
+    <li>Read the new prompt with added words marked and removed ones struck through; <strong>Edit</strong> it if
+      needed.</li>
+    <li>Choose 1, 2 or 4 and make them. Only this step spends allowance.</li>
+  </ol>
+  <p>The remix lands in its own batch, linked back to the original under "Made from".</p>
+</section>
+
+<section id="guide-variations">
+  <h2>Variations</h2>
+  <p>A few images from one, each changing one thing. Large view → <strong>Variations…</strong> or <kbd>V</kbd>.</p>
+  <ol>
+    <li><strong>Style</strong>: confirm it. A guess (top 3, plus the style it was made with) reads colour and
+      composition only and is right first time about a third of the time, so look and pick. "Another style" lets
+      you try the image in a different style.</li>
+    <li><strong>What changes</strong>, one image per tick:
+      <ul>
+        <li><strong>Palette</strong>: palette and light pulled to the style; subject and framing kept.</li>
+        <li><strong>Subject</strong>: new subject; palette, light and framing kept (optionally write it).</li>
+        <li><strong>Composition</strong>: new framing; palette and subject kept.</li>
+        <li><strong>Mood</strong>: other time of day; subject and framing kept.</li>
+      </ul></li>
+    <li><strong>In every variation</strong> (optional): add or remove something, like "no planet in the sky".</li>
+    <li>Check the cost and start.</li>
+  </ol>
+</section>
+
+<section id="guide-gallery">
+  <h2>Gallery</h2>
+  <p>Every image ever made, in rows that fill the width without cropping. It is <strong>read-only</strong> on
+    purpose, so you can browse without risk; to rate an image, open its batch.</p>
+  <ul>
+    <li><strong>Rating</strong>: All, Up, Down, Almost (old), Not rated, each with a count.</li>
+    <li><strong>Style</strong> and <strong>Batch</strong> menus.</li>
+    <li>The filters are in the address, so Back returns to them.</li>
+  </ul>
+  <p>Click an image for the large view: ← → to step, the rating and why, links to its <strong>style</strong> (on
+    Taste) and its <strong>batch</strong>, <strong>Change the style…</strong>, and the prompt.</p>
+</section>
+
+<section id="guide-taste">
+  <h2>Taste</h2>
+  <p>The styles as they are written, each with your own images as evidence. Styles with the most images come first;
+    the index at the top jumps to one.</p>
+  <h3>Each style card</h3>
+  <ul>
+    <li><strong>New run</strong>, <strong>One image</strong>, <strong>Change this style…</strong> and
+      <strong>Note for Claude…</strong>.</li>
+    <li><strong>Changed from the app</strong> (folded): every edit made from the page, newest first, with your words,
+      whether Codex or you wrote it, what changed field by field, and <strong>Undo</strong>.</li>
+    <li><strong>How new runs lean</strong> (folded): which options your thumbs made more or less likely ("1.8× as
+      likely"), with the ups and downs behind each, and the subjects you liked. Every option keeps a chance.</li>
+    <li>The <strong>description</strong> and the <strong>palette</strong> with colour codes.</li>
+    <li>Light, Composition, Medium, Mood, Detail, Lean towards, <strong>Avoid</strong>, and Good for (desktop, Teams,
+      phone, post).</li>
+    <li><strong>Evidence</strong>: up to 8 images rated Up, 4 rated Down with their whys, how many are not rated, and
+      a link to all of them in the Gallery.</li>
+  </ul>
+</section>
+
+<section id="guide-change">
+  <h2>Change a style</h2>
+  <p>From the large view (<kbd>E</kbd>), the Gallery large view, a batch with one style, or a Taste card. The change
+    applies to every image made in this style after you apply it.</p>
+  <h3>With Codex</h3>
+  <ol>
+    <li>Say what should change, or add quick picks: fewer elements, less repetition, more variety, simpler
+      compositions, less busy detail, calmer with fewer colours. "How the style reads now" shows the current text.</li>
+    <li><strong>Propose the edit</strong>: Codex reads the whole style and proposes the smallest edit (about 15 s,
+      nothing changes yet).</li>
+    <li>Read it field by field, added words marked, removed ones struck through. Untick any field you want to leave
+      as it is.</li>
+    <li><strong>Apply to the style</strong> (or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>).</li>
+  </ol>
+  <h3>With your own words</h3>
+  <p><strong>Add my words as they are</strong> skips Codex: choose <strong>Lean towards</strong> ("one main subject,
+    quiet areas around it") or <strong>Avoid</strong> ("rows of identical towers"), check, and apply.</p>
+  <p>After applying, the message offers <strong>Undo</strong> for a few seconds; later, use Undo on the Taste card.
+    Your edits stay on your laptop until you tell Claude "commit my style edits".</p>
+</section>
+
+<section id="guide-suggestions">
+  <h2>Suggestions</h2>
+  <p>Every 20 ratings Codex reads your latest thumbs and whys and suggests edits per style. It runs by itself; the
+    header chip appears when a suggestion waits. Open it from the chip or Overview → Suggestions.</p>
+  <ul>
+    <li>Each <strong>card</strong> shows the style, its ups and downs, up to 12 of the images you rated (with your
+      whys, linked to the large view), what Codex read in them, and the proposed edit field by field.</li>
+    <li>Untick fields you disagree with, then <strong>Apply</strong>, or <strong>Skip</strong> the card. An applied
+      card offers Undo.</li>
+    <li>Styles that need nothing are folded under "Fine as they are".</li>
+    <li>The round closes by itself once nothing waits. "Look now" asks early when a style has enough new ratings.</li>
+  </ul>
+</section>
+
+<section id="guide-notes">
+  <h2>Notes for Claude</h2>
+  <p>For feedback that doesn't fit a thumb or a field. From the large view (<kbd>C</kbd>), a Taste card, or
+    <strong>General note…</strong> on Overview.</p>
+  <ol>
+    <li>Write it plainly: "faces look plastic in every run", "this composition is the one: more like it".</li>
+    <li><strong>Leave the note</strong>. The message offers to copy "process my app notes".</li>
+    <li>In chat with Claude, say "process my app notes". Claude looks at what each note points at, proposes style
+      edits as one set for your OK, and answers each note.</li>
+    <li>Read the answers on Overview. A note not yet read can be taken back.</li>
+  </ol>
+  <p>Codex never reads these notes.</p>
+</section>
+
+<section id="guide-overview">
+  <h2>Overview</h2>
+  <ul>
+    <li><strong>Style suggestions</strong>: how many ratings until Codex looks again (a meter out of 20), a link to
+      Suggestions, and <strong>Preview the distil summary</strong> (shows what Codex would read, changes nothing).</li>
+    <li><strong>Notes for Claude</strong>: your notes with Claude's answers, Take back, and General note….</li>
+    <li><strong>Per style</strong>: a bar per style with ups and downs, since the last look or all ratings, and the
+      same numbers as a table.</li>
+  </ul>
+</section>
+
+<section id="guide-cost">
+  <h2>Allowance</h2>
+  <p>Images are made with Codex on the ChatGPT plan: no bill, but a shared allowance. Wherever something spends, a
+    cost block shows:</p>
+  <ul>
+    <li>Images, about a minute each, and the share of the five-hour window (about 0.25–0.75 % per image).</li>
+    <li>Meters for the five-hour window and the week, read from Codex's own log.</li>
+    <li>Images in the last 7 days (plus queued) against the weekly budget of about 200; it warns when a run goes
+      over.</li>
+  </ul>
+  <p>Writing subjects, rewriting prompts and proposing style edits are short text jobs and don't make images.
+    When the app runs in dry-run mode, a notice says so and nothing is spent.</p>
+</section>
+
+<section id="guide-keys">
+  <h2>All keys</h2>
+  <table>
+    <thead><tr><th>Key</th><th>Where</th><th>Does</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Batch grid</td><td>Move between tiles</td></tr>
+      <tr><td><kbd>←</kbd> <kbd>→</kbd>, <kbd>Home</kbd> <kbd>End</kbd></td><td>Large view</td><td>Previous / next, first / last</td></tr>
+      <tr><td><kbd>U</kbd> / <kbd>D</kbd></td><td>Grid, large view</td><td>Thumb up / down; again takes it back</td></tr>
+      <tr><td><kbd>I</kbd></td><td>Grid, large view</td><td>Ignore or restore</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Large view</td><td>Type a why; again saves and moves on</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Large view</td><td>Remix</td></tr>
+      <tr><td><kbd>V</kbd></td><td>Large view</td><td>Variations</td></tr>
+      <tr><td><kbd>E</kbd></td><td>Large view</td><td>Change the style</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Large view</td><td>Note for Claude</td></tr>
+      <tr><td><kbd>S</kbd> (hold)</td><td>Large view</td><td>Show the seed in place</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Large view</td><td>Fit or real pixels</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Large view, dialogs</td><td>Close (in a text field: leave the field)</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>New run, Change the style</td><td>Start / apply</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="guide-cases">
+  <h2>Use cases</h2>
+
+  <h3>Browse old images, like one, and make the style follow it</h3>
+  <ol>
+    <li><strong>Gallery</strong> → pick a style, or <strong>Not rated</strong> to see what you never judged.</li>
+    <li>Click an image and step with ← →.</li>
+    <li>Found one you love? Click its <strong>batch</strong> link in the side panel (the Gallery is read-only).</li>
+    <li>Open the same image and press <kbd>U</kbd>. Add a why: "calm horizon, one subject".</li>
+    <li>The panel says what moved: new runs of this style now lean toward this image.</li>
+    <li>To write it into the style for good, press <kbd>E</kbd> and describe what you like in it: "one subject on a
+      low horizon, wide empty sky". Check the proposal and apply.</li>
+    <li>On <strong>Taste</strong>, the image shows among the style's Up examples, and your edit under "Changed from
+      the app".</li>
+  </ol>
+  <p class="muted small">There is no button yet to keep one exact image as a reference example for its style.</p>
+
+  <h3>Rate a new batch quickly</h3>
+  <ol>
+    <li>When the run ends, click <strong>Rate them</strong> in the message.</li>
+    <li>Open the first image and use only the keyboard: <kbd>U</kbd> or <kbd>D</kbd>, <kbd>Enter</kbd> for a why and
+      to move on, <kbd>→</kbd> to skip.</li>
+    <li><kbd>I</kbd> hides a broken one.</li>
+  </ol>
+
+  <h3>Make images for a LinkedIn post</h3>
+  <ol>
+    <li><strong>New run</strong> → Batch, pick one or two styles.</li>
+    <li>Shape <strong>Portrait</strong> or <strong>Square</strong>, 3 or 4 per style.</li>
+    <li>Write your subjects, or a direction for Codex and <strong>Write N now</strong> to read them first.</li>
+    <li><strong>Preview the prompts (free)</strong> if you like, then <strong>Start</strong>. You'll get a message
+      when they're ready.</li>
+  </ol>
+
+  <h3>One specific image in a style</h3>
+  <ol>
+    <li>On the style's Taste card click <strong>One image</strong>.</li>
+    <li>Write the subject, pick the shape, make 1–4.</li>
+  </ol>
+
+  <h3>An image is almost right</h3>
+  <ol>
+    <li>Open it and press <kbd>R</kbd>.</li>
+    <li>Say the change ("seen from far above, no people"), tick what must stay, keep the reference on.</li>
+    <li><strong>Write the new prompt</strong>, read the changes, make 1–2.</li>
+  </ol>
+
+  <h3>Find out what you like about an image</h3>
+  <ol>
+    <li>Open it and press <kbd>V</kbd>, tick palette, subject, composition and mood.</li>
+    <li>In the new batch, hold <kbd>S</kbd> on each to compare with the original.</li>
+    <li>Thumb them: you see which single change worked, and the style learns it too.</li>
+  </ol>
+
+  <h3>Try an image in another style</h3>
+  <ol>
+    <li>Open it and press <kbd>V</kbd>.</li>
+    <li>Under Style, choose <strong>Another style</strong>, tick Palette, and start.</li>
+  </ol>
+
+  <h3>A style keeps doing something you dislike</h3>
+  <ol>
+    <li>On one of its images press <kbd>E</kbd>.</li>
+    <li><strong>Add my words as they are</strong> → <strong>Avoid</strong> → "rows of identical towers" → apply.</li>
+    <li>Changed your mind? Undo on the style's Taste card.</li>
+  </ol>
+
+  <h3>The suggestions chip appears</h3>
+  <ol>
+    <li>Click it. Read each card: your images, Codex's reading, the edit.</li>
+    <li>Untick what you disagree with, Apply, or Skip.</li>
+  </ol>
+
+  <h3>Feedback too fuzzy for a field</h3>
+  <ol>
+    <li>Press <kbd>C</kbd> and write it plainly.</li>
+    <li>Later, tell Claude "process my app notes"; the answers show on Overview.</li>
+  </ol>
+
+  <h3>An image failed</h3>
+  <ol>
+    <li>In the batch, the No image tile: <strong>Retry once</strong>, or <strong>Copy prompt</strong> to try it
+      elsewhere.</li>
+  </ol>
+
+  <h3>Use an image or prompt outside the app</h3>
+  <ol>
+    <li>In the batch: <strong>Open folder</strong> or <strong>Copy path</strong>.</li>
+    <li>In the large view: <strong>Copy</strong> next to the prompt, for Gemini or ChatGPT.</li>
+  </ol>
+
+  <h3>Stop a run you started by mistake</h3>
+  <ol>
+    <li>Header chip → <strong>Log</strong> → <strong>Stop</strong>, or <strong>Remove</strong> it if it is still
+      waiting.</li>
+  </ol>
+</section>
+
+<section id="guide-undo">
+  <h2>Behind the scenes and undo</h2>
+  <p>Each action ends in a file on your laptop. Images, ratings and logs never go to GitHub; style changes go only
+    when you tell Claude "commit my style edits".</p>
+  <table>
+    <thead><tr><th>You do</th><th>What happens</th><th>Undo</th></tr></thead>
+    <tbody>
+      <tr><td>Thumb</td><td>A row in the ratings log; the style's next runs re-weight their options</td><td>Same thumb again</td></tr>
+      <tr><td>Why</td><td>Saved with the thumb; read by the next suggestion round</td><td>Clear the field</td></tr>
+      <tr><td>Ignore</td><td>Hidden and left out of ratings</td><td>Undo in the message, or Restore</td></tr>
+      <tr><td>Start a run</td><td>Joins the queue; one image at a time into a dated folder</td><td>Remove, or Stop</td></tr>
+      <tr><td>Apply a style change or suggestion</td><td>Style file rewritten, prompts rebuilt, before and after logged</td><td>Undo in the message, or on the Taste card</td></tr>
+      <tr><td>Note for Claude</td><td>Waits until you say "process my app notes"</td><td>Take back, on Overview</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Who does what:</strong> you look and decide in the page. Codex makes images and drafts subjects,
+    prompts and style proposals; it never changes a style without your Apply. Claude looks after the style files,
+    reads your notes and commits your edits when asked.</p>
+</section>
+
+</div>

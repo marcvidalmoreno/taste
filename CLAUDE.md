@@ -38,3 +38,6 @@ Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, n
 
 ## Every change
 An undo line in the reply and a changelog entry in the README.
+A change to the web app that adds, removes or renames something Marc can see or do also updates the in-app
+Guide (`app/guide.html`, its section and "Last updated" date) in the same commit (Marc, 21 Nov 2026).
+`app/about.html` holds the why, not features.

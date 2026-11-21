@@ -1,124 +1,106 @@
 <!-- About page, loaded into #view by js/about.js. Plain HTML so it is easy to edit by hand.
-     DRAFT written by Claude Code on 14 Nov 2026 from the README, the repo CLAUDE.md and the git history;
-     brought up to date on 21 Nov 2026 (thumbs, runs from the page, change the style, suggestions);
-     waiting for Marc's review. Remove the .draft-note paragraph once approved. -->
+     The why of the project: introductory and reflective. How to use the app lives in guide.html (#/guide).
+     DRAFT rewritten by Claude Code on 21 Nov 2026 in Marc's voice, from the earlier About text, the README and
+     his about-me notes; waiting for Marc's review. Remove the .draft-note paragraph once approved. -->
 <hgroup class="page-head">
   <h1>About</h1>
-  <p>What this project is, how it came to be, and how it works.</p>
+  <p>Why this project exists, and what it believes.</p>
 </hgroup>
 
-<p class="draft-note">Draft for Marc's review: facts come from the README and the git history, wording is not final.</p>
+<p class="draft-note">Draft for Marc's review: written in my voice from my notes, the wording is not final.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/about/why">Why</a>
-  <a href="#/about/history">History</a>
-  <a href="#/about/how">How it works</a>
-  <a href="#/about/decisions">Decisions</a>
-  <a href="#/about/together">How we work</a>
+  <a href="#/about/believe">What it believes</a>
+  <a href="#/about/not">What it is not</a>
+  <a href="#/about/grew">How it grew</a>
+  <a href="#/about/together">Who does what</a>
 </nav>
 
 <div class="about">
 
 <section id="about-why">
   <h2>Why</h2>
-  <p>I make images for my posts and wallpapers, and I know what I like when I see it. Over the years I saved
-    about 1,000 wallpapers. An image model can't read that folder, but it can read a written description.</p>
-  <p>So this project turns the folder into words: styles with a palette, light, composition, medium, mood and,
-    just as important, what to avoid. Then every image I make, and how I rate it, feeds back into those words.
-    The taste is meant to grow from evidence, not from guesses.</p>
-  <p>The wallpapers belong to the people who made them. They stay on my laptop. Only the descriptions and the
-    images I generate are mine to show.</p>
+  <p class="lead">I know what I like when I see it. I could never say it in words.</p>
+  <p>Over the years I saved about a thousand wallpapers. Each one was a small decision: a second of looking, a
+    yes. Together they are a record of my taste, kept by my eyes and never written down. Not even I could read
+    it.</p>
+  <p>That is how taste works for most of us. Recognising is fast and sure; describing is slow and vague. The
+    brain gets the gist of a picture in a fraction of a second, long before we find a word for it. Ask me to
+    describe the light I love and I'll give you an adjective. Show me two images and I'll pick one at once.</p>
+  <p>An image model works the other way round. It can't look at my folder, but it reads words very well. So this
+    project translates: from a folder of images I chose to written styles, with a palette, a light, a composition,
+    a medium, a mood and, just as important, what to avoid.</p>
+  <p>Then it closes the loop. Every image made from those words comes back to me, and my reaction, a thumb and a
+    few words, goes back into them. The description stops being a guess I wrote once and becomes something that
+    learns from what I actually choose.</p>
 </section>
 
-<section id="about-history">
-  <h2>History</h2>
-  <ol class="timeline">
-    <li><time>8 Nov 2026</time> <strong>First version.</strong> Five styles found by clustering the wallpapers by
-      colour, prompt packs for the Gemini app (Nano Banana), and an inbox that sorts newly liked images into a style.</li>
-    <li><time>13 Nov 2026</time> <strong>Codex route.</strong> Images made with ChatGPT through Codex CLI, on my
-      plan, with no API key and no bill. One image per run, every run logged with its cost in allowance.
-      Variations, contact sheets, ratings and a "distil" step that turns ratings into style edits.</li>
-    <li><time>13 Nov 2026</time> <strong>Taste rebuilt from zero.</strong> Colour alone found the right style only
-      36 % of the time. Every wallpaper was tagged by eye on contact sheets (subject, medium, mood, light) and grouped
-      into fourteen styles, each approved one by one. Palettes are measured from the images.</li>
-    <li><time>13 Nov 2026</time> <strong>This web app.</strong> Look at a batch, mark keep / almost / no with a
-      reason, save, start variations, see ratings per style.</li>
-    <li><time>14 Nov 2026</time> <strong>Gallery, Taste and About pages.</strong> Everything I've made in one place,
-      and the styles shown with my own images as examples.</li>
-    <li><time>15–19 Nov 2026</time> <strong>More collections, more variety.</strong> New styles from my ART folder
-      and later collections, a few dropped again after testing, and several looks per style (light, framing, mood)
-      so images in one style stop looking alike.</li>
-    <li><time>18 Nov 2026</time> <strong>Thumbs.</strong> Rating became thumbs up or down, with an optional why,
-      instead of keep / almost / no.</li>
-    <li><time>21 Nov 2026</time> <strong>The app is the interface.</strong> Runs start from the page and wait in one
-      queue; remix and variations from any image; a thumb counts the moment I press it and steers the style's next
-      runs; I can change a style from wherever I see its images; and every 20 ratings Codex suggests style edits
-      that I apply or skip. Claude and Codex do the rest out of sight.</li>
-  </ol>
-</section>
-
-<section id="about-how">
-  <h2>How it works</h2>
-  <ol>
-    <li><strong>Styles.</strong> Each style is one JSON file in <code>taste/styles/</code>.
-      <code>build_taste.py</code> turns them into short prompt blocks in <code>taste/taste.json</code>.</li>
-    <li><strong>Generate.</strong> I start a run on the New run page; it joins one queue. <code>codex_run.py</code>
-      starts one fresh <code>codex exec</code> per image with a style and a subject (Codex writes fresh subjects
-      when I leave them empty). About a minute and ~95k tokens per image (mostly cached).</li>
-    <li><strong>Vary and remix.</strong> Variations change one thing at a time: palette, subject, composition or
-      mood, with the image as a reference. A remix changes what I say; Codex rewrites the prompt and I read it first.</li>
-    <li><strong>Rate.</strong> Thumbs up or down, with a short why. A thumb is saved at once and can be taken back.
-      Each one re-weights the style's options (<code>leaning.py</code>), so new runs lean toward what I liked;
-      the Taste page shows how.</li>
-    <li><strong>Change a style.</strong> From any image, the Gallery or the Taste page: I say what should change,
-      Codex proposes the smallest edit, I untick what I don't want and apply. Or I add my own words as a
-      "lean towards" or an "avoid" line. Every edit can be undone.</li>
-    <li><strong>Suggestions.</strong> Every 20 ratings Codex reads the latest thumbs and whys and suggests edits
-      per style. A chip in the header says when one waits; I apply or skip each one.</li>
-  </ol>
-  <p>The app is plain HTML, CSS (Pico.css) and JavaScript modules, served by a small Python server on
-    127.0.0.1 only. No framework, no build step. Images, ratings and logs stay in <code>generated/codex/</code>,
-    which git ignores.</p>
-</section>
-
-<section id="about-decisions">
-  <h2>Decisions</h2>
+<section id="about-believe">
+  <h2>What it believes</h2>
   <dl class="decisions">
-    <dt>Styles by eye, not by colour</dt>
-    <dd>Colour clustering was quick but wrong two times out of three. Tagging by eye took longer and gives styles
-      I recognise as mine. Tools still offer a top-3 guess, and I confirm it.</dd>
-    <dt>Codex for images, Claude Code for the taste</dt>
-    <dd>One tool generates, the other one thinks. Codex makes the images and drafts text (subjects, prompts,
-      style proposals) but never edits a style file itself; a style changes only when I press Apply, or when I OK
-      Claude Code's set of edits in chat. Files are the hand-off between them.</dd>
-    <dt>One change per variation</dt>
-    <dd>If a variation changes palette and subject at once, I can't tell which one I liked. One change, one lesson.</dd>
-    <dt>Every mark counts at once</dt>
-    <dd>Until 21 Nov marks were drafts until I pressed Save. Now a thumb is saved the moment I press it and pressing
-      it again takes it back: one step less, and nothing lost if I close the tab.</dd>
-    <dt>The app is the interface</dt>
-    <dd>I give feedback where I feel it, on the image or the style, as a thumb, a remix or a few words. No
-      scripts or chat steps on my side; Claude and Codex pick it up from the files.</dd>
-    <dt>Local first</dt>
-    <dd>The wallpapers and every reference image stay private. The app listens on this machine only.</dd>
-    <dt>Measure the allowance, don't guess it</dt>
-    <dd>Every run logs the allowance read from Codex's own log, so the budget (about 40 images a week) rests on
-      numbers.</dd>
+    <dt>Taste grows from evidence</dt>
+    <dd>What I say I like and what I keep are not always the same. So the styles change from my reactions to real
+      images, not from what I think I want. Downs teach as much as ups.</dd>
+
+    <dt>Recognition first, words second</dt>
+    <dd>I'm asked to judge, not to describe. A thumb takes a second; a "why" is optional. The words are the
+      machine's job: it turns my choices into language and shows me the result.</dd>
+
+    <dt>The human decides, the machine runs</dt>
+    <dd>I always stand on the side of the human, and here that human is me. Codex makes and drafts, Claude
+      organises, and nothing changes in a style until I press Apply. Every change shows what it was before and can
+      be undone.</dd>
+
+    <dt>Nothing hidden</dt>
+    <dd>Trust should match reality. When a thumb steers the next runs, the page says which parts it moved. When a
+      run spends allowance, the cost is in view before I press Start. I can always see why the machine did what it
+      did.</dd>
+
+    <dt>Technology out of sight</dt>
+    <dd>I give feedback where I feel it: on the image, on the style, in the moment. No scripts, no files to edit,
+      no chat to remember. The machinery runs quietly behind the page.</dd>
+
+    <dt>One change, one lesson</dt>
+    <dd>A variation changes one thing at a time. If palette and subject change together, I can't tell which one I
+      liked. Small steps make the feedback mean something.</dd>
   </dl>
 </section>
 
+<section id="about-not">
+  <h2>What it is not</h2>
+  <p>It is not a way to copy anyone. The wallpapers belong to the people who made them. They stay on my laptop,
+    and the styles describe qualities (a light, a palette, a way of framing) rather than reproduce works. Only the
+    descriptions and the images I make are mine to show.</p>
+  <p>It is not a product either. It is a small, real place where I learn how people and AI can work together:
+    where the machine helps, where it must ask, and how a calm interface keeps a person in control.</p>
+</section>
+
+<section id="about-grew">
+  <h2>How it grew</h2>
+  <ol class="timeline">
+    <li><time>8 Nov 2026</time> A first try: styles found by grouping the wallpapers by colour. Quick, and wrong
+      two times out of three.</li>
+    <li><time>13 Nov 2026</time> Rebuilt by eye: every wallpaper tagged for subject, medium, mood and light, and each
+      style approved one by one. Images made through Codex on my own plan, and this web app to rate them.</li>
+    <li><time>14–19 Nov 2026</time> More collections, more styles, a few dropped again after testing, and more
+      variety inside each style.</li>
+    <li><time>18 Nov 2026</time> Rating became a simple thumb up or down, with an optional why.</li>
+    <li><time>21 Nov 2026</time> The app became the interface: runs, remixes, style changes and suggestions all
+      happen in the page.</li>
+  </ol>
+</section>
+
 <section id="about-together">
-  <h2>How we work</h2>
-  <p>Three of us, each with a clear job:</p>
+  <h2>Who does what</h2>
   <ul>
-    <li><strong>Me:</strong> I look, rate and decide, in this app. Every style edit needs my OK.</li>
-    <li><strong>Claude Code:</strong> owns the taste files, reads my notes and ratings, proposes edits, builds the
-      tools and this app, commits my style edits, and writes a changelog entry with an undo line for every change.</li>
-    <li><strong>Codex CLI:</strong> makes the images, one fresh run per image, and drafts subjects, remix prompts
-      and style suggestions for me to read. It never changes a style on its own.</li>
+    <li><strong>Me:</strong> I look, react and decide. Every change to a style needs my OK.</li>
+    <li><strong>Codex:</strong> makes the images, one at a time, and drafts words for me to read: new subjects,
+      remix prompts, style suggestions. It never changes a style on its own.</li>
+    <li><strong>Claude:</strong> looks after the styles, reads my notes, builds the tools and this app, and keeps
+      a record of every change with a way to undo it.</li>
   </ul>
-  <p>The rules for Claude Code are in the repo's <code>CLAUDE.md</code>: stop and report after one failed retry,
-    ask before spending a large share of the allowance, check every push for private data.</p>
+  <p>How to use the app, step by step, is in the <a href="#/guide">Guide</a>.</p>
 </section>
 
 </div>

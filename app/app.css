@@ -416,6 +416,13 @@ dialog.glarge[open] { display: grid; grid-template-columns: minmax(0, 1fr) 22rem
 .about { max-width: 46rem; }
 .about section { margin-bottom: 2.5rem; scroll-margin-top: 4.5rem; }
 .about h2 { font-size: 1.2rem; }
+.about h3 { font-size: 1rem; margin: 1.2rem 0 .4rem; }
+.about .lead { font-size: 1.15rem; }
+/* Guide: same reading column; tables and keys stay compact so a section fits one screen. */
+.guide table { font-size: .9rem; }
+.guide td, .guide th { vertical-align: top; }
+.guide kbd { font-size: .8rem; padding: .1rem .35rem; }
+.guide ol ul, .guide li > ul { margin-top: .3rem; }
 .timeline { padding-left: 1.2rem; }
 .timeline li { margin-bottom: .6rem; }
 .timeline time { color: var(--pico-muted-color); font-variant-numeric: tabular-nums; margin-right: .4rem; }

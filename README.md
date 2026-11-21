@@ -114,6 +114,12 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Two text pages in the web app (Marc): **About** (`app/about.html`) rewritten as an introduction
+  to why the project exists (taste is recognised before it is described, evidence over guesses, the human decides,
+  nothing hidden, tech out of sight), still a draft for Marc's review; new **Guide** (`app/guide.html`, `#/guide`,
+  header link) with everything the app can do page by page, all keys and 14 use cases. `js/about.js` loads both
+  and now opens a page at the top. Rule in `CLAUDE.md` ("Every change"): app changes Marc can see update the Guide
+  in the same commit. Undo: `git revert` this commit.
 - **21 Nov 2026** – About page brought up to date: history up to today (thumbs, the app as the interface), How it
   works with runs from the page, leaning, change the style and suggestions; "Draft, then save" replaced by "Every
   mark counts at once" and "The app is the interface"; Codex's text jobs named in "How we work". Still marked as a
