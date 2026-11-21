@@ -105,8 +105,12 @@ function batchForm() {
       h('div', { class: 'nr-row' },
         h('input', { type: 'search', placeholder: 'Filter styles', value: filter, 'aria-label': 'Filter styles', 'data-focus': 'filter',
           onInput: (e) => { filter = e.target.value; drawForm(); } }),
+        // Select all picks every style in view: all of them, or only those the filter shows.
+        shown.some((k) => !state.styles.includes(k)) && h('button', { class: 'ghost small', 'data-focus': 'all',
+          onClick: () => { state.styles = [...new Set([...state.styles, ...shown])]; save(); drawForm('[data-focus="clear"]'); drawSummary(); } },
+          filter && shown.length < keys.length ? `Select the ${shown.length} shown` : 'Select all'),
         state.styles.length > 0 && h('button', { class: 'ghost small', 'data-focus': 'clear',
-          onClick: () => { state.styles = []; save(); drawForm(); drawSummary(); } }, 'Clear')),
+          onClick: () => { state.styles = []; save(); drawForm('[data-focus="all"]'); drawSummary(); } }, 'Clear')),
       h('div', { class: 'style-picker' },
         shown.map((k) => h('button', {
           type: 'button', class: 'style-chip', 'aria-pressed': String(state.styles.includes(k)), 'data-focus': 'chip-' + k,

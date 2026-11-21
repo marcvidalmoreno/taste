@@ -114,6 +114,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – New run: **Select all** next to the style filter picks every style (with a filter on, it reads
+  "Select the N shown" and picks only those). The cost box shows the size straight away (30 styles × 4 = 120 images).
+  Keyboard focus moves to Clear after Select all, and back. Guide updated.
 - **21 Nov 2026** – More like this (Marc picked idea 2 of the inspiration research, "go"). A **More like this** row in
   the Large view and the Gallery large view: the 8 existing images closest in colour and framing, a **Same style
   only** chip, a click opens the neighbour in the Gallery large view (← → steps through the row, which has its own
