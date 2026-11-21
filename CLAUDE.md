@@ -13,6 +13,10 @@ Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, n
 - Codex CLI generates images (`scripts/codex_run.py`, one fresh `codex exec` per image) and, for the web app,
   writes subjects and prompt rewrites (`scripts/codex_text.py`, read-only; Marc, 21 Nov 2026). It never edits
   taste files and never reads the notes for Claude.
+- Marc can change a style from the web app ("Change the style", Marc, 21 Nov 2026): Codex proposes (read-only),
+  Marc applies in the page; that apply is his OK. The app rewrites the style file, runs `build_taste.py` and logs
+  before / after in `generated/codex/style-edits.json`, but never commits. When Marc says "commit my style edits":
+  review `git diff taste/`, add a changelog entry from that log, commit and push.
 - "Process my app notes": `scripts/notes.py` lists the notes Marc left in the web app; look at what each points
   at, propose the style edits as one set, apply after his OK, then answer each with `notes.py done <id> "..."`.
 - Files are the hand-off: images, `generated/codex/runs.csv`, `generated/codex/ratings.csv` (all git-ignored).

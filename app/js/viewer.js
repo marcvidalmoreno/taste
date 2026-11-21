@@ -5,6 +5,7 @@ import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons } from './mar
 import { openVariations } from './variations.js';
 import { openRemix } from './remix.js';
 import { openNote } from './notes.js';
+import { openStyleEdit } from './styleedit.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
@@ -127,7 +128,7 @@ function drawPanel(im) {
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),
       ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
-      h('kbd', {}, 'C'), ' note  ', h('kbd', {}, 'F'), ' 1:1  ',
+      h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ', h('kbd', {}, 'F'), ' 1:1  ',
       h('kbd', {}, 'Esc'), ' close'));
 }
 
@@ -156,6 +157,7 @@ function actions(im) {
   return h('section', { class: 'actions' },
     h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'Say what should change; Codex rewrites the prompt' }, 'Remix… ', h('kbd', {}, 'R')),
     h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Variations… ', h('kbd', {}, 'V')),
+    im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
     h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C')),
     !im.saved && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
       im.status === 'ignored' ? 'Restore' : 'Ignore', ' ', h('kbd', {}, 'I')));
@@ -163,6 +165,7 @@ function actions(im) {
 
 const variationsOf = (im) => openVariations({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style });
 const remixOf = (im) => openRemix({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style, prompt: im.prompt });
+const styleOf = (im) => im.style && openStyleEdit({ style: im.style, batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}` });
 const noteOn = (im) => openNote({ batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}`, style: im.style });
 
 // Batches made from this image (variations, remixes), newest last: where its "children" went.
@@ -250,6 +253,7 @@ function onKey(e) {
   else if (key === 'v') variationsOf(im);
   else if (key === 'r') remixOf(im);
   else if (key === 'c') noteOn(im);
+  else if (key === 'e') styleOf(im);
   else if (key === 's') { if (!e.repeat) showSeed(true); }
   else if (key === 'Enter' && !e.target.closest('button, a')) panel.querySelector('.why:not([disabled])')?.focus();
   else return;

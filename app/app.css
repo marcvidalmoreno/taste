@@ -565,3 +565,21 @@ dialog.note-dialog article { max-width: 36rem; }
   .newrun-summary { position: static; }
   .run-card { flex-direction: column; align-items: stretch; }
 }
+
+/* 12. Change a style from the page (21 Nov 2026) ------------------------------------------------- */
+dialog.style-edit article { max-width: 46rem; }
+.field-diff { background: #161616; border-radius: var(--radius); padding: .6rem .8rem; margin-bottom: .6rem; }
+.field-diff.is-off { opacity: .45; }
+.field-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; }
+.field-head .nr-check { margin: 0; }
+.field-diff .prompt { margin: 0; background: none; padding: 0; }
+.diff-list { padding-left: 1.1rem; margin: 0; }
+.diff-list li { list-style: disc; margin-bottom: .2rem; }
+.facts-mini { display: grid; grid-template-columns: 7rem 1fr; gap: .3rem 1rem; margin: .5rem 0 0; }
+.facts-mini dt { color: var(--pico-muted-color); }
+.facts-mini dd { margin: 0; }
+.facts-mini li { margin: 0 0 .15rem; }
+.style-edits { margin: .25rem 0 .5rem; }
+.style-edits li { margin: 0 0 .5rem; }
+.style-edits .is-undone { opacity: .55; }
+.edit-line { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }

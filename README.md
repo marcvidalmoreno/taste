@@ -85,6 +85,7 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 |---|---|
 | **The web app: start runs, remix, rate, leave notes for Claude** | `.venv/Scripts/python -I scripts/app.py` → http://127.0.0.1:8777 (`--dry-run`: every run and text job spends nothing) |
 | Fresh subjects or a rewritten prompt (what the web app asks Codex) | `.venv/Scripts/python -I scripts/codex_text.py subjects --style S --n 4 [--hint "..."]` or `rewrite --prompt "..." --change "..."` |
+| A style edit proposal (what the web app's "Change the style" asks Codex; nothing is written) | `.venv/Scripts/python -I scripts/codex_text.py style --style S --change "..."` |
 | Notes Marc left in the web app ("process my app notes") | `.venv/Scripts/python -I scripts/notes.py`, then `notes.py done <id> "<answer>"` |
 | Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> --style S [--subject "..."]` (no `--style`: prints the top-3 guess) |
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
@@ -112,6 +113,15 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Web app: **Change the style** from wherever you see its images (viewer key E, gallery large view,
+  a single-style batch, each style on the Taste page). Write what should change ("fewer elements, less
+  repetition"); Codex proposes the smallest edit to the style's fields (`codex_text.py style`, read-only, ~15 s),
+  shown field by field with the changed words marked; untick what you don't want and apply. Or add your words as
+  they are, as a "lean towards" or an "avoid" line. The app rewrites `taste/styles/<style>.json` in the repo's
+  format, rebuilds `taste.json`, and the next image in that style uses it (also images still to come in a running
+  run). Every edit keeps its before / after in `generated/codex/style-edits.json`: Undo in the toast and on the
+  Taste page. The app never commits; "commit my style edits" in chat does. Taste page shows "Lean towards".
+  Undo: `git revert` this commit.
 - **21 Nov 2026** – Web app: start and steer runs from the page instead of from chat (Marc chose "Codex text + queue").
   **New run** page: pick styles, images per style, shape, wildcard; subjects one per line, empty lines written by
   Codex (new `scripts/codex_text.py`, read-only text jobs, ~15 s) or the style's examples; free prompt preview;

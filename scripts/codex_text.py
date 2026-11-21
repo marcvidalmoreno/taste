@@ -4,9 +4,12 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_text.py subjects --style <style> [--n 4] [--hint "winter, at night"]
   .venv/Scripts/python -I scripts/codex_text.py rewrite --prompt "<old prompt>" --change "<what should change>"
         [--keep subject,palette,composition,light]
+  .venv/Scripts/python -I scripts/codex_text.py style --style <style> --change "<what should change>"
   add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
 
-Prints one JSON object on stdout: {"subjects": [...]} or {"prompt": "...", "summary": "..."}.
+Prints one JSON object on stdout: {"subjects": [...]}, {"prompt": "...", "summary": "..."} or, for style,
+{"changes": {<field>: <new value>}, "summary": "..."}: a proposal only. This script never writes the style; the web
+app shows the proposal and applies it after Marc's OK (21 Nov 2026).
 
 Added 21 Nov 2026 (Marc chose "Codex text + queue"): Codex may write subjects and prompts, never style files.
 The taste stays with Claude Code: these jobs read taste/styles/*.json and taste/taste.json, write nothing there.
@@ -46,6 +49,25 @@ Rewrite the prompt so it makes that change and nothing else. Keep its structure 
 "Subject: ...", then the style notes) and keep every part that the change does not touch word for word.
 If the change contradicts a style note, change that note too. No text, logos or real named people.
 Answer exactly: {{"prompt": "<the new prompt>", "summary": "<what you changed, under 15 words>"}}"""
+
+
+STYLE = """You edit the written description of one visual style that an image model follows. Do not run commands,
+do not read or write files. Answer with JSON only.
+
+The style now (JSON):
+{style}
+
+What Marc wants changed, after looking at images made with it: {change}
+
+Change only the fields that need it, with the smallest edit that makes the change felt in every image (the
+model reads description, light, composition, medium, mood, detail, prefer and avoid; light, composition and mood
+are lists of alternatives, one picked per image, so a change meant for every image may need each item, or a
+line in "prefer" or "avoid"). Keep each field's type (a list stays a list of short phrases). Keep the language
+plain and concrete. Never add text, logos, real named people or named artists.
+Answer exactly: {{"changes": {{"<field>": <new value>, ...}}, "summary": "<what you changed, under 20 words>"}}"""
+
+EDITABLE = ('description', 'light', 'composition', 'camera_or_medium', 'mood', 'texture_detail', 'prefer', 'avoid',
+            'subjects')
 
 
 def style_info(key):
@@ -144,6 +166,35 @@ def rewrite(a):
     return {'prompt': prompt, 'summary': clean(d.get('summary', ''), 160), 'seconds': secs}
 
 
+def style_edit(a):
+    s = style_info(a.style)
+    now = {k: s[k] for k in EDITABLE if k in s}
+    if a.dry_run:
+        return {'changes': {'prefer': list(s.get('prefer') or []) + [a.change]},
+                'summary': f'dry run: added "{a.change}" to lean towards', 'seconds': 0, 'dry_run': True}
+    answer, secs = ask(f'style:{a.style}', STYLE.format(style=json.dumps(now, indent=1, ensure_ascii=False), change=a.change))
+    d = parse_json(answer)
+    out = {}
+    for k, v in (d.get('changes') or {}).items():   # keep only real, well-typed edits
+        if k not in EDITABLE:
+            continue
+        if isinstance(v, list):
+            v = [clean(x, 300) for x in v if clean(x, 300)]
+            if not v or (k in now and isinstance(now[k], str) and k != 'texture_detail'):
+                continue
+        elif isinstance(v, str):
+            v = clean(v, 1200)
+            if not v or (k in now and isinstance(now[k], list)):
+                continue
+        else:
+            continue
+        if v != now.get(k):
+            out[k] = v
+    if not out:
+        sys.exit('Codex proposed no change to the style')
+    return {'changes': out, 'summary': clean(d.get('summary', ''), 200), 'seconds': secs}
+
+
 if __name__ == '__main__':
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -159,6 +210,11 @@ if __name__ == '__main__':
     r.add_argument('--change', required=True)
     r.add_argument('--keep', default='')
     r.add_argument('--dry-run', action='store_true')
+    e = sub.add_parser('style')
+    e.add_argument('--style', required=True)
+    e.add_argument('--change', required=True)
+    e.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
     a.n = max(1, min(12, getattr(a, 'n', 4)))
-    print(json.dumps(subjects(a) if a.cmd == 'subjects' else rewrite(a), ensure_ascii=False))
+    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit}[a.cmd]
+    print(json.dumps(run(a), ensure_ascii=False))

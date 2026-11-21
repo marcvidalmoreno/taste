@@ -23,6 +23,8 @@ Files this server reads or writes (all in generated/codex/)
   <batch>/run.json     what a run started here was, where it came from and how it was set (written)
   app-queue.json       runs waiting (written; app-queue.dry.json with --dry-run, so a test never runs for real)
   claude-notes.json    notes for Claude Code (written here, answered with scripts/notes.py)
+  style-edits.json     style edits made here: before / after of each, for Undo (written; the style file itself is
+                       taste/styles/<style>.json, rewritten in the repo's format, then build_taste.py)
   .progress.json       live progress of the running run (read; written by the run scripts)
 
 Runs (21 Nov 2026): one queue, one image run at a time. New runs (batch.py), single images, remixes and retries
@@ -608,6 +610,96 @@ def spec_variations(body):
             'n': len(changes), 'expected': [f'{i}-{c}' for i, c in enumerate(changes, 1)]}
 
 
+# -- style edits from the page (21 Nov 2026): Marc writes what should change, Codex proposes (read-only), Marc
+# approves in the page, this server applies it, rebuilds taste.json, and keeps the before / after for Undo.
+
+STYLE_EDITS = BASE / 'style-edits.json'   # [{id, style, at, change, summary, before, after, source, undone}]
+EDITABLE = ('description', 'light', 'composition', 'camera_or_medium', 'mood', 'texture_detail', 'prefer', 'avoid',
+            'subjects')
+FIELD_NAMES = {'description': 'Description', 'light': 'Light', 'composition': 'Composition', 'camera_or_medium': 'Medium',
+               'mood': 'Mood', 'texture_detail': 'Detail', 'prefer': 'Lean towards', 'avoid': 'Avoid', 'subjects': 'Subjects'}
+
+
+def check_changes(style, changes):
+    """Only known fields, same type as now (a list stays a list of short phrases), something really different."""
+    now = style_file(style)
+    if not isinstance(changes, dict) or not changes:
+        raise ApiError(400, 'nothing to change')
+    out = {}
+    for k, v in changes.items():
+        if k not in EDITABLE:
+            raise ApiError(400, f'"{k}" cannot be edited here')
+        if isinstance(v, list):
+            v = [clean(x, 300) for x in v if clean(x, 300)]
+            if k in now and isinstance(now[k], str) and k != 'texture_detail':
+                raise ApiError(400, f'"{k}" must stay one text')
+        elif isinstance(v, str):
+            v = clean(v, 1200)
+            if k in now and isinstance(now[k], list):
+                raise ApiError(400, f'"{k}" must stay a list')
+        else:
+            raise ApiError(400, f'"{k}": text or a list of texts')
+        if k in ('description', 'light', 'composition', 'camera_or_medium', 'mood', 'texture_detail') and not v:
+            raise ApiError(400, f'"{FIELD_NAMES[k]}" cannot be empty')
+        if v != now.get(k):
+            out[k] = v
+    if not out:
+        raise ApiError(400, 'that is how the style already reads')
+    return now, out
+
+
+def write_style(style, data):
+    """Same format as the files in the repo (2 spaces, ASCII escapes, Windows line ends), then rebuild taste.json."""
+    import subprocess
+    path = ROOT / 'taste' / 'styles' / f'{style}.json'
+    tmp = path.with_suffix('.tmp')
+    with open(tmp, 'w', encoding='utf-8', newline='\r\n') as fh:
+        fh.write(json.dumps(data, indent=2))
+    os.replace(tmp, path)
+    r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'build_taste.py'), str(ROOT)], cwd=ROOT,
+                       capture_output=True, text=True, encoding='utf-8', errors='replace')
+    if r.returncode:
+        raise ApiError(500, 'build_taste.py failed: ' + (r.stderr or r.stdout).strip()[-300:])
+
+
+def apply_style_edit(style, changes, change_text, summary, source, how):
+    import time
+    with LOCK:
+        now, changes = check_changes(style, changes)
+        before = {k: now.get(k) for k in changes}
+        write_style(style, {**now, **changes})
+        edits = read_json(STYLE_EDITS, [])
+        rec = {'id': f'{int(time.time() * 1000)}', 'style': style, 'at': time.strftime('%Y-%m-%d %H:%M'),
+               'change': clean(change_text, 400), 'summary': clean(summary, 200), 'how': how,
+               'before': before, 'after': changes, 'source': source, 'undone': False}
+        edits.append(rec)
+        write_json(STYLE_EDITS, edits)
+    return rec
+
+
+def undo_style_edit(eid):
+    with LOCK:
+        edits = read_json(STYLE_EDITS, [])
+        rec = next((e for e in edits if e['id'] == eid), None)
+        if not rec or rec['undone']:
+            raise ApiError(404, 'no such edit, or it is undone already')
+        now = style_file(rec['style'])
+        moved = [k for k, v in rec['after'].items() if now.get(k) != v]
+        if moved:
+            raise ApiError(409, 'changed again since (' + ', '.join(FIELD_NAMES.get(k, k) for k in moved)
+                           + '): undo the later edit first')
+        restored = {**now}
+        for k, v in rec['before'].items():
+            if v is None:
+                restored.pop(k, None)   # the field did not exist before (e.g. a first "lean towards")
+            else:
+                restored[k] = v
+        write_style(rec['style'], restored)
+        rec['undone'] = True
+        write_json(STYLE_EDITS, edits)
+    return rec
+
+
 # ---------------------------------------------------------------- HTTP
 
 class ApiError(Exception):
@@ -640,6 +732,10 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/notes'): 'get_notes',
         ('POST', 'api/notes/delete'): 'post_notes_delete',
         ('POST', 'api/notes'): 'post_notes',
+        ('POST', 'api/style/propose'): 'post_style_propose',
+        ('POST', 'api/style/apply'): 'post_style_apply',
+        ('POST', 'api/style/undo'): 'post_style_undo',
+        ('GET', 'api/style/edits'): 'get_style_edits',
         ('GET', 'api/job'): 'get_job',
         ('GET', 'api/overview'): 'get_overview',
         ('GET', 'api/distil'): 'get_distil',
@@ -932,6 +1028,34 @@ class Handler(BaseHTTPRequestHandler):
             d['notes'] = keep
             write_json(NOTES, d)
         return {'ok': True}
+
+    def post_style_propose(self):
+        """Codex proposes an edit to one style: {style, change}. Read-only, ~15 s; nothing is written."""
+        body = self.read_body()
+        style, change = str(body.get('style', '')), clean(body.get('change'), 400)
+        now = style_file(style)
+        if not change:
+            raise ApiError(400, 'say what should change')
+        r = text_job('style', '--style', style, '--change', change)
+        return {**r, 'before': {k: now.get(k) for k in r['changes']}}
+
+    def post_style_apply(self):
+        """Apply an edit Marc approved: {style, changes: {field: value}, change, summary, how: codex|words,
+        source: {batch, name}}. Rebuilds taste.json; the next image in this style uses it."""
+        body = self.read_body()
+        src = body.get('source') or {}
+        source = {'batch': str(src.get('batch', '')), 'name': str(src.get('name', ''))} if src.get('batch') else None
+        rec = apply_style_edit(str(body.get('style', '')), body.get('changes'), body.get('change', ''),
+                               body.get('summary', ''), source, 'codex' if body.get('how') == 'codex' else 'words')
+        return rec
+
+    def post_style_undo(self):
+        return undo_style_edit(str(self.read_body().get('id', '')))
+
+    def get_style_edits(self, style=''):
+        """Edits made from the page, newest first (one style, or all)."""
+        edits = [e for e in read_json(STYLE_EDITS, []) if not style or e['style'] == style]
+        return {'edits': list(reversed(edits))[:30]}
 
     def get_job(self):
         return job_state()

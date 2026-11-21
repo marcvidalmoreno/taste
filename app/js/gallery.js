@@ -4,6 +4,7 @@
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
 import { api, styles } from './api.js';
+import { openStyleEdit } from './styleedit.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATING_LABELS, showError, isTyping } from './ui.js';
 
 const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
@@ -143,5 +144,7 @@ function draw() {
         h('dt', {}, 'Batch'), h('dd', {}, h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch)),
           ' · ', shortDate(im.date)),
         im.change && [h('dt', {}, 'Variation'), h('dd', {}, `changes the ${im.change}`)]),
+      st && h('button', { class: 'secondary outline small-btn', onClick: () => openStyleEdit({ style: im.style, batch: im.batch, name: im.name, file: im.file }) },
+        `Change the style…`),
       im.prompt && h('details', {}, h('summary', {}, 'Prompt'), h('p', { class: 'prompt' }, im.prompt))));
 }

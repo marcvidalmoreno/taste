@@ -6,6 +6,7 @@ import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { renderSaveBar } from './save.js';
 import { job, enqueueRun, KIND } from './job.js';
 import { api as call } from './api.js';
+import { openStyleEdit } from './styleedit.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError, toast } from './ui.js';
 
 let view;
@@ -124,6 +125,7 @@ function batchMeta(d) {
       h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(d.path).then(() => toast('Folder path copied', { timeout: 2000 })) }, 'Copy path'),
       h('button', { class: 'ghost small', onClick: () => call('reveal', { method: 'POST', body: { batch: d.batch } }).catch(showError) }, 'Open folder'),
       h('span', { class: 'spacer' }),
+      styles.length === 1 && h('button', { class: 'ghost small', onClick: () => openStyleEdit({ style: styles[0] }) }, 'Change the style…'),
       styles.length > 0 && h('a', { class: 'small', href: '#/new?mode=batch&style=' + styles.map(encodeURIComponent).join(',') },
         styles.length > 1 ? 'New run with these styles' : 'New run with this style')),
     p && h('a', { class: 'made-from', href: parentHref },

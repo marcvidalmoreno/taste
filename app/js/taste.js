@@ -5,9 +5,11 @@
 import { h, thumbUrl, plural, RATING_LABELS, showError } from './ui.js';
 import { loadGallery, openLarge, galleryHref } from './gallery.js';
 import { openNote } from './notes.js';
+import { openStyleEdit, undoEdit, diffValue, FIELDS } from './styleedit.js';
+import { api } from './api.js';
 
 const FACTS = [['light', 'Light'], ['composition', 'Composition'], ['camera_or_medium', 'Medium'],
-  ['mood', 'Mood'], ['texture_detail', 'Detail']];
+  ['mood', 'Mood'], ['texture_detail', 'Detail'], ['prefer', 'Lean towards']];
 const USES = { teams: 'Teams background', desktop: 'Desktop', phone: 'Phone', post: 'Post' };
 
 export async function renderTaste(view, focus) {
@@ -55,7 +57,9 @@ function styleCard(key, s, imgs) {
         h('h2', {}, s.name),
         h('a', { href: '#/new?mode=batch&style=' + encodeURIComponent(key), role: 'button', class: 'secondary outline small-btn' }, 'New run'),
         h('a', { href: '#/new?mode=one&style=' + encodeURIComponent(key), class: 'small' }, 'One image'),
+        h('button', { class: 'secondary outline small-btn', onClick: () => openStyleEdit({ style: key, onApplied: () => renderTaste(document.getElementById('view'), key) }) }, 'Change this style…'),
         h('button', { class: 'ghost small', onClick: () => openNote({ style: key }) }, 'Note for Claude…')),
+      editsSlot(key),
       h('p', {}, s.description),
       h('div', { class: 'swatches', role: 'list', 'aria-label': 'Palette' },
         s.palette.map((c) => h('span', { role: 'listitem', title: c }, h('i', { style: { background: c } }), h('code', {}, c))))),
@@ -70,4 +74,23 @@ function styleCard(key, s, imgs) {
                unrated ? `${plural(unrated, 'image')} not rated yet. ` : '',
                h('a', { href: galleryHref({ style: key }) }, `All ${plural(imgs.length, 'image')} in the gallery`))]
           : h('p', { class: 'muted' }, 'No images made in this style yet.'))));
+}
+
+// Edits made from the page to this style, newest first, each with Undo (while nothing later changed the same field).
+function editsSlot(key) {
+  const box = h('div', { class: 'style-edits' });
+  api('style/edits/' + encodeURIComponent(key)).then(({ edits }) => {
+    if (!edits.length) return;
+    box.replaceChildren(h('details', {},
+      h('summary', { class: 'small' }, (() => { const on = edits.filter((e) => !e.undone).length, off = edits.length - on;
+        return `Changed from the app: ${plural(on, 'edit')}${off ? ` (${off} undone)` : ''}`; })()),
+      h('ul', { class: 'plain' }, edits.map((e) => h('li', { class: e.undone ? 'is-undone' : '' },
+        h('div', { class: 'edit-line' },
+          h('span', {}, h('strong', {}, `“${e.change}”`), ' ', h('span', { class: 'muted small' },
+            `${e.at.slice(8, 10)}/${e.at.slice(5, 7)} ${e.at.slice(11)} · ${e.how === 'codex' ? 'Codex edit' : 'your words'}${e.undone ? ' · undone' : ''}`)),
+          !e.undone && h('button', { class: 'ghost small', onClick: () => undoEdit(e, () => renderTaste(document.getElementById('view'), key)) }, 'Undo')),
+        h('details', { class: 'small' }, h('summary', {}, e.summary || Object.keys(e.after).map((k) => FIELDS[k] || k).join(', ')),
+          Object.keys(e.after).map((k) => [h('p', { class: 'muted' }, FIELDS[k] || k), diffValue(e.before[k], e.after[k])])))))));
+  }).catch(() => {});
+  return box;
 }

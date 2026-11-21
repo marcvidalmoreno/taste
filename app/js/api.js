@@ -21,3 +21,8 @@ export function styles() {
   stylesPromise ??= api('styles').then((d) => d.styles).catch(() => ({}));
   return stylesPromise;
 }
+// After a style edit: read them again (every caller of styles() then gets the new text).
+export function refreshStyles() {
+  stylesPromise = null;
+  return styles();
+}
