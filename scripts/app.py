@@ -18,6 +18,7 @@ Files this server reads or writes (all in generated/codex/)
   ratings.csv          saved ratings (read; appended through rate.append_ratings)
   app-drafts.json      marks not saved yet, so they survive closing the tab (written)
   app-ignored.json     images hidden from the grid and left out of ratings (written)
+  .look-index.json     colour and framing numbers per image for "More like this" (written, safe to delete)
   kept.json            images kept as examples of their style: [{batch, name, style, at}] (written; new batch and
                        single-image runs of that style send up to 2 of them along as references, 21 Nov 2026)
   .thumbs/             small JPEG copies for the grid (written, safe to delete)
@@ -60,6 +61,7 @@ TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
          '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml',
          '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
          '.md': 'text/plain; charset=utf-8'}
+LOCK_SIMILAR = threading.Lock()  # one measuring pass at a time (scripts/similar.py)
 LOCK = threading.Lock()  # one writer at a time for the small JSON files and thumbnails
 
 
@@ -1115,6 +1117,7 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/overview'): 'get_overview',
         ('GET', 'api/distil'): 'get_distil',
         ('GET', 'api/gallery'): 'get_gallery',
+        ('GET', 'api/similar'): 'get_similar',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -1613,10 +1616,29 @@ class Handler(BaseHTTPRequestHandler):
                 out[p.stem]['refs'] = sorted(f.name for f in refs.glob('ref-*.jpg'))
         return {'styles': out}
 
+    def get_similar(self, batch='', name='', mode=''):
+        """The 8 images that look most like this one (colour and framing, scripts/similar.py), in the Gallery's shape.
+        mode 'same': only this image's style. Free: reads thumbnails, spends nothing."""
+        from similar import update_index, nearest
+        if not is_batch(batch) or name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in batch "{batch}"')
+        imgs = {f"{x['batch']}/{x['name']}": x for x in self.gallery_images()}
+        me = f'{batch}/{name}'
+        if me not in imgs:
+            return {'items': []}
+        with LOCK_SIMILAR:
+            vectors = update_index(BASE / '.look-index.json',
+                                   [(k, thumbnail(x['batch'], x['file']), x['mtime']) for k, x in imgs.items()])
+        allowed = {k for k, x in imgs.items() if x['style'] == imgs[me]['style']} if mode == 'same' else None
+        return {'items': [{**imgs[k], 'distance': round(d, 2)} for k, d in nearest(vectors, me, 8, allowed)]}
+
     def get_gallery(self):
         """Every image of every batch, newest first, ignored ones left out. The Gallery and Taste pages show
         these; the Gallery's large view can mark them too (PUT /api/mark, 21 Nov 2026). Seeds are left out
         (rate.batch_images skips them), so wallpapers by other people never show here."""
+        return {'images': self.gallery_images()}
+
+    def gallery_images(self):
         out = []
         names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
         shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set())
@@ -1631,7 +1653,7 @@ class Handler(BaseHTTPRequestHandler):
                             'date': im['date'] or b[:10],
                             'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept']})
         out.sort(key=lambda x: x['mtime'], reverse=True)
-        return {'images': out}
+        return out
 
 
 def use_venv():

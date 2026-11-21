@@ -8,12 +8,15 @@
 import { api, styles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton } from './marks.js';
+import { similarRow } from './similar.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping } from './ui.js';
 
 const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
 let all = [];        // every image from the server
+let stepList = [];   // what the large view steps through: the grid's list, or a "More like this" row
 let shown = [];      // after the filters, in page order (the large view steps through these)
 let styleMap = {};
+styles().then((st) => { styleMap = st; });   // names for a large view opened from outside this page
 let dlg, index = 0;
 
 export const galleryHref = (q = {}) => {
@@ -141,19 +144,19 @@ function flushWhy() {
   for (const [k, t] of pendingWhy) {
     clearTimeout(t);
     pendingWhy.delete(k);
-    const im = shown.find((x) => keyOf(x) === k);
+    const im = stepList.find((x) => keyOf(x) === k);
     if (im) { sendMark(im).catch(showError); refreshTile(im); }
   }
 }
 
 function redraw(im) {
   refreshTile(im);
-  if (dlg?.open && shown[index] === im) drawMarks(im);
+  if (dlg?.open && stepList[index] === im) drawMarks(im);
 }
 
 // Keep as example: the star shows on the tile and on Taste; the grid does not reflow.
 function keep(im) {
-  setKept(im, im.batch, !im.kept).then(() => { refreshTile(im); if (dlg?.open && shown[index] === im) drawKeep(im); }).catch(() => {});
+  setKept(im, im.batch, !im.kept).then(() => { refreshTile(im); if (dlg?.open && stepList[index] === im) drawKeep(im); }).catch(() => {});
 }
 
 // ------------------------------------------------------------------ large view
@@ -164,8 +167,8 @@ function ensureDialog() {
   dlg.addEventListener('keydown', (e) => {
     if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
     const rating = ratingForKey(e.key.toLowerCase());
-    if (rating) { e.preventDefault(); toggleMark(shown[index], rating); }
-    if (e.key.toLowerCase() === 'x') { e.preventDefault(); keep(shown[index]); }
+    if (rating) { e.preventDefault(); toggleMark(stepList[index], rating); }
+    if (e.key.toLowerCase() === 'x') { e.preventDefault(); keep(stepList[index]); }
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
   });
@@ -175,7 +178,7 @@ function ensureDialog() {
 }
 
 export function openLarge(i, list) {
-  if (list) shown = list;
+  stepList = list || shown;   // the grid's list, or another one (Taste, "More like this"): the grid keeps its own
   ensureDialog();
   index = i;
   draw();
@@ -185,7 +188,7 @@ export function openLarge(i, list) {
 
 function step(d) {
   const n = index + d;
-  if (n < 0 || n >= shown.length) return;
+  if (n < 0 || n >= stepList.length) return;
   flushWhy();
   index = n;
   draw();
@@ -195,7 +198,7 @@ let markBox, keepBox;
 function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im))); }
 
 function draw() {
-  const im = shown[index];
+  const im = stepList[index];
   const st = styleMap[im.style];
   dlg.replaceChildren(
     h('div', { class: 'glarge-img' },
@@ -203,11 +206,12 @@ function draw() {
     h('aside', { class: 'glarge-side' },
       h('div', { class: 'glarge-nav' },
         h('button', { class: 'secondary outline', onClick: () => step(-1), disabled: index === 0, 'aria-label': 'Previous image' }, '←'),
-        h('span', { class: 'muted small' }, `${index + 1} / ${shown.length}`),
-        h('button', { class: 'secondary outline', onClick: () => step(1), disabled: index === shown.length - 1, 'aria-label': 'Next image' }, '→'),
+        h('span', { class: 'muted small' }, `${index + 1} / ${stepList.length}`),
+        h('button', { class: 'secondary outline', onClick: () => step(1), disabled: index === stepList.length - 1, 'aria-label': 'Next image' }, '→'),
         h('button', { class: 'secondary outline close', onClick: () => dlg.close(), 'aria-label': 'Close' }, '✕')),
       markBox = h('section', { class: 'mark-box' }),
       keepBox = h('div', { class: 'keep-box' }),
+      similarRow(im, im.batch, !!im.style),
       h('dl', {},
         h('dt', {}, 'Style'), h('dd', {}, st ? h('a', { href: '#/taste/' + encodeURIComponent(im.style), onClick: () => dlg.close() }, st.name) : '–'),
         h('dt', {}, 'Batch'), h('dd', {}, h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch)),
