@@ -1,6 +1,6 @@
 {
   "name": "Fractal worlds",
-  "description": "Fractal structure as the subject: spiral coastlines, glowing filigree, recursive architecture.",
+  "description": "Pure mathematical fractal forms as the subject: Mandelbrot and Julia boundaries, flame fractals, spiral filigree, self-similar curves; no real-world objects.",
   "palette": [
     "#0d0c0e",
     "#373438",
@@ -18,9 +18,9 @@
   ],
   "composition": [
     "one central spiral or bay with deep zoom detail, generous dark space",
-    "a tunnel of recursive arches pulling toward a bright centre",
+    "a deep zoom into a Mandelbrot boundary, spirals inside spirals",
     "a branching tree or coastline across the whole frame",
-    "a sphere or planet whose surface is fractal"
+    "veils of flame-fractal light folding across the frame"
   ],
   "camera_or_medium": "detailed digital render, high contrast, fine linework",
   "mood": [
@@ -32,13 +32,17 @@
   "texture_detail": "self-similar detail at every scale",
   "avoid": [
     "busy noise",
-    "text and logos"
+    "text and logos",
+    "cities, buildings or architecture",
+    "plants, animals or people",
+    "everyday objects",
+    "photographic scenes"
   ],
   "subjects": [
     "a Julia spiral glowing on black",
-    "a seahorse-valley coastline",
-    "a cathedral of recursive arches",
-    "a soap-bubble orb whose surface is a fractal"
+    "a seahorse-valley boundary in deep zoom",
+    "a flame fractal veil of light",
+    "a branching filigree of self-similar curves"
   ],
   "use": [
     "phone",

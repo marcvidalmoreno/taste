@@ -14,22 +14,27 @@
     "studio light on glossy surfaces, thin-film rainbow reflections",
     "warm gold and coral light, soft glow",
     "cool blue and violet light on deep navy",
-    "bright pale background, soft pastel reflections"
+    "bright pale background, soft pastel reflections",
+    "UV black-light glow, fluorescent edges on black",
+    "hard sun through prisms, sharp caustics and spectra"
   ],
   "composition": [
     "one central form on a dark or soft background, generous negative space",
     "flowing ribbons or waves across the whole frame",
     "a cluster of small forms floating at different depths",
-    "a close macro view, the surface filling the frame"
+    "a close macro view, the surface filling the frame",
+    "one hard-edged geometric shape (prism, cone, cube) refracting light",
+    "an oil-slick surface seen from straight above"
   ],
   "camera_or_medium": "3D render or macro photograph",
   "mood": [
     "smooth, modern, calm or playful",
     "warm, soft, luxurious",
     "cool, deep, quiet",
-    "light, fresh, airy"
+    "light, fresh, airy",
+    "bold, loud, graphic"
   ],
-  "texture_detail": "glass, liquid metal, thin-film interference, soft blur",
+  "texture_detail": "glass, liquid metal, thin-film interference, soft blur, oil slick, holographic foil, dichroic acrylic, mother-of-pearl, frosted glass",
   "avoid": [
     "busy patterns",
     "recognisable objects",

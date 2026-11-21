@@ -12,22 +12,24 @@
   ],
   "light": [
     "neon night: cyan and coral rim light on black, no sun",
-    "violet dusk, pink and electric blue haze, no sun",
-    "a giant red or pink sun or moon behind towers (this look only)",
+    "acid green and sodium amber light on black, no sun",
+    "a giant red or orange sun or moon behind towers (this look only)",
     "holographic iridescent sheen on flat black, no sun"
   ],
   "composition": [
     "strict symmetry down a central street, a vanishing point behind a lone silhouette",
     "double exposure: a city skyline inside a large silhouette on black (the only look with a big face)",
     "a tall poster stuffed edge to edge with buildings, machines and debris",
-    "a small figure seen from behind facing a huge glowing skyline"
+    "a small figure seen from behind facing a huge glowing skyline",
+    "a steep view straight down onto the city, streets as glowing lines",
+    "an extreme close-up of a mask, hand or machine part, the city only in reflections"
   ],
   "camera_or_medium": "limited-colour screen print and flat vector illustration with bold ink outlines; some painterly digital brushwork",
   "mood": [
     "cool, defiant, electric",
     "lonely, nocturnal, wistful",
     "chaotic, explosive, apocalyptic",
-    "dreamy, nostalgic, dusk"
+    "tense, toxic, industrial"
   ],
   "texture_detail": "halftone grain, flat colour separations, crisp ink linework, holographic foil sheen, slight print misregistration",
   "avoid": [
@@ -38,7 +40,8 @@
     "readable text or logos",
     "recognisable characters or franchises",
     "named artists or films",
-    "giant faces or heads in the sky unless the composition asks for one"
+    "giant faces or heads in the sky unless the composition asks for one",
+    "pink or magenta as the main colour"
   ],
   "subjects": [
     "a lone rider silhouette at the end of a neon street",
@@ -69,6 +72,15 @@
       "#55c5f5",
       "#5179ba",
       "#45bef4"
+    ],
+    [
+      "#0a0a0a",
+      "#1d3b2a",
+      "#3fae5a",
+      "#d9a441",
+      "#e8e4d8",
+      "#c4462c",
+      "#2a5f8a"
     ]
   ]
 }

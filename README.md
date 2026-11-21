@@ -110,6 +110,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Style tweaks from Marc's feedback on the 20 Nov round: cyberpunk poster less pink and more
+  varied (acid green / amber light, a red-orange sun, a toxic-green palette, top-down and close-up compositions,
+  avoid pink as the main colour); fractal worlds purely abstract (no cities, objects or plants); iridescent abstract
+  more variety (UV and prism-caustic light, geometric and oil-slick compositions, new materials, a loud mood);
+  japanese landscape gets worm's-eye, bird's-eye and tilted compositions. Undo: `git revert` this commit.
 - **20 Nov 2026** – Image budget raised from 40 to 200 a week (`WEEK_BUDGET` in `scripts/app.py`, "Allowance"
   above), so the variations dialog stops warning on normal use. Undo: `git revert` this commit.
 - **20 Nov 2026** – Live progress for runs started from chat: `batch.py`, `variations.py` and a lone
