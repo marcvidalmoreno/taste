@@ -114,6 +114,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Research note [`docs/research/2026-11-inspiration.md`](docs/research/2026-11-inspiration.md):
+  public features of Midjourney and Lummi (in depth) and Krea, Cosmos, Recraft and Google Whisk/Mixboard (lighter),
+  what taste already does, 13 ideas, a ranked shortlist of 8 and a "Rejected and why" list. Public pages only;
+  nothing in `app/` or `scripts/` changed, so no Guide update. Undo: `git revert` this commit.
 - **21 Nov 2026** – Style guess fixed (Marc: "No guess: ModuleNotFoundError: No module named 'numpy'"). The app
   on 8791 had been started with the system Python, which has no numpy or scikit-learn. `scripts/app.py` now
   restarts itself with the project `.venv` Python when started with another one, and `scripts/nearest.py` falls
