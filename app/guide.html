@@ -22,6 +22,7 @@
   <a href="#/guide/variations">Variations</a>
   <a href="#/guide/gallery">Gallery</a>
   <a href="#/guide/taste">Taste</a>
+  <a href="#/guide/newstyle">New style from images</a>
   <a href="#/guide/change">Change a style</a>
   <a href="#/guide/suggestions">Suggestions</a>
   <a href="#/guide/notes">Notes for Claude</a>
@@ -296,7 +297,7 @@
 <section id="guide-taste">
   <h2>Taste</h2>
   <p>The styles as they are written, each with your own images as evidence. Styles with the most images come first;
-    the index at the top jumps to one.</p>
+    the index at the top jumps to one. <strong>New style from images…</strong>, top right, starts a new one.</p>
   <h3>Each style card</h3>
   <ul>
     <li><strong>New run</strong>, <strong>One image</strong>, <strong>Change this style…</strong> and
@@ -305,12 +306,37 @@
       whether Codex or you wrote it, what changed field by field, and <strong>Undo</strong>.</li>
     <li><strong>How new runs lean</strong> (folded): which options your thumbs made more or less likely ("1.8× as
       likely"), with the ups and downs behind each, and the subjects you liked. Every option keeps a chance.</li>
-    <li>The <strong>description</strong> and the <strong>palette</strong> with colour codes.</li>
+    <li>The <strong>description</strong>, <strong>Started from</strong> (the reference images, for a style made with
+      New style from images; click one to see it large) and the <strong>palette</strong> with colour codes.</li>
     <li>Light, Composition, Medium, Mood, Detail, Lean towards, <strong>Avoid</strong>, and Good for (desktop, Teams,
       phone, post).</li>
     <li><strong>Evidence</strong>: up to 8 images rated Up, 4 rated Down with their whys, how many are not rated, and
       a link to all of them in the Gallery.</li>
   </ul>
+</section>
+
+<section id="guide-newstyle">
+  <h2>New style from images</h2>
+  <p>From <strong>Taste</strong> → <strong>New style from images…</strong>. For a look you found elsewhere (a
+    gallery, a book cover, a Midjourney style code's sample images) and want as a style of your own.</p>
+  <ol>
+    <li><strong>Add 1 to 4 images</strong>: choose them, drop them on the box, or copy an image in the browser and
+      paste it with <kbd>Ctrl</kbd> + <kbd>V</kbd>. Two to four with one look in common work best: Codex keeps what
+      they share. × removes one.</li>
+    <li>Optional: a <strong>name</strong> (Codex suggests one if empty) and <strong>what draws you to them</strong>
+      ("the muted dusk colours, flat shapes"). Your words steer what Codex looks for.</li>
+    <li><strong>Propose the style</strong>: Codex looks at the images and writes the look in words (about 30 s). The
+      <strong>palette</strong> is measured from the images' pixels, not guessed.</li>
+    <li>Read it. Every field can be changed; in the lists, one line is one option, and light, composition and mood get
+      one option picked per image. Nothing is written yet.</li>
+    <li><strong>Create style</strong> (or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>). It is on the Taste page at once.</li>
+    <li><strong>First run</strong> opens New run with the style picked. Your thumbs then steer it like any other
+      style.</li>
+  </ol>
+  <p>The style describes the look, never an artist, studio or source. The images stay on your laptop: they are
+    other people's work and never go to GitHub. <strong>Undo</strong> on the last step, or on the Taste card under
+    "Changed from the app", takes the style off the page again (its file is set aside, not deleted). The new style
+    file goes to GitHub only when you tell Claude "commit my style edits".</p>
 </section>
 
 <section id="guide-change">
@@ -425,6 +451,16 @@
   </ol>
   <p class="muted small">There is no button yet to keep one exact image as a reference example for its style.</p>
 
+  <h3>Start a style from a look you found</h3>
+  <ol>
+    <li>Find 2 to 4 images with the look, for example a style code's samples on a gallery site. Copy each one
+      (right-click → Copy image).</li>
+    <li><strong>Taste</strong> → <strong>New style from images…</strong>, paste each with <kbd>Ctrl</kbd> + <kbd>V</kbd>,
+      and say in a line what you like in them.</li>
+    <li><strong>Propose the style</strong>, read it, fix a word if needed, <strong>Create style</strong>.</li>
+    <li><strong>First run</strong>, then thumbs. After about 20 ratings, Suggestions sharpen it.</li>
+  </ol>
+
   <h3>Rate a new batch quickly</h3>
   <ol>
     <li>When the run ends, click <strong>Rate them</strong> in the message.</li>
@@ -518,6 +554,7 @@
       <tr><td>Ignore</td><td>Hidden and left out of ratings</td><td>Undo in the message, or Restore</td></tr>
       <tr><td>Start a run</td><td>Joins the queue; one image at a time into a dated folder</td><td>Remove, or Stop</td></tr>
       <tr><td>Apply a style change or suggestion</td><td>Style file rewritten, prompts rebuilt, before and after logged</td><td>Undo in the message, or on the Taste card</td></tr>
+      <tr><td>Create a new style</td><td>Style file written, prompts rebuilt, the reference images kept on your laptop</td><td>Undo on the last step, or on the Taste card</td></tr>
       <tr><td>Note for Claude</td><td>Waits until you say "process my app notes"</td><td>Take back, on Overview</td></tr>
     </tbody>
   </table>

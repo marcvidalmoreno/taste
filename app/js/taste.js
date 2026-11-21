@@ -1,4 +1,5 @@
-// Taste: the 14 styles as written in taste/styles/*.json, each with my own images as evidence.
+// Taste: the styles as written in taste/styles/*.json, each with my own images as evidence.
+// "New style from images…" starts one from reference images (newstyle.js, 21 Nov 2026).
 // Kept images next to rejected ones (with the reason): the contrast says more than the description.
 //   #/taste            all styles
 //   #/taste/<style>    the same page, scrolled to one style
@@ -7,6 +8,7 @@ import { loadGallery, openLarge, galleryHref } from './gallery.js';
 import { openNote } from './notes.js';
 import { openStyleEdit, undoEdit, diffValue, FIELDS } from './styleedit.js';
 import { api } from './api.js';
+import { openNewStyle } from './newstyle.js';
 
 const FACTS = [['light', 'Light'], ['composition', 'Composition'], ['camera_or_medium', 'Medium'],
   ['mood', 'Mood'], ['texture_detail', 'Detail'], ['prefer', 'Lean towards']];
@@ -29,8 +31,11 @@ export async function renderTaste(view, focus) {
     || styles[a].name.localeCompare(styles[b].name));
 
   view.replaceChildren(
-    h('hgroup', { class: 'page-head' }, h('h1', {}, 'Taste'),
-      h('p', {}, `${plural(keys.length, 'style')} found in about 1,000 wallpapers I saved, each with the images I made in it.`)),
+    h('div', { class: 'page-head taste-head' },
+      h('hgroup', {}, h('h1', {}, 'Taste'),
+        h('p', {}, `${plural(keys.length, 'style')}, most found in about 1,000 wallpapers I saved, each with the images I made in it.`)),
+      h('button', { class: 'secondary outline small-btn', onClick: () => openNewStyle({
+        onCreated: (key) => renderTaste(document.getElementById('view'), key || undefined) }) }, 'New style from images…')),
     h('nav', { class: 'style-index', 'aria-label': 'Styles' },
       keys.map((k) => h('a', { href: '#/taste/' + encodeURIComponent(k) },
         h('span', { class: 'mini-swatch', 'aria-hidden': 'true' }, styles[k].palette.slice(0, 4).map((c) => h('i', { style: { background: c } }))),
@@ -63,6 +68,10 @@ function styleCard(key, s, imgs) {
       editsSlot(key),
       leanSlot(key),
       h('p', {}, s.description),
+      s.refs?.length > 0 && h('div', { class: 'ref-strip small-refs', role: 'list', 'aria-label': 'Started from these references' },
+        h('span', { class: 'muted small' }, 'Started from'),
+        s.refs.map((f) => h('a', { role: 'listitem', href: `/ref/${encodeURIComponent(key)}/${encodeURIComponent(f)}`, target: '_blank', rel: 'noopener' },
+          h('img', { src: `/ref/${encodeURIComponent(key)}/${encodeURIComponent(f)}`, alt: 'Reference image', loading: 'lazy' })))),
       h('div', { class: 'swatches', role: 'list', 'aria-label': 'Palette' },
         s.palette.map((c) => h('span', { role: 'listitem', title: c }, h('i', { style: { background: c } }), h('code', {}, c))))),
     h('div', { class: 'style-body' },
@@ -89,10 +98,11 @@ function editsSlot(key) {
       h('ul', { class: 'plain' }, edits.map((e) => h('li', { class: e.undone ? 'is-undone' : '' },
         h('div', { class: 'edit-line' },
           h('span', {}, h('strong', {}, `“${e.change}”`), ' ', h('span', { class: 'muted small' },
-            `${e.at.slice(8, 10)}/${e.at.slice(5, 7)} ${e.at.slice(11)} · ${e.how === 'codex' ? 'Codex edit' : 'your words'}${e.undone ? ' · undone' : ''}`)),
+            `${e.at.slice(8, 10)}/${e.at.slice(5, 7)} ${e.at.slice(11)} · ${{ codex: 'Codex edit', new: 'created from references' }[e.how] || 'your words'}${e.undone ? ' · undone' : ''}`)),
           !e.undone && h('button', { class: 'ghost small', onClick: () => undoEdit(e, () => renderTaste(document.getElementById('view'), key)) }, 'Undo')),
-        h('details', { class: 'small' }, h('summary', {}, e.summary || Object.keys(e.after).map((k) => FIELDS[k] || k).join(', ')),
-          Object.keys(e.after).map((k) => [h('p', { class: 'muted' }, FIELDS[k] || k), diffValue(e.before[k], e.after[k])])))))));
+        e.how === 'new' ? (e.summary && h('p', { class: 'muted small' }, e.summary))
+          : h('details', { class: 'small' }, h('summary', {}, e.summary || Object.keys(e.after).map((k) => FIELDS[k] || k).join(', ')),
+            Object.keys(e.after).map((k) => [h('p', { class: 'muted' }, FIELDS[k] || k), diffValue(e.before[k], e.after[k])])))))));
   }).catch(() => {});
   return box;
 }

@@ -114,6 +114,14 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – New style from images (Marc: "Yes, build it", after asking how a Midjourney `--sref` look could
+  become a taste style). Taste → **New style from images…**: add 1-4 references (choose, drop or paste), optional
+  name and "what draws you to them"; Codex looks at them (`codex_text.py new`, `codex exec -i`, read-only, medium
+  effort, ~30 s) and writes every field; the palette is measured from the pixels (`features.palette`); Marc edits
+  any field, **Create style** writes `taste/styles/<key>.json` and rebuilds `taste.json`, then **First run**. The
+  references stay in `generated/codex/references/<key>/` (git-ignored) and show as "Started from" on the card.
+  Undo moves the style file and references to `generated/codex/removed-styles/`. Guide: new section, a use case,
+  a row in the undo table. Undo: `git revert` this commit.
 - **21 Nov 2026** – Research note [`docs/research/2026-11-inspiration.md`](docs/research/2026-11-inspiration.md):
   public features of Midjourney and Lummi (in depth) and Krea, Cosmos, Recraft and Google Whisk/Mixboard (lighter),
   what taste already does, 13 ideas, a ranked shortlist of 8 and a "Rejected and why" list. Public pages only;

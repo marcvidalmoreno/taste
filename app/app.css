@@ -641,3 +641,31 @@ dialog.style-edit article { max-width: 46rem; }
 .distil-fine li { margin: .3rem 0; }
 .distil-last { max-width: 48rem; }
 .distil-next { max-width: 48rem; margin-top: 1rem; }
+
+/* 14. New style from reference images (21 Nov 2026) ----------------------------------------------- */
+.taste-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.taste-head hgroup { margin: 0; }
+.drop-zone { display: flex; flex-wrap: wrap; gap: .6rem; padding: .75rem; margin-bottom: .5rem; border: 1px dashed #444;
+             border-radius: var(--radius); background: #161616; min-height: 9rem; align-items: stretch; }
+.drop-zone.is-over { border-color: #bbb; background: var(--surface); }
+.drop-add { flex: 1 1 10rem; margin: 0; display: grid; place-content: center; gap: .25rem; text-align: center;
+            background: transparent; border: 0; color: var(--text); min-height: 7.5rem; }
+.drop-zone.has-images .drop-add { flex: 0 1 9rem; border: 1px dashed #444; border-radius: var(--radius); }
+.drop-add:hover strong { text-decoration: underline; }
+.ref-tile { position: relative; margin: 0; flex: 0 1 9rem; }
+.ref-tile img { width: 100%; height: 7.5rem; object-fit: cover; border-radius: 4px; display: block; }
+.ref-remove { position: absolute; top: .25rem; right: .25rem; width: 1.6rem; height: 1.6rem; margin: 0; padding: 0;
+              line-height: 1; border-radius: 99px; background: rgba(0, 0, 0, .7); border: 0; color: #fff; font-size: 1rem; }
+.ref-strip { display: flex; gap: .4rem; align-items: center; margin-bottom: .75rem; flex-wrap: wrap; }
+.ref-strip img { height: 4.5rem; width: auto; max-width: 8rem; object-fit: cover; border-radius: 4px; display: block; }
+.small-refs { margin: .25rem 0 .6rem; }
+.small-refs img { height: 2.75rem; }
+.new-style .field-diff textarea { margin: 0; font-size: .9rem; }
+.new-style label.field-head { cursor: text; }
+.ns-palette { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ns-palette span { display: inline-flex; align-items: center; gap: .3rem; }
+.ns-palette i { width: 1.4rem; height: 1.4rem; border-radius: 4px; border: 1px solid var(--line); }
+.ns-palette code { font-size: .72rem; background: none; padding: 0; color: var(--pico-muted-color); }
+.ns-done { display: flex; gap: 1rem; align-items: center; }
+.ns-done p { margin: 0 0 .25rem; }
+dialog.variations footer a[role=button] { margin: 0; width: auto; }

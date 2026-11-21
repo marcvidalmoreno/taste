@@ -165,7 +165,7 @@ export async function undoEdit(rec, after) {
     await api('style/undo', { method: 'POST', body: { id: rec.id } });
     await refreshStyles();
     after?.();
-    toast('Style edit undone');
+    toast(rec.how === 'new' ? 'New style undone: it is off the Taste page' : 'Style edit undone');
   } catch (err) { showError(err); }
 }
 

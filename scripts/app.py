@@ -26,6 +26,9 @@ Files this server reads or writes (all in generated/codex/)
   distil-run.json      the current distil round: Codex's proposal per style and what Marc decided (written)
   style-edits.json     style edits made here: before / after of each, for Undo (written; the style file itself is
                        taste/styles/<style>.json, rewritten in the repo's format, then build_taste.py)
+  references/<style>/  reference images a style was started from in the page (written; other people's work,
+                       so it stays here, git-ignored). references/.drafts/ holds them until "Create style"
+  removed-styles/      a new style whose creation was undone (its file and references move here, never deleted)
   .progress.json       live progress of the running run (read; written by the run scripts)
 
 Runs (21 Nov 2026): one queue, one image run at a time. New runs (batch.py), single images, remixes and retries
@@ -700,6 +703,11 @@ def undo_style_edit(eid):
         rec = next((e for e in edits if e['id'] == eid), None)
         if not rec or rec['undone']:
             raise ApiError(404, 'no such edit, or it is undone already')
+        if rec.get('how') == 'new':
+            undo_new_style(rec, edits)
+            rec['undone'] = True
+            write_json(STYLE_EDITS, edits)
+            return rec
         now = style_file(rec['style'])
         moved = [k for k, v in rec['after'].items() if now.get(k) != v]
         if moved:
@@ -715,6 +723,142 @@ def undo_style_edit(eid):
         rec['undone'] = True
         write_json(STYLE_EDITS, edits)
     return rec
+
+
+# -- a new style from reference images (21 Nov 2026): Marc drops 1-4 images, Codex looks at them and writes the
+# words, the palette is measured from the pixels; Marc reads and edits the proposal in the page, "Create style"
+# writes taste/styles/<key>.json. The images stay in generated/codex/references/ (git-ignored).
+
+REFS = BASE / 'references'
+REMOVED = BASE / 'removed-styles'
+MAX_REFS = 4
+
+
+def save_refs(images):
+    """Data URLs from the page -> generated/codex/references/.drafts/<id>/ref-N.jpg. Each one is opened and saved
+    again with Pillow (max 1280 px), so only real pictures land on disk."""
+    import base64, io, time
+    from PIL import Image
+    if not isinstance(images, list) or not images:
+        raise ApiError(400, 'add at least one image')
+    if len(images) > MAX_REFS:
+        raise ApiError(400, f'{MAX_REFS} images at most')
+    decoded = []
+    for i, url in enumerate(images, 1):
+        head, _, data = str(url).partition(',')
+        if not head.startswith('data:image/') or ';base64' not in head:
+            raise ApiError(400, 'images only')
+        try:
+            im = Image.open(io.BytesIO(base64.b64decode(data, validate=True))).convert('RGB')
+        except Exception:
+            raise ApiError(400, f'image {i} could not be read')
+        im.thumbnail((1280, 1280))
+        decoded.append(im)
+    import shutil
+    for old in (REFS / '.drafts').glob('*') if (REFS / '.drafts').is_dir() else []:
+        if old.is_dir() and time.time() - old.stat().st_mtime > 86400:   # proposals never created: copies made here
+            shutil.rmtree(old, ignore_errors=True)
+    draft = f'{int(time.time() * 1000)}'
+    folder = REFS / '.drafts' / draft
+    folder.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for i, im in enumerate(decoded, 1):
+        path = folder / f'ref-{i}.jpg'
+        im.save(path, 'JPEG', quality=88)
+        paths.append(path)
+    return draft, paths
+
+
+def measured_palette(paths):
+    """5 base colours + up to 2 accents from the pixels (scripts/features.py, the recipe the first styles used)."""
+    try:
+        import features
+        return features.palette([features.thumb64(p)[0] for p in paths])
+    except Exception:
+        return []   # no numpy / scikit-learn: Codex's own palette stays
+
+
+def draft_folder(draft):
+    folder = REFS / '.drafts' / str(draft)
+    if not str(draft).isdigit() or not folder.is_dir():
+        raise ApiError(404, 'the reference images are gone: start again')
+    return folder
+
+
+def check_new_style(st):
+    """A whole style as the page sends it after Marc's edits: the fields build_taste.py needs, typed right."""
+    import re
+    if not isinstance(st, dict):
+        raise ApiError(400, 'no style')
+    out = {'name': clean(st.get('name'), 80)}
+    if not out['name']:
+        raise ApiError(400, 'give the style a name')
+    for k in ('description', 'camera_or_medium', 'texture_detail'):
+        out[k] = clean(st.get(k), 1200)
+    pal = [str(c).lower() for c in st.get('palette') or [] if re.fullmatch(r'#[0-9a-fA-F]{6}', str(c))][:7]
+    if len(pal) < 3:
+        raise ApiError(400, 'the palette needs at least 3 colours')
+    out['palette'] = pal
+    for k in ('light', 'composition', 'mood', 'avoid', 'prefer', 'subjects'):
+        v = st.get(k) or []
+        out[k] = [clean(x, 300) for x in (v if isinstance(v, list) else [v]) if clean(x, 300)][:8]
+    for k in ('description', 'light', 'composition', 'camera_or_medium', 'mood', 'texture_detail', 'avoid'):
+        if not out[k]:
+            raise ApiError(400, f'"{FIELD_NAMES[k]}" cannot be empty')
+    for k in ('prefer', 'subjects'):
+        if not out[k]:
+            del out[k]
+    out['use'] = [u for u in st.get('use') or [] if u in ('desktop', 'teams', 'phone', 'post')] or ['desktop']
+    return out
+
+
+def create_style(draft, st, notes, summary):
+    import time
+    folder = draft_folder(draft)
+    st = check_new_style(st)
+    key = slugify(st['name'], '')
+    if not key:
+        raise ApiError(400, 'the name needs letters or numbers')
+    with LOCK:
+        if (ROOT / 'taste' / 'styles' / f'{key}.json').exists():
+            raise ApiError(409, f'a style called "{st["name"]}" exists already: choose another name')
+        order = ('name', 'description', 'palette', 'light', 'composition', 'camera_or_medium', 'mood',
+                 'texture_detail', 'prefer', 'avoid', 'subjects', 'use')
+        write_style(key, {k: st[k] for k in order if k in st})
+        dest = REFS / key
+        if dest.exists():   # should not happen (Undo moves them out): set the old ones aside
+            REMOVED.mkdir(parents=True, exist_ok=True)
+            os.replace(dest, REMOVED / f'{key}-refs-{draft}')
+        os.replace(folder, dest)
+        n = len(list(dest.glob('ref-*.jpg')))
+        edits = read_json(STYLE_EDITS, [])
+        rec = {'id': f'{int(time.time() * 1000)}', 'style': key, 'at': time.strftime('%Y-%m-%d %H:%M'),
+               'change': clean(notes, 400) or f'New style from {n} reference image{"s" if n != 1 else ""}',
+               'summary': clean(summary, 300), 'how': 'new', 'before': {}, 'after': st,
+               'source': {'refs': dest.name}, 'undone': False}
+        edits.append(rec)
+        write_json(STYLE_EDITS, edits)
+    return rec
+
+
+def undo_new_style(rec, edits):
+    """Undo of a creation: the style file moves to generated/codex/removed-styles/ (never deleted), taste.json is
+    rebuilt. Only while no later edit of the style is still in place."""
+    import subprocess
+    later = [e for e in edits if e['style'] == rec['style'] and int(e['id']) > int(rec['id']) and not e['undone']]
+    if later:
+        raise ApiError(409, 'the style was changed since: undo those edits first')
+    path = ROOT / 'taste' / 'styles' / f'{rec["style"]}.json'
+    REMOVED.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        os.replace(path, REMOVED / f'{rec["style"]}-{rec["id"]}.json')
+    refs = REFS / rec['style']
+    if refs.is_dir():   # its references go along, so a later style of the same name starts clean
+        os.replace(refs, REMOVED / f'{rec["style"]}-{rec["id"]}-refs')
+    r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'build_taste.py'), str(ROOT)], cwd=ROOT,
+                       capture_output=True, text=True, encoding='utf-8', errors='replace')
+    if r.returncode:
+        raise ApiError(500, 'build_taste.py failed: ' + (r.stderr or r.stdout).strip()[-300:])
 
 
 def migrate_drafts():
@@ -907,6 +1051,8 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/style/propose'): 'post_style_propose',
         ('POST', 'api/style/apply'): 'post_style_apply',
         ('POST', 'api/style/undo'): 'post_style_undo',
+        ('POST', 'api/style/new/propose'): 'post_style_new_propose',
+        ('POST', 'api/style/new/create'): 'post_style_new_create',
         ('GET', 'api/style/edits'): 'get_style_edits',
         ('GET', 'api/distil/state'): 'get_distil_state',
         ('POST', 'api/distil/run'): 'post_distil_run',
@@ -930,13 +1076,13 @@ class Handler(BaseHTTPRequestHandler):
         if host not in ('127.0.0.1', 'localhost'):
             raise ApiError(403, 'local use only')
 
-    def read_body(self):
+    def read_body(self, limit=100_000):
         """JSON body of a write. Writes need the page's own header: a page on another site can't add it
         without a CORS preflight, which this server never answers, so only the taste page can write."""
         if self.headers.get('X-Taste-App') != '1' or 'application/json' not in (self.headers.get('Content-Type') or ''):
             raise ApiError(403, 'writes only from the taste page')
         n = int(self.headers.get('Content-Length') or 0)
-        if n > 100_000:
+        if n > limit:
             raise ApiError(413, 'request too large')
         try:
             return json.loads(self.rfile.read(n) or b'{}')
@@ -987,6 +1133,13 @@ class Handler(BaseHTTPRequestHandler):
                 # The URL carries ?v=<mtime>, so the browser may keep the file: a new image gets a new URL.
                 src = thumbnail(batch, file) if parts[0] == 'thumb' else BASE / batch / file
                 return self.send_file(src, cache='private, max-age=31536000, immutable')
+            # 2b. Reference images of a style: /ref/<style>/ref-N.jpg
+            if parts[0] == 'ref' and len(parts) == 3:
+                folder, file = parts[1], parts[2]
+                f = REFS / folder / file
+                if folder.startswith('.') or not (file.startswith('ref-') and file.endswith('.jpg')) or not f.is_file():
+                    raise ApiError(404, 'no such image')
+                return self.send_file(f, cache='private, max-age=3600')
             # 3. The page itself: / -> app/index.html, anything else from app/
             target = (APP_DIR / (path or 'index.html')).resolve()
             if APP_DIR.resolve() not in target.parents or not target.is_file():
@@ -1243,6 +1396,30 @@ class Handler(BaseHTTPRequestHandler):
     def post_style_undo(self):
         return undo_style_edit(str(self.read_body().get('id', '')))
 
+    def post_style_new_propose(self):
+        """{images: [data URL, ...], name, notes} -> Codex looks at the images and proposes a whole style
+        (~30-60 s); the palette is measured from the pixels. Nothing in taste/ is written yet."""
+        body = self.read_body(limit=12_000_000)
+        draft, paths = save_refs(body.get('images'))
+        name, notes = clean(body.get('name'), 80), clean(body.get('notes'), 400)
+        args = ['new', '--images', *map(str, paths)]
+        if name:
+            args += ['--name', name]
+        if notes:
+            args += ['--notes', notes]
+        r = text_job(*args)
+        pal = measured_palette(paths)
+        if len(pal) >= 3:
+            r['style']['palette'] = pal
+        return {**r, 'draft': draft, 'measured': len(pal) >= 3}
+
+    def post_style_new_create(self):
+        """{draft, style: {...}, notes, summary}: Marc's Create. Writes taste/styles/<key>.json, rebuilds taste.json,
+        moves the references to generated/codex/references/<key>/, logs it for Undo."""
+        body = self.read_body()
+        return create_style(str(body.get('draft', '')), body.get('style'), body.get('notes', ''),
+                            body.get('summary', ''))
+
     def get_style_edits(self, style=''):
         """Edits made from the page, newest first (one style, or all)."""
         edits = [e for e in read_json(STYLE_EDITS, []) if not style or e['style'] == style]
@@ -1346,6 +1523,9 @@ class Handler(BaseHTTPRequestHandler):
             s = read_json(p, {})
             out[p.stem] = {**s, 'name': s.get('name', p.stem), 'palette': s.get('palette', [])[:7],
                            'description': s.get('description', '')}
+            refs = REFS / p.stem
+            if refs.is_dir():   # started from reference images in the page
+                out[p.stem]['refs'] = sorted(f.name for f in refs.glob('ref-*.jpg'))
         return {'styles': out}
 
     def get_gallery(self):

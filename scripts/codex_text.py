@@ -8,6 +8,8 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_text.py distil --style <style> --ratings <ratings.json>
         # ratings.json: [{"rating": "keep"|"no", "why": "...", "change": "...", "prompt": "..."}], the ratings of this
         # style since the last distil; answers like style (a proposal), or {"changes": {}} when nothing should change
+  .venv/Scripts/python -I scripts/codex_text.py new --images ref-1.jpg [ref-2.jpg ...] [--name "..."] [--notes "..."]
+        # a whole new style from 1-4 reference images (Codex looks at them); answers {"style": {...}, "summary": "..."}
   add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
 
 Prints one JSON object on stdout: {"subjects": [...]}, {"prompt": "...", "summary": "..."} or, for style,
@@ -96,12 +98,14 @@ def recent_subjects(style, limit=40):
     return list(dict.fromkeys(reversed(out)))[:limit]
 
 
-def ask(task, text, effort='low'):
-    """One codex exec, read-only, empty folder. Returns (answer text, seconds)."""
+def ask(task, text, effort='low', images=()):
+    """One codex exec, read-only, empty folder, images attached if any. Returns (answer text, seconds)."""
     WORK.mkdir(parents=True, exist_ok=True)
     out = WORK / f'answer-{int(time.time() * 1000)}.txt'
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'read-only',
            '-c', f'model_reasoning_effort="{effort}"', '-o', str(out)]
+    for img in images:
+        cmd += ['-i', img]
     start = time.time()
     res = subprocess.run(cmd, input=text, cwd=WORK, capture_output=True, text=True, encoding='utf-8',
                          errors='replace', timeout=300)
@@ -198,6 +202,77 @@ ratings are too few or too mixed to say anything, change nothing.
 Answer exactly: {{"changes": {{"<field>": <new value>, ...}}, "summary": "<what the ratings say and what you changed, under 30 words>"}}"""
 
 
+NEW = """You describe one visual style in words, so that an image model can reproduce the look. The attached
+images are references Marc collected because they share a look he likes. Do not run commands, do not read or write
+files. Answer with JSON only.
+
+Marc's name for it: {name}
+What draws Marc to them: {notes}
+
+Describe the look itself (medium, line and edge, light, colour, composition, mood, texture), not just what the
+images show, so the style works for any subject. Never name artists, illustrators, photographers, studios, brands,
+real people, films or the source of the images, and never write "in the style of". Plain, concrete words.
+- name: Marc's name if he gave one, else a short plain name (2-4 words)
+- description: one or two sentences, what the style is
+- palette: 5-7 hex colours seen in the references, dark to light
+- light, composition, mood: 4 alternatives each, every one true to the references, each clearly different
+- camera_or_medium, texture_detail: one short phrase each
+- prefer: 2-4 lines for what most defines the look
+- avoid: 3-6 things that would break the look; always include "text and logos"
+- subjects: 5 concrete scenes of 8-20 words that suit the style and are not copies of the references
+- use: from "desktop", "teams", "phone", "post", the ones the look suits
+Another style, for the form only:
+{example}
+Answer exactly: {{"style": {{"name": "...", "description": "...", "palette": ["#..."], "light": ["..."],
+"composition": ["..."], "camera_or_medium": "...", "mood": ["..."], "texture_detail": "...", "prefer": ["..."],
+"avoid": ["..."], "subjects": ["..."], "use": ["..."]}}, "summary": "<what the references share, under 25 words>"}}"""
+
+NEW_LISTS = ('light', 'composition', 'mood', 'prefer', 'avoid', 'subjects')
+NEW_TEXTS = ('name', 'description', 'camera_or_medium', 'texture_detail')
+USES = ('desktop', 'teams', 'phone', 'post')
+
+
+def new_fields(d):
+    """A whole style from Codex's answer, typed like the files in taste/styles (lists stay lists)."""
+    out = {}
+    for k in NEW_TEXTS:
+        v = d.get(k)
+        out[k] = clean(' '.join(v) if isinstance(v, list) else v or '', 80 if k == 'name' else 1200)
+    for k in NEW_LISTS:
+        v = d.get(k) or []
+        out[k] = [clean(x, 300) for x in (v if isinstance(v, list) else [v]) if clean(x, 300)][:8]
+    out['palette'] = [x.lower() for x in (d.get('palette') or []) if re.fullmatch(r'#[0-9a-fA-F]{6}', str(x))][:7]
+    out['use'] = [u for u in (d.get('use') or []) if u in USES] or ['desktop']
+    if not any('text' in a.lower() for a in out['avoid']):
+        out['avoid'].append('text and logos')
+    return out
+
+
+def new_style(a):
+    images = [str(Path(p).resolve()) for p in a.images][:4]
+    if a.dry_run:
+        name = a.name or 'New style (dry run)'
+        return {'style': new_fields({
+            'name': name, 'description': f'Dry run stand-in for {len(images)} reference image(s). {a.notes}'.strip(),
+            'palette': ['#1d1c22', '#4a4652', '#8a7f8c', '#c9b8a8', '#efe6dc'],
+            'light': ['soft dusk light', 'flat overcast light', 'low warm sun', 'cool moonlight'],
+            'composition': ['one subject, wide empty space', 'low horizon', 'close crop', 'high viewpoint'],
+            'camera_or_medium': 'flat digital illustration', 'mood': ['calm', 'wistful', 'quiet', 'hopeful'],
+            'texture_detail': 'clean flat shapes, faint grain', 'prefer': ['few elements'],
+            'avoid': ['busy detail'], 'subjects': ['a lighthouse on a quiet headland at dusk (dry run)'],
+            'use': ['desktop']}), 'summary': 'dry run: a stand-in style, Codex was not asked', 'seconds': 0, 'dry_run': True}
+    example = json.dumps({k: v for k, v in style_info('quiet-landscapes').items() if k != 'palettes'}, indent=1,
+                         ensure_ascii=False)
+    text = NEW.format(name=a.name or 'none given', notes=a.notes or 'not said', example=example)
+    answer, secs = ask('new', text, effort='medium', images=images)
+    d = parse_json(answer)
+    st = new_fields(d.get('style') or d)
+    missing = [k for k in ('description', 'light', 'composition', 'mood', 'camera_or_medium') if not st[k]]
+    if missing:
+        sys.exit('Codex left out ' + ', '.join(missing))
+    return {'style': st, 'summary': clean(d.get('summary', ''), 300), 'seconds': secs}
+
+
 def validated(now, d):
     """Only real, well-typed edits of the editable fields."""
     out = {}
@@ -289,7 +364,12 @@ if __name__ == '__main__':
     t.add_argument('--style', required=True)
     t.add_argument('--ratings', required=True)
     t.add_argument('--dry-run', action='store_true')
+    w = sub.add_parser('new')
+    w.add_argument('--images', nargs='+', required=True)
+    w.add_argument('--name', default='')
+    w.add_argument('--notes', default='')
+    w.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
     a.n = max(1, min(12, getattr(a, 'n', 4)))
-    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil}[a.cmd]
+    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil, 'new': new_style}[a.cmd]
     print(json.dumps(run(a), ensure_ascii=False))
