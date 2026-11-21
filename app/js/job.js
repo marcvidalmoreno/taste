@@ -78,6 +78,7 @@ export async function poll() {
   job.queue ||= [];
   if (job.running && job.from_chat && reportFor === null) reportFor = job.started;
   drawChip();
+  drawSuggest();
   drawLog();
   drawTitle();
   if (job.batch) {
@@ -258,3 +259,15 @@ function drawChip() {
 
 // A run may already be going when the page opens (reload, second tab, a run started from chat): pick it up.
 poll();
+
+// ---------------------------------------------------------------- suggestions chip
+// Shown only when Codex has a style suggestion waiting for Marc (it looks by itself every 20 ratings); nothing
+// while it works. One click to the Suggestions page.
+function drawSuggest() {
+  const li = document.getElementById('suggest-chip');
+  const n = job.suggest?.ready || 0;
+  li.hidden = !n;
+  if (!n) return;
+  li.replaceChildren(h('a', { href: '#/suggestions', class: 'suggest-chip', title: 'From your latest ratings: apply what you agree with' },
+    h('span', { class: 'dot', 'aria-hidden': 'true' }), `${plural(n, 'style suggestion')}`));
+}

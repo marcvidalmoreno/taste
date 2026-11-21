@@ -33,16 +33,16 @@ function distilCard(o) {
   const due = n >= o.due;
   const out = h('div');
   return h('article', { class: 'card distil' },
-    h('h2', {}, 'Next distil'),
-    h('p', { class: 'big' }, due ? 'Due now' : `${o.due - n} ratings to go`),
+    h('h2', {}, 'Style suggestions'),
+    h('p', { class: 'big' }, due ? 'Codex is on it' : `Next look in ${o.due - n} ratings`),
     h('div', { class: 'meter' },
       h('span', { class: 'bar', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': o.due, 'aria-valuenow': Math.min(n, o.due),
                   'aria-label': `${n} of ${o.due} ratings since the last distil` },
         h('i', { style: { width: Math.min(100, (n / o.due) * 100) + '%' } })),
       h('span', { class: 'num' }, `${n} / ${o.due}`)),
     h('p', { class: 'muted small' }, o.marked ? `Ratings since the last distil (marked ${o.marked}).` : 'No distil yet: every rating counts.'),
-    h('p', { class: 'small' }, 'Codex reads the new ratings per style and proposes edits; you apply them style by style.'),
-    n > 0 && h('a', { href: '#/distil', role: 'button', class: due ? '' : 'secondary outline' }, due ? 'Review the distil' : 'Distil now'), ' ',
+    h('p', { class: 'small' }, 'Every 20 ratings Codex looks at your styles and suggests edits; a chip in the header says when one waits.'),
+    h('a', { href: '#/suggestions', class: 'small' }, 'Suggestions'), ' ',
     n > 0 && h('button', { class: 'ghost small', onClick: async (e) => {
       e.target.setAttribute('aria-busy', 'true');
       try {

@@ -489,10 +489,11 @@ def job_state():
     elif prog:
         run = {**prog, 'title': prog.get('kind', 'run'), 'phase': 'Making images' if prog['running'] else ''}
     else:
-        return {'running': False, 'queue': queue, 'recent': list(RECENT)}
+        return {'running': False, 'queue': queue, 'recent': list(RECENT), 'suggest': suggestions()}
     folder = BASE / run['batch']
     made = [n for n in run['expected'] if (folder / f'{n}.png').exists()]
-    return {**run, 'exists': is_batch(run['batch']), 'made': made, 'queue': queue, 'recent': list(RECENT)}
+    return {**run, 'exists': is_batch(run['batch']), 'made': made, 'queue': queue, 'recent': list(RECENT),
+            'suggest': suggestions()}
 
 
 # -- run specs: what each kind of run needs, checked before it joins the queue
@@ -730,6 +731,7 @@ def migrate_drafts():
 DISTIL_RUN = BASE / 'distil-run.json'
 DISTIL_MIN = 2          # ratings a style needs since the last distil before Codex is asked about it
 _DLOCK = threading.Lock()
+_AUTO = threading.Lock()  # one automatic start at a time (several thumbs can arrive together)
 _DRUN = {}              # the current round, in memory once loaded: the worker threads and Marc's decisions share it
 
 
@@ -756,7 +758,8 @@ def distil_state():
     run = current_run()
     st = read_json(rate.STATE, {})
     since = distil_since()
-    return {'run': run, 'since': since, 'total': sum(d['n'] for d in since.values()), 'due': rate.DUE,
+    last = None if run else read_json(DISTIL_RUN.with_name(DISTIL_RUN.stem + '.last.json'), None)
+    return {'run': run, 'last': last, 'since': since, 'total': sum(d['n'] for d in since.values()), 'due': rate.DUE,
             'marked': st.get('marked'), 'min': DISTIL_MIN, 'dry_run': DRY_RUN}
 
 
@@ -770,7 +773,8 @@ def start_distil(styles):
     import time
     from concurrent.futures import ThreadPoolExecutor
     since = distil_since()
-    run = {'started': time.strftime('%Y-%m-%d %H:%M'), 'running': True, 'finished': None,
+    all_rows = list(csv.DictReader(open(rate.RATINGS, encoding='utf-8'))) if rate.RATINGS.exists() else []
+    run = {'started': time.strftime('%Y-%m-%d %H:%M'), 'running': True, 'finished': None, 'rows_at_start': len(all_rows),
            'styles': {s: {'status': 'waiting', 'n': since[s]['n'], 'up': since[s]['up'], 'down': since[s]['down']} for s in styles}}
     _DRUN['run'] = run
     _save_run(run)
@@ -798,8 +802,58 @@ def start_distil(styles):
             list(pool.map(one, styles))
         run.update(running=False, finished=time.strftime('%Y-%m-%d %H:%M'))
         _save_run(run)
+        close_if_decided(run)
     threading.Thread(target=all_of_them, daemon=True).start()
     return run
+
+
+def close_if_decided(run):
+    """A round closes on its own once nothing waits for Marc (21 Nov 2026, "tech out of sight"): no proposal left
+    to apply or skip. The next round then starts after the ratings that existed when this one started. A round in
+    which every style failed stays open, so its ratings are not lost."""
+    import datetime
+    if run.get('running') or any(c['status'] == 'ready' for c in run['styles'].values()):
+        return False
+    if run['styles'] and all(c['status'] == 'failed' for c in run['styles'].values()):
+        return False
+    if not DRY_RUN:
+        rows = run.get('rows_at_start')
+        if rows is None:   # a round from before 21 Nov 2026 05:40: everything rated so far
+            rows = len(list(csv.DictReader(open(rate.RATINGS, encoding='utf-8')))) if rate.RATINGS.exists() else 0
+        write_json(rate.STATE, {'rows': rows, 'marked': datetime.date.today().isoformat()})
+    run['closed'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+    write_json(DISTIL_RUN.with_name(DISTIL_RUN.stem + '.last.json'), run)
+    DISTIL_RUN.unlink(missing_ok=True)
+    _DRUN['run'] = None
+    return True
+
+
+def maybe_auto_distil():
+    """Codex checks the styles by itself when DUE ratings have piled up since the last round (never in dry run)."""
+    if DRY_RUN or current_run() or not _AUTO.acquire(blocking=False):
+        return
+    try:
+        _auto_distil()
+    finally:
+        _AUTO.release()
+
+
+def _auto_distil():
+    if current_run():
+        return
+    since = distil_since()
+    if sum(d['n'] for d in since.values()) < rate.DUE:
+        return
+    styles = [k for k, d in sorted(since.items(), key=lambda kv: -kv[1]['n'])
+              if d['n'] >= DISTIL_MIN and (ROOT / 'taste' / 'styles' / f'{k}.json').exists()]
+    if styles:
+        start_distil(styles)
+
+
+def suggestions():
+    """For the header: how many style suggestions wait for Marc (nothing while Codex is still at work)."""
+    run = current_run()
+    return {'ready': sum(1 for c in run['styles'].values() if c['status'] == 'ready') if run else 0}
 
 
 # ---------------------------------------------------------------- HTTP
@@ -977,6 +1031,7 @@ class Handler(BaseHTTPRequestHandler):
                     rate.append_ratings(batch, [(name, 'cleared', '')], allow_clear=True)
             elif not now or now['rating'] != rating or now['why'] != why:
                 rate.append_ratings(batch, [(name, rating, why)])
+        threading.Thread(target=maybe_auto_distil, daemon=True).start()
         run = rate.batch_runs(batch).get(name, {})
         from leaning import matched_axes
         return {'ok': True, 'style': run.get('style', ''), 'moves': matched_axes(run.get('style', ''), run.get('prompt', '')),
@@ -1212,6 +1267,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             raise ApiError(400, 'action: apply or skip')
         _save_run(run)
+        close_if_decided(run)
         return distil_state()
 
     def post_distil_mark(self):
@@ -1323,6 +1379,7 @@ def main():
         DISTIL_RUN = BASE / 'distil-run.dry.json'
     QUEUE[:] = [q for q in read_json(QUEUE_FILE, []) if isinstance(q, dict) and q.get('id')]
     threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=maybe_auto_distil, daemon=True).start()
     url = f'http://127.0.0.1:{port}/'
     print(f'taste app on {url}  (Ctrl+C to stop)' + ('  [dry run: runs spend nothing]' if DRY_RUN else ''))
     if not a.no_browser:

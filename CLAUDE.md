@@ -2,6 +2,12 @@
 
 Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, no Claude attribution.
 
+## How Marc works: the app is the interface (Marc, 21 Nov 2026)
+- Marc gives feedback in the web app, in the element where he feels it (thumbs, remix, change the style,
+  suggestions). Claude and Codex do the rest behind the scenes. Motto: tech out of sight.
+- Never ask him in chat to decide image or style changes. A decision that is his goes into the app as a calm,
+  one-click element; no tech steps (marking, saving, running scripts) on his side.
+
 ## Pushing (Marc, 13 Nov 2026)
 - Pushes to `origin/main` are automatic in this repo: no need to ask.
 - Before every push, check the staged diff for private data (other people's images, anything under
