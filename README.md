@@ -114,6 +114,15 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – More like this (Marc picked idea 2 of the inspiration research, "go"). A **More like this** row in
+  the Large view and the Gallery large view: the 8 existing images closest in colour and framing, a **Same style
+  only** chip, a click opens the neighbour in the Gallery large view (← → steps through the row, which has its own
+  row). New `scripts/similar.py` (same number recipe as `nearest.py` / `features.py`: 35 numbers per image from its
+  thumbnail, standardised, colour and composition weighted equally; cached in `generated/codex/.look-index.json`,
+  safe to delete; the first look measures all images, about 7 s) and `GET /api/similar/<batch>/<name>[/same]`. It sees
+  colour and framing, not subject. Free: no Codex, no images. Also fixed: the Gallery large view opened from Taste
+  or from a row now keeps the grid's own list, and shows the style name and "Change the style…" there. Guide updated.
+  Undo: `git revert` this commit.
 - **21 Nov 2026** – Keep as example (Marc picked idea 1 of the inspiration research). A **★ Keep as example** button
   (key **X**; K was already "up") in the batch Large view and the Gallery large view, and a ☆ / ★ on every example
   thumbnail on Taste. Kept images show first in the style's Evidence ("★ Kept as examples") and a star on their
