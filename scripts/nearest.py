@@ -8,7 +8,11 @@ Style members come from taste/data/style_members.json (scripts/build/restyle.py)
 Usage: .venv/Scripts/python -I scripts/nearest.py <project-root> <image> [<image> ...]
 """
 import sys, os, json
-import numpy as np
+try:
+    import numpy as np
+except ModuleNotFoundError:   # started with a Python outside the project .venv (same 3.12): borrow its packages
+    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.venv', 'Lib', 'site-packages'))
+    import numpy as np
 
 
 def model(root):

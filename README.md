@@ -114,6 +114,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Style guess fixed (Marc: "No guess: ModuleNotFoundError: No module named 'numpy'"). The app
+  on 8791 had been started with the system Python, which has no numpy or scikit-learn. `scripts/app.py` now
+  restarts itself with the project `.venv` Python when started with another one, and `scripts/nearest.py` falls
+  back to the `.venv` packages, so the guess also worked on the already-running server without a restart.
+  Nothing visible changed, so no Guide update. Undo: `git revert` this commit.
 - **21 Nov 2026** – Thumbs in the Gallery (Marc: "I click on a picture and I cannot like/dislike"). The Gallery's
   large view now has the Up / Down buttons, U / D keys and a why field, saved at once through the
   same `PUT /api/mark` as the batch view; the tile badge updates in place, the grid does not reflow. Also fixed:

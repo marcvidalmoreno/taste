@@ -1369,7 +1369,21 @@ class Handler(BaseHTTPRequestHandler):
         return {'images': out}
 
 
+def use_venv():
+    """Started with another Python (no numpy, scikit-learn)? Run again with the project .venv one and wait."""
+    venv = ROOT / '.venv'
+    py = venv / 'Scripts' / 'python.exe'
+    if py.exists() and Path(sys.prefix).resolve() != venv.resolve():
+        import subprocess
+        print(f'restarting with {py} (the project .venv)')
+        try:
+            sys.exit(subprocess.call([str(py), '-I', str(Path(__file__).resolve()), *sys.argv[1:]]))
+        except KeyboardInterrupt:
+            sys.exit(0)
+
+
 def main():
+    use_venv()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--port', type=int, default=8777)
     ap.add_argument('--no-browser', action='store_true', help='do not open the browser')
