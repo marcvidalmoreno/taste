@@ -1349,9 +1349,9 @@ class Handler(BaseHTTPRequestHandler):
         return {'styles': out}
 
     def get_gallery(self):
-        """Every image of every batch, newest first, ignored ones left out. Read-only: the Gallery and
-        Taste pages show these; marking stays in the batch view. Seeds are left out (rate.batch_images
-        skips them), so wallpapers by other people never show here."""
+        """Every image of every batch, newest first, ignored ones left out. The Gallery and Taste pages show
+        these; the Gallery's large view can mark them too (PUT /api/mark, 21 Nov 2026). Seeds are left out
+        (rate.batch_images skips them), so wallpapers by other people never show here."""
         out = []
         names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
         shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}))
@@ -1359,7 +1359,7 @@ class Handler(BaseHTTPRequestHandler):
             for im in batch_images(b, shared):
                 if im['status'] == 'ignored':
                     continue
-                s = im['saved']
+                s = im['draft']   # the current mark ("saved" is always empty since marks save at once)
                 out.append({'batch': b, 'name': im['name'], 'file': im['file'], 'mtime': im['mtime'],
                             'style': im['style'], 'mode': im['mode'], 'change': im['change'],
                             'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],

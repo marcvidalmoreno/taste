@@ -3,7 +3,7 @@
 //   #/b/<batch>?show=...        one batch (show = to-rate | rated | ignored)
 //   #/b/<batch>/<image>?show=   the same, with the large view open on one image
 //   #/overview                  ratings per style
-//   #/gallery?style=&rating=&batch=   every image, read-only
+//   #/gallery?style=&rating=&batch=   every image; the large view has the thumbs
 //   #/taste[/<style>]           the styles with my images as examples
 //   #/guide[/<section>]         how to use the app, page by page, and use cases
 //   #/about[/<section>]         why the project exists

@@ -1,11 +1,13 @@
 // Gallery: every generated image in justified rows (like Flickr), filtered by style, rating and batch.
-// Read-only on purpose: marking stays in the batch view, so this page can be browsed without risk.
+// The large view has the same thumbs as the batch view (21 Nov 2026): a mark is saved at once and counts
+// for the style's next runs; the same thumb again takes it back. Filters are not re-applied while you mark,
+// so nothing jumps away under the pointer.
 //   #/gallery?style=<key>&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
 import { api, styles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATING_LABELS, showError, isTyping } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping } from './ui.js';
 
 const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
 let all = [];        // every image from the server
@@ -85,7 +87,7 @@ function ratio(im) {
 function tile(im, i) {
   const r = ratio(im);
   return h('button', {
-    class: 'jtile', style: { flex: `${r} 1 ${Math.round(r * ROW_H)}px`, aspectRatio: String(r) },
+    class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 ${Math.round(r * ROW_H)}px`, aspectRatio: String(r) },
     'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.why ? ': ' + im.why : ''}`,
     onClick: () => openLarge(i),
   },
@@ -93,16 +95,73 @@ function tile(im, i) {
   im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph));
 }
 
-// ------------------------------------------------------------------ large view (read-only)
+const keyOf = (im) => `${im.batch}/${im.name}`;
+
+// After a mark: swap the tile's badge in place (the grid keeps its order and filter until the page is read again).
+function refreshTile(im) {
+  const el = document.querySelector(`.jtile[data-key="${CSS.escape(keyOf(im))}"]`);
+  if (el) el.replaceWith(tile(im, +el.dataset.i));
+}
+
+// ------------------------------------------------------------------ marks (saved at once, like the batch view)
+
+const pendingWhy = new Map();   // key -> timer: the "why" is sent a second after the last key, or on leaving
+
+function sendMark(im) {
+  return api('mark', { method: 'PUT', body: { batch: im.batch, name: im.name, rating: im.rating || null, why: im.why || '' } });
+}
+
+async function toggleMark(im, rating) {
+  if (rating === 'almost') return;
+  const before = { rating: im.rating, why: im.why };
+  im.rating = im.rating === rating ? null : rating;
+  clearTimeout(pendingWhy.get(keyOf(im)));
+  pendingWhy.delete(keyOf(im));
+  redraw(im);
+  try {
+    await sendMark(im);
+  } catch (err) {
+    Object.assign(im, before);
+    redraw(im);
+    showError(err);
+  }
+}
+
+function setWhy(im, why) {
+  im.why = why;
+  const k = keyOf(im);
+  clearTimeout(pendingWhy.get(k));
+  if (!im.rating) return;   // a why without a mark waits until a thumb is pressed
+  pendingWhy.set(k, setTimeout(() => { pendingWhy.delete(k); sendMark(im).catch(showError); refreshTile(im); }, 1000));
+}
+
+function flushWhy() {
+  for (const [k, t] of pendingWhy) {
+    clearTimeout(t);
+    pendingWhy.delete(k);
+    const im = shown.find((x) => keyOf(x) === k);
+    if (im) { sendMark(im).catch(showError); refreshTile(im); }
+  }
+}
+
+function redraw(im) {
+  refreshTile(im);
+  if (dlg?.open && shown[index] === im) drawMarks(im);
+}
+
+// ------------------------------------------------------------------ large view
 
 function ensureDialog() {
   if (dlg) return;
   dlg = h('dialog', { class: 'glarge', 'aria-label': 'Large view', tabindex: '-1' });
   dlg.addEventListener('keydown', (e) => {
-    if (isTyping(e)) return;
+    if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const rating = ratingForKey(e.key.toLowerCase());
+    if (rating) { e.preventDefault(); toggleMark(shown[index], rating); }
     if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
   });
+  dlg.addEventListener('close', flushWhy);
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });  // click on the backdrop
   document.body.append(dlg);
 }
@@ -119,9 +178,12 @@ export function openLarge(i, list) {
 function step(d) {
   const n = index + d;
   if (n < 0 || n >= shown.length) return;
+  flushWhy();
   index = n;
   draw();
 }
+
+let markBox;
 
 function draw() {
   const im = shown[index];
@@ -135,10 +197,7 @@ function draw() {
         h('span', { class: 'muted small' }, `${index + 1} / ${shown.length}`),
         h('button', { class: 'secondary outline', onClick: () => step(1), disabled: index === shown.length - 1, 'aria-label': 'Next image' }, '→'),
         h('button', { class: 'secondary outline close', onClick: () => dlg.close(), 'aria-label': 'Close' }, '✕')),
-      h('p', {}, im.rating
-        ? h('span', { class: `rating-pill ${im.rating}` }, RATING_LABELS[im.rating].label)
-        : h('span', { class: 'rating-pill' }, 'Not rated'),
-        im.why && h('span', { class: 'why' }, ' ', im.why)),
+      markBox = h('section', { class: 'mark-box' }),
       h('dl', {},
         h('dt', {}, 'Style'), h('dd', {}, st ? h('a', { href: '#/taste/' + encodeURIComponent(im.style), onClick: () => dlg.close() }, st.name) : '–'),
         h('dt', {}, 'Batch'), h('dd', {}, h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch)),
@@ -146,5 +205,29 @@ function draw() {
         im.change && [h('dt', {}, 'Variation'), h('dd', {}, `changes the ${im.change}`)]),
       st && h('button', { class: 'secondary outline small-btn', onClick: () => openStyleEdit({ style: im.style, batch: im.batch, name: im.name, file: im.file }) },
         `Change the style…`),
-      im.prompt && h('details', {}, h('summary', {}, 'Prompt'), h('p', { class: 'prompt' }, im.prompt))));
+      im.prompt && h('details', {}, h('summary', {}, 'Prompt'), h('p', { class: 'prompt' }, im.prompt)),
+      h('p', { class: 'keys muted small' }, h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ',
+        h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ', h('kbd', {}, 'Esc'), ' close')));
+  drawMarks(im);
+}
+
+// Thumbs, why and a one-line status. Redrawn alone after a mark, so the why field keeps its cursor otherwise.
+function drawMarks(im) {
+  const st = styleMap[im.style]?.name || 'this style';
+  const r = im.rating;
+  const status = r === 'almost' ? 'Almost (old rating). Press Up or Down to replace it.'
+    : r ? `Saved. Counts for ${st}; press the same thumb again to take it back.`
+    : 'Not marked yet. A mark counts at once and steers the next runs of this style.';
+  markBox.replaceChildren(
+    h('div', { role: 'group', class: 'marks', 'aria-label': 'Mark' },
+      Object.entries(RATINGS).map(([key, m]) => h('button', {
+        type: 'button', class: `mark-btn ${key}`, 'aria-pressed': String(r === key), onClick: () => toggleMark(im, key),
+      }, h('span', { 'aria-hidden': 'true' }, m.glyph), ' ', m.label, ' ', h('kbd', {}, m.key.toUpperCase())))),
+    h('input', {
+      type: 'text', class: 'why', value: im.why || '', maxlength: 300, 'aria-label': 'Why',
+      placeholder: 'Why? a few words (optional)',
+      onInput: (e) => setWhy(im, e.target.value),
+      onKeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); step(1); } },
+    }),
+    h('p', { class: 'muted small status' }, status));
 }

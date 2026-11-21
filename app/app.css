@@ -372,6 +372,9 @@ dialog.glarge[open] { display: grid; grid-template-columns: minmax(0, 1fr) 22rem
 .glarge dt { color: var(--pico-muted-color); font-weight: 400; }
 .glarge dd { margin: 0; }
 .glarge .prompt { font-size: .85rem; color: var(--pico-muted-color); white-space: pre-wrap; }
+.glarge .marks { grid-template-columns: repeat(2, 1fr); }
+.glarge .mark-box { margin-bottom: 1rem; }
+.glarge .keys { margin-top: 1rem; }
 @media (max-width: 900px) {
   /* Narrow or zoomed-in: image fills the space above the bar, whole; the bar and facts scroll on their own. */
   dialog.glarge[open] { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto;

@@ -114,6 +114,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Thumbs in the Gallery (Marc: "I click on a picture and I cannot like/dislike"). The Gallery's
+  large view now has the Up / Down buttons, U / D keys and a why field, saved at once through the
+  same `PUT /api/mark` as the batch view; the tile badge updates in place, the grid does not reflow. Also fixed:
+  since marks save at once, `/api/gallery` read the always-empty `saved` field, so every Gallery image showed as
+  "Not rated" (975 of 975); it now reads the current mark. Guide updated. Undo: `git revert` this commit.
 - **21 Nov 2026** – Faster home page (Marc: "Load batches takes ages"): `scripts/app.py` read `runs.csv` and
   `ratings.csv` once per batch (120+ times per load); `list_batches` and the Gallery now read them once and share
   them (`all_runs`, `batch_images(batch, shared)`). `/api/batches` 1.4 s → 0.18 s, same data. Nothing visible
