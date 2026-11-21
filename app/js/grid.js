@@ -4,8 +4,9 @@ import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './st
 import { toggleMark, ignoreWithUndo, markButtons } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { renderSaveBar } from './save.js';
-import { job } from './job.js';
-import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError } from './ui.js';
+import { job, enqueueRun, KIND } from './job.js';
+import { api as call } from './api.js';
+import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError, toast } from './ui.js';
 
 let view;
 
@@ -50,13 +51,14 @@ function draw() {
     h('header', { class: 'grid-head' },
       h('hgroup', {},
         h('h1', {}, batchTitle(d.batch)),
-        h('p', {}, [shortDate(d.date), plural(d.items.length, 'image'), d.seed && 'variations of the seed']
+        h('p', {}, [KIND[d.kind]?.label, shortDate(d.date), plural(d.items.length, 'image'), d.seed && d.kind !== 'variations' && 'with a seed']
           .filter(Boolean).join(' · '))),
       filters()),
+    batchMeta(d),
     // A new variations batch has no images yet, only placeholders: still a grid, not "nothing to rate".
-    list.length || pendingTiles().length
+    list.length || pendingTiles().length || failedTiles().length
       ? h('ul', { class: 'grid', onKeydown: onGridKey },
-          store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile), pendingTiles())
+          store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile), pendingTiles(), failedTiles())
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
     store.show === 'ignored' && list.length > 0 &&
       h('p', { class: 'muted small hint' }, 'To bring one back, open it and choose Restore, or press I on it here.'),
@@ -108,6 +110,87 @@ function pendingTiles() {
   });
 }
 
+// Where the batch is on disk, where it came from, how it was made and what was made from it.
+// Answers "where did my images go?" and "what was this?" without leaving the page.
+function batchMeta(d) {
+  const p = d.parent;
+  const parentHref = p && (p.file.startsWith('seed.') ? batchHref(p.batch)
+    : `#/b/${encodeURIComponent(p.batch)}/${encodeURIComponent(p.file.replace(/\.[^.]+$/, ''))}`);
+  const styles = [...new Set(d.items.map((im) => im.style).filter(Boolean))];
+  return h('section', { class: 'batch-meta' },
+    h('div', { class: 'meta-row' },
+      h('span', { class: 'muted small' }, 'Folder'),
+      h('code', { class: 'path', title: d.path }, d.rel_path),
+      h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(d.path).then(() => toast('Folder path copied', { timeout: 2000 })) }, 'Copy path'),
+      h('button', { class: 'ghost small', onClick: () => call('reveal', { method: 'POST', body: { batch: d.batch } }).catch(showError) }, 'Open folder'),
+      h('span', { class: 'spacer' }),
+      styles.length > 0 && h('a', { class: 'small', href: '#/new?mode=batch&style=' + styles.map(encodeURIComponent).join(',') },
+        styles.length > 1 ? 'New run with these styles' : 'New run with this style')),
+    p && h('a', { class: 'made-from', href: parentHref },
+      h('img', { src: thumbUrl(p.batch, p.file), alt: '' }),
+      h('span', {}, 'Made from ', h('strong', {}, p.file.replace(/\.[^.]+$/, '')), ' in ', batchTitle(p.batch),
+        d.run?.change && h('span', { class: 'muted' }, ` · asked: “${d.run.change}”`))),
+    d.run && runDetails(d.run),
+    d.children?.length > 0 && h('div', { class: 'children' },
+      h('span', { class: 'muted small' }, 'Made from images here'),
+      h('ul', { class: 'child-list' }, d.children.map((c) => h('li', {},
+        h('a', { href: batchHref(c.batch), title: batchTitle(c.batch) },
+          c.preview ? h('img', { src: thumbUrl(c.batch, c.preview), alt: '' }) : h('span', { class: 'no-img' }),
+          h('span', { class: 'small' }, `${KIND[c.kind]?.label || c.kind} of ${c.file.replace(/\.[^.]+$/, '')}`, h('br'),
+            h('span', { class: 'muted' }, plural(c.images, 'image')))))))));
+}
+
+function runDetails(r) {
+  const rows = [
+    ['Started', r.started && `${shortDate(r.started.slice(0, 10))} ${r.started.slice(11)} · from the ${r.by || 'web app'}`],
+    ['Styles', r.styles?.map(styleName).join(', ')],
+    ['Shape', r.ratio],
+    ['Wildcard', r.kind === 'batch' ? (r.wildcards ? 'last image of each style' : 'none') : null],
+    ['Changes', r.changes?.join(', ')],
+    ['Asked for', r.change],
+    ['Kept', r.keep?.join(', ')],
+    ['Subject', r.subject],
+    ['In every image', r.note],
+  ].filter(([, v]) => v);
+  const subjects = Object.entries(r.subjects || {}).filter(([, list]) => list?.length);
+  return h('details', { class: 'run-details' },
+    h('summary', { class: 'small' }, 'How it was made'),
+    h('dl', {}, rows.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)])),
+    subjects.length > 0 && h('div', { class: 'small' }, subjects.map(([st, list]) => [
+      h('p', { class: 'muted' }, `Subjects · ${styleName(st)}` + (r.hints?.[st] ? ` (asked: ${r.hints[st]})` : '')),
+      h('ol', {}, list.map((x) => h('li', {}, x)))])));
+}
+
+// Images that were tried and gave nothing (blocked by the filter, timed out): say so, offer one retry.
+function failedTiles() {
+  if (store.show !== 'to-rate') return [];
+  const waiting = new Set(job.running && job.batch === store.data.batch ? job.expected : []);
+  const queued = new Set((job.queue || []).filter((q) => q.batch === store.data.batch).flatMap((q) => q.expected));
+  return (store.data.failed || []).filter((f) => !waiting.has(f.name)).map((f) => h('li', { class: 'failed-tile' },
+    h('div', { class: 'frame' },
+      h('strong', {}, 'No image'),
+      h('small', {}, 'Blocked by the filter, or Codex timed out. The log is next to it: ', h('code', {}, `${f.name}.codex.log`)),
+      h('div', { class: 'failed-actions' },
+        queued.has(f.name) ? h('span', { class: 'small' }, 'Retry queued')
+          : h('button', { class: 'secondary outline small-btn', onClick: (e) => retry(f, e.currentTarget) }, 'Retry once'),
+        f.prompt && h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(f.prompt).then(() => toast('Prompt copied', { timeout: 2000 })) }, 'Copy prompt'))),
+    h('div', { class: 'caption' }, h('span', { class: 'num' }, '–'), h('span', { class: 'style' }, styleName(f.style)),
+      h('span', { class: 'kind' }, f.name))));
+}
+
+async function retry(f, btn) {
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    const res = await enqueueRun({ kind: 'retry', batch: store.data.batch, name: f.name });
+    toast(res.position <= 1 ? `Trying ${f.name} again` : `Retry of ${f.name} queued, number ${res.position}`);
+  } catch (err) {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    showError(err);
+  }
+}
+
 function seedTile(d) {
   return h('li', { class: 'seed-tile' },
     h('div', { class: 'frame' }, h('img', { src: thumbUrl(d.batch, d.seed), alt: 'Seed image of this batch', loading: 'lazy' })),
@@ -140,11 +223,16 @@ function tile(im) {
 onChange((name, kind) => {
   if (kind === 'saved' || kind === 'reload') return reloadBatch().catch(showError);
   if (kind === 'job') {   // progress: only the placeholders change
-    if (!view?.querySelector('.grid-page') || store.data?.batch !== job.batch) return;
+    if (!view?.querySelector('.grid-page')) return;
     const ul = view.querySelector('.grid');
+    const here = job.running && store.data?.batch === job.batch;
+    // The run for this batch ended while another one took over the header: read the batch once more,
+    // so the placeholders give way to the images (or to a "No image" tile).
+    if (!here && ul?.querySelector('.pending-tile')) return reloadBatch().catch(showError);
+    if (store.data?.batch !== job.batch) return;
     if (!ul) return draw();
     ul.querySelectorAll('.pending-tile').forEach((li) => li.remove());
-    ul.append(...pendingTiles());
+    ul.querySelector('.failed-tile') ? ul.querySelector('.failed-tile').before(...pendingTiles()) : ul.append(...pendingTiles());
     return;
   }
   if (!view?.querySelector('.grid-page') || !name) return;

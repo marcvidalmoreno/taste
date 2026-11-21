@@ -20,6 +20,14 @@ Files this server reads or writes (all in generated/codex/)
   app-ignored.json     images hidden from the grid and left out of ratings (written)
   .thumbs/             small JPEG copies for the grid (written, safe to delete)
   distil-state.json    where the last distil stopped (read only: --mark stays a command-line step)
+  <batch>/run.json     what a run started here was, where it came from and how it was set (written)
+  app-queue.json       runs waiting (written; app-queue.dry.json with --dry-run, so a test never runs for real)
+  claude-notes.json    notes for Claude Code (written here, answered with scripts/notes.py)
+  .progress.json       live progress of the running run (read; written by the run scripts)
+
+Runs (21 Nov 2026): one queue, one image run at a time. New runs (batch.py), single images, remixes and retries
+(run_list.py) and variations (variations.py) are queued from the page; a run started from chat holds the queue
+until it ends. Codex also writes subjects and rewrites prompts (codex_text.py, read-only text jobs).
 
 Draft, then save: marks are drafts until "Save ratings" appends them to ratings.csv in one go.
 Saved ratings are read-only here, because distil.py remembers its place by row count.
@@ -111,13 +119,15 @@ def batch_images(batch):
 
 
 def summary(batch, images):
+    rec = run_record(batch)
     count = lambda st: sum(1 for im in images if im['status'] == st)  # noqa: E731
     return {'batch': batch, 'date': batch[:10], 'images': len(images),
             'to_rate': count('new') + count('draft'), 'drafts': count('draft'),
             'rated': count('rated'), 'ignored': count('ignored'),
             'newest': max((im['mtime'] for im in images), default=int((BASE / batch).stat().st_mtime)),
             'preview': [im['file'] for im in images if im['status'] != 'ignored'][:4],
-            'seed': seed_file(batch)}
+            'seed': seed_file(batch), 'kind': kind_of_batch(batch, images, rec), 'title': (rec or {}).get('title', ''),
+            'styles': sorted({im['style'] for im in images if im['style']})}
 
 
 def list_batches():
@@ -141,15 +151,26 @@ def thumbnail(batch, file):
     return dst
 
 
-# ---------------------------------------------------------------- variations: one job at a time
+# ---------------------------------------------------------------- runs: one queue, one image run at a time
 
 PY = sys.executable
 CHANGES = ['palette', 'subject', 'composition', 'mood']   # the order scripts/variations.py makes them in
+RATIO_CHOICES = ('mixed', 'wide', 'portrait', 'square')
 WEEK_BUDGET = 200         # README "Allowance": 10 % of the week for images = about 200 images (remeasured 20 Nov 2026)
-DRY_RUN = False           # --dry-run: jobs run variations.py --dry-run (no Codex, no allowance)
-JOB = {'running': False}  # the one variation job; read by GET /api/job
+DRY_RUN = False           # --dry-run: every run and text job is a dry run (no Codex, no allowance)
+QUEUE_FILE = BASE / 'app-queue.json'    # runs waiting: a restart of the app keeps them
+NOTES = BASE / 'claude-notes.json'      # notes for Claude Code (scripts/notes.py reads and answers them)
+SPECS = BASE / '.app'                   # files of dry runs (subjects, jobs), deleted when the run ends
+QUEUE = []                # specs waiting, first = next
+CUR = {}                  # the run the app started last (running or finished); read by GET /api/job
+PROC = {}                 # its process: {'p': Popen}
+RECENT = []               # the last finished app runs, newest last: the page reports each one once, even when
+                          # the next queued run starts at once
+_QLOCK = threading.Lock()
+_WAKE = threading.Event()
 _guess = None             # nearest.model, loaded on first use (a few seconds: sklearn + 1,000 thumbnails)
 _GUESS_LOCK = threading.Lock()  # its own lock: loading it must not hold up marking
+_lineage = {'key': None, 'map': {}}
 
 
 def allowance():
@@ -164,8 +185,9 @@ def allowance():
     if rate.RUNS.exists():
         week = sum(1 for row in csv.DictReader(open(rate.RUNS, encoding='utf-8'))
                    if row['ok'] == 'yes' and row['date'] >= since)
+    queued = sum(len(s['expected']) for s in QUEUE)
     return {'now': now, 'unknown_reason': None if now else (r.stderr or r.stdout).strip()[-300:],
-            'week_images': week, 'week_budget': WEEK_BUDGET, 'dry_run': DRY_RUN}
+            'week_images': week, 'week_budget': WEEK_BUDGET, 'dry_run': DRY_RUN, 'queued_images': queued}
 
 
 def source_image(batch, file):
@@ -187,43 +209,251 @@ def guess_styles(path):
     return {'top': [{'style': s, 'distance': d} for s, d in top], 'far': far}
 
 
+def slugify(text, fallback='run'):
+    return '-'.join(''.join(c if c.isalnum() else ' ' for c in text.lower()).split())[:32].strip('-') or fallback
+
+
 def free_slug(stem):
-    """variations.py writes to generated/codex/<today>-<slug>/; never reuse a folder (it would overwrite)."""
+    """Folders are generated/codex/<today>-<slug>/; never reuse one (it would overwrite), nor one a queued
+    run has already reserved."""
     import datetime
-    base = ''.join(c if c.isalnum() else '-' for c in stem.lower()).strip('-')[:24] or 'variations'
+    base = slugify(stem, 'variations')[:24]
     day, slug, i = datetime.date.today().isoformat(), base, 2
-    while (BASE / f'{day}-{slug}').exists():
+    taken = {s['batch'] for s in QUEUE} | ({CUR['batch']} if CUR.get('running') else set())
+    while (BASE / f'{day}-{slug}').exists() or f'{day}-{slug}' in taken:
         slug, i = f'{base}-{i}', i + 1
     return slug, f'{day}-{slug}'
 
 
-def start_job(src, style, subject, n, note=''):
-    import subprocess, time
-    slug, batch = free_slug(src.stem if src.stem != 'seed' else src.parent.name[11:] + '-seed')
-    cmd = [PY, '-I', str(ROOT / 'scripts' / 'variations.py'), str(src), '--style', style, '--n', str(n), '--slug', slug]
-    if subject:
-        cmd += ['--subject', subject]
-    if note:
-        cmd += ['--note', note]
+def style_file(key):
+    p = ROOT / 'taste' / 'styles' / f'{key}.json'
+    if not key or '/' in key or '\\' in key or not p.exists():
+        raise ApiError(400, f'unknown style "{key}"')
+    return read_json(p, {})
+
+
+def text_job(*args):
+    """scripts/codex_text.py (Codex writes subjects or a prompt; ~15 s). Raises ApiError with Codex's reason."""
+    import subprocess
+    cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_text.py'), *args] + (['--dry-run'] if DRY_RUN else [])
+    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=320)
+    if r.returncode or not r.stdout.strip().startswith('{'):
+        raise ApiError(502, (r.stderr or r.stdout).strip().splitlines()[-1][:300] if (r.stderr or r.stdout).strip()
+                       else 'Codex gave no answer')
+    return json.loads(r.stdout)
+
+
+def clean(s, n=200):
+    return ' '.join(str(s or '').split())[:n]
+
+
+# -- run records: generated/codex/<batch>/run.json says what a run was, where it came from and how it was set
+
+def run_record(batch):
+    return read_json(BASE / batch / 'run.json', None) if is_batch(batch) else None
+
+
+def lineage():
+    """{child batch: {'batch', 'file'}}: where each variations / remix batch came from. run.json says it for
+    runs started from the app; older variations batches are matched by their seed's bytes (same size first,
+    then the same content), so the image a seed was copied from is found without hashing everything."""
+    import hashlib
+    names = sorted(p.name for p in BASE.iterdir() if is_batch(p.name)) if BASE.exists() else []
+    key = tuple((n, int((BASE / n).stat().st_mtime)) for n in names)
+    if _lineage['key'] == key:
+        return _lineage['map']
+    out, sizes = {}, {}
+    for n in names:
+        for p in (BASE / n).glob('*.png'):
+            if not p.name.startswith('seed.'):
+                sizes.setdefault(p.stat().st_size, []).append(p)
+    digest = lambda p: hashlib.sha1(p.read_bytes()).hexdigest()  # noqa: E731
+    for n in names:
+        rec = read_json(BASE / n / 'run.json', None)
+        if rec and rec.get('source'):
+            out[n] = rec['source']
+            continue
+        seed = seed_file(n)
+        if not seed:
+            continue
+        sp = BASE / n / seed
+        cands = [p for p in sizes.get(sp.stat().st_size, []) if p.parent.name != n]
+        if cands:
+            d = digest(sp)
+            hit = next((p for p in cands if digest(p) == d), None)
+            if hit:
+                out[n] = {'batch': hit.parent.name, 'file': hit.name}
+    _lineage.update(key=key, map=out)
+    return out
+
+
+def kind_of_batch(batch, images, rec):
+    if rec and rec.get('kind'):
+        return rec['kind']
+    return 'variations' if seed_file(batch) else 'batch'   # older folders: no run.json to say more
+
+
+def failed_images(batch, have):
+    """runs.csv rows of this batch that made no image (blocked, timed out), latest try per name."""
+    if not rate.RUNS.exists():
+        return []
+    rows = {}
+    for r in csv.DictReader(open(rate.RUNS, encoding='utf-8')):
+        if r['batch'] == batch:
+            rows[r['name']] = r
+    return [{'name': n, 'style': r['style'], 'change': r['change'], 'mode': r['mode'], 'prompt': r['prompt'],
+             'date': r['date'], 'time': r['time'], 'seed': r['seed']}
+            for n, r in sorted(rows.items()) if r['ok'] != 'yes' and n not in have]
+
+
+# -- the queue
+
+def save_queue():
+    write_json(QUEUE_FILE, QUEUE)
+
+
+def public(spec):
+    keys = ('id', 'kind', 'title', 'batch', 'expected', 'created', 'source', 'styles', 'n')
+    return {k: spec.get(k) for k in keys}
+
+
+def enqueue(spec):
+    import time
+    spec.update(id=f'{int(time.time() * 1000)}', created=time.time())
+    with _QLOCK:
+        QUEUE.append(spec)
+        save_queue()
+        pos = len(QUEUE) + (1 if CUR.get('running') or (not DRY_RUN and (chat_run() or {}).get('running')) else 0)
+    _WAKE.set()
+    return {**job_state(), 'queued_id': spec['id'], 'position': pos}
+
+
+def worker():
+    """Starts the next queued run when nothing is running (neither from the app nor from chat)."""
+    import time
+    while True:
+        _WAKE.wait(3)
+        _WAKE.clear()
+        with _QLOCK:
+            # a dry run spends nothing and writes no progress file: it never waits for a real run
+            if CUR.get('running') or not QUEUE or (not DRY_RUN and (chat_run() or {}).get('running')):
+                continue
+            spec = QUEUE.pop(0)
+            save_queue()
+            CUR.clear()
+            CUR.update(spec, running=True, phase='Starting', started=time.time(), finished=None, returncode=None,
+                       log=[], stopped=False, cancel=False, dry_run=DRY_RUN, error=None)
+        try:
+            launch(spec)
+        except Exception as e:  # report it on the page; the queue goes on
+            CUR['log'].append(f'ERROR: {e}')
+            CUR.update(running=False, finished=time.time(), returncode=-1, error=str(e), phase='')
+        with _QLOCK:
+            remember_finished()
+        _WAKE.set()
+
+
+def launch(spec):
+    import shutil, subprocess, time
+    if spec['kind'] == 'variations' and not DRY_RUN:   # variations.py names its folder by today's date
+        spec['slug'], spec['batch'] = free_slug(spec['slug'])
+        CUR['batch'] = spec['batch']
+    folder = SPECS / spec['id'] if DRY_RUN else BASE / spec['batch']
+    folder.mkdir(parents=True, exist_ok=True)
+    say = lambda line: CUR.__setitem__('log', CUR['log'] + [f'{time.strftime("%H:%M:%S")}  {line}'])  # noqa: E731
+    if spec['kind'] == 'batch':
+        subjects = {}
+        for st in spec['styles']:
+            have = [s for s in spec['subjects'].get(st, []) if s.strip()][:spec['n']]
+            if len(have) < spec['n']:
+                CUR['phase'] = f'Codex is writing subjects for {style_file(st).get("name", st)}'
+                say(CUR['phase'])
+                have += text_job('subjects', '--style', st, '--n', str(spec['n'] - len(have)),
+                                 '--hint', spec['hints'].get(st, ''))['subjects']
+            if CUR.get('cancel'):
+                raise RuntimeError('stopped before the first image')
+            subjects[st] = have
+            for s in have:
+                say(f'subject {st}: {s}')
+        spec['subjects'] = CUR['subjects'] = subjects
+        write_json(folder / 'subjects.json', subjects)
+        cmd = [PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(folder), '--subjects', str(folder / 'subjects.json'),
+               '--styles', ','.join(spec['styles']), '--n', str(spec['n']), '--wildcards', str(spec['wildcards']),
+               '--ratio', spec['ratio']]
+    elif spec['kind'] in ('remix', 'single', 'retry'):
+        write_json(folder / '.jobs.json', spec['jobs'])
+        cmd = [PY, '-I', str(ROOT / 'scripts' / 'run_list.py'), '--out', str(folder), '--jobs', str(folder / '.jobs.json')]
+    else:  # variations
+        src = BASE / spec['source']['batch'] / spec['source']['file']
+        cmd = [PY, '-I', str(ROOT / 'scripts' / 'variations.py'), str(src), '--style', spec['style'],
+               '--changes', ','.join(spec['changes']), '--slug', spec['slug']]
+        if spec.get('subject'):
+            cmd += ['--subject', spec['subject']]
+        if spec.get('note'):
+            cmd += ['--note', spec['note']]
     if DRY_RUN:
         cmd.append('--dry-run')
+    else:
+        rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
+                                         'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep')
+               if spec.get(k) not in (None, '', [], {})}
+        rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
+        write_json(folder / 'run.json', rec)
+    if CUR.get('cancel'):
+        raise RuntimeError('stopped before the first image')
+    CUR['phase'] = 'Making images' if not DRY_RUN else 'Dry run: printing the prompts'
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, encoding='utf-8', errors='replace')
-    JOB.clear()
-    JOB.update(running=True, batch=batch, source={'batch': src.parent.name, 'file': src.name}, style=style, n=n,
-               expected=[f'{i}-{c}' for i, c in enumerate(CHANGES[:n], 1)], started=time.time(),
-               finished=None, returncode=None, log=[], dry_run=DRY_RUN)
+    PROC['p'] = proc
+    for line in proc.stdout:
+        CUR['log'] = (CUR['log'] + [line.rstrip()])[-200:]
+    CUR.update(running=False, returncode=proc.wait(), finished=time.time(), phase='')
+    PROC.clear()
+    if DRY_RUN:
+        shutil.rmtree(folder, ignore_errors=True)
+    elif spec['kind'] == 'batch':
+        subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'sheet.py'), str(folder)], cwd=ROOT, capture_output=True)
 
-    def follow():  # read the script's output as it comes, keep the last lines for the page
-        for line in proc.stdout:
-            JOB['log'] = (JOB['log'] + [line.rstrip()])[-80:]
-        JOB.update(running=False, returncode=proc.wait(), finished=time.time())
-    threading.Thread(target=follow, daemon=True).start()
+
+def remember_finished():
+    """Keep a short record of the run that just ended (CUR), for GET /api/job."""
+    folder = BASE / CUR['batch']
+    rec = {**public(CUR), **{k: CUR.get(k) for k in ('started', 'finished', 'stopped', 'dry_run', 'error', 'returncode')},
+           'made': [] if CUR.get('dry_run') else [n for n in CUR['expected'] if (folder / f'{n}.png').exists()],
+           'exists': is_batch(CUR['batch']), 'log': CUR['log'][-80:]}
+    RECENT.append(rec)
+    del RECENT[:-5]
+
+
+def stop_current():
+    """Stop the running run: the app's own, or one started from chat (its pid is in .progress.json).
+    Ends the whole process tree, so the codex exec of the current image stops too."""
+    import subprocess
+    pid = None
+    if CUR.get('running'):
+        CUR['cancel'] = True
+        CUR['stopped'] = True
+        pid = PROC['p'].pid if PROC.get('p') else None
+        if pid is None:
+            return  # still writing subjects: launch() sees cancel before the first image
+    else:
+        run = chat_run()
+        if not (run and run.get('running') and run.get('pid')):
+            raise ApiError(409, 'nothing is running')
+        pid = run['pid']
+    subprocess.run(['taskkill', '/PID', str(pid), '/T', '/F'], capture_output=True)
+    # The killed run can't write its last line: do it for it, so the next queued run starts at once.
+    import time
+    with LOCK:
+        d = read_json(BASE / '.progress.json', None)
+        if isinstance(d, dict) and d.get('pid') == pid and d.get('finished') is None:
+            d.update(finished=time.time(), current=None, log=(d.get('log') or []) + [f'{time.strftime("%H:%M:%S")}  STOPPED from the web app'])
+            write_json(BASE / '.progress.json', d)
 
 
 def chat_run():
-    """A run started outside the page (batch.py, variations.py or codex_run.py from chat): scripts/progress.py
-    writes generated/codex/.progress.json as it goes. No heartbeat for 45 s = the run was stopped."""
+    """A run's live progress: scripts/progress.py writes generated/codex/.progress.json as it goes (batch.py,
+    variations.py, run_list.py, a lone codex_run.py). No heartbeat for 45 s = the run was stopped."""
     import time
     try:
         d = read_json(BASE / '.progress.json', None)
@@ -237,16 +467,145 @@ def chat_run():
 
 
 def job_state():
-    run = None if JOB.get('running') else chat_run()
-    if run and 'batch' in JOB and JOB['started'] > run['started']:
-        run = None  # the page's own job is newer
-    if not run:
-        if 'batch' not in JOB:
-            return {'running': False}
-        run = {**JOB, 'kind': 'variations'}
+    """What is running (or ran last), what is queued. The app's own run wins over the progress file unless
+    a run from chat started after it."""
+    with _QLOCK:
+        cur = {k: v for k, v in CUR.items()}
+        queue = [public(s) for s in QUEUE]
+    prog = chat_run()
+    # a live run from chat, or one that started after the app's run ended, takes over once the app's run is done
+    if cur and (cur['running'] or not (prog and (prog['running'] or prog['started'] > (cur['finished'] or 0)))):
+        run = {**public(cur), **{k: cur.get(k) for k in ('running', 'phase', 'started', 'finished', 'returncode',
+                                                         'stopped', 'dry_run', 'error', 'log', 'subjects')},
+               'failed': [], 'current': None, 'from_chat': False}
+        if prog and prog['batch'] == cur['batch'] and prog['started'] >= cur['started'] - 1:
+            run.update(expected=prog['expected'], failed=prog['failed'], current=prog['current'],
+                       log=[line for line in cur['log'] if 'subject' in line or 'Codex' in line] + prog['log'])
+            if not cur['running'] and prog['running']:  # the process tree is gone; the file just hasn't caught up
+                run['current'] = None
+    elif prog:
+        run = {**prog, 'title': prog.get('kind', 'run'), 'phase': 'Making images' if prog['running'] else ''}
+    else:
+        return {'running': False, 'queue': queue, 'recent': list(RECENT)}
     folder = BASE / run['batch']
     made = [n for n in run['expected'] if (folder / f'{n}.png').exists()]
-    return {**run, 'exists': is_batch(run['batch']), 'made': made}
+    return {**run, 'exists': is_batch(run['batch']), 'made': made, 'queue': queue, 'recent': list(RECENT)}
+
+
+# -- run specs: what each kind of run needs, checked before it joins the queue
+
+KEEPABLE = ('subject', 'palette', 'composition', 'light', 'medium')
+
+
+def spec_batch(body, preview=False):
+    """{styles: [..], n: 1-8, subjects: {style: [..]}, hints: {style: '..'}, ratio, wildcards: 0|1, name}"""
+    styles = list(dict.fromkeys(s for s in body.get('styles') or [] if isinstance(s, str)))
+    if not styles:
+        raise ApiError(400, 'pick at least one style')
+    info = {s: style_file(s) for s in styles}
+    n = int(body.get('n') or 4)
+    if not 1 <= n <= 8:
+        raise ApiError(400, 'images per style: 1 to 8')
+    ratio = body.get('ratio') or 'mixed'
+    if ratio not in RATIO_CHOICES:
+        raise ApiError(400, 'ratio: mixed, wide, portrait or square')
+    wildcards = 1 if body.get('wildcards') and n > 1 else 0
+    subjects = {s: [clean(x) for x in (body.get('subjects') or {}).get(s, []) if clean(x)][:n] for s in styles}
+    hints = {s: clean((body.get('hints') or {}).get(s), 200) for s in styles}
+    placeholders = set()
+    if preview:   # never call Codex for a preview: fill with the style's own example subjects
+        for s in styles:
+            pool = info[s].get('subjects') or ['a scene that suits the style']
+            for i in range(len(subjects[s]), n):
+                subjects[s].append(pool[i % len(pool)])
+                placeholders.add(f'{s}-{i + 1}')
+    names = [info[s].get('name', s) for s in styles]
+    title = clean(body.get('name'), 60) or (', '.join(names[:3]) + (f' +{len(names) - 3}' if len(names) > 3 else ''))
+    _, batch = free_slug(clean(body.get('name'), 60) or '-'.join(styles[:2]))
+    return {'kind': 'batch', 'title': title, 'batch': batch, 'styles': styles, 'n': n, 'ratio': ratio,
+            'wildcards': wildcards, 'subjects': subjects, 'hints': hints, 'placeholders': placeholders,
+            'expected': [f'{s}-{i + 1}' for s in styles for i in range(n)]}
+
+
+def spec_single(body):
+    """One image (or a few) from a style and a subject I write: {style, subject, ratio, n: 1-4}."""
+    style = str(body.get('style', ''))
+    st = style_file(style)
+    subject = clean(body.get('subject'))
+    if not subject:
+        raise ApiError(400, 'write a subject')
+    ratio = body.get('ratio') or 'wide'
+    if ratio not in RATIO_CHOICES[1:]:
+        raise ApiError(400, 'ratio: wide, portrait or square')
+    n = max(1, min(4, int(body.get('n') or 1)))
+    _, batch = free_slug(subject[:24])
+    stem = '-'.join(slugify(subject, 'image').split('-')[:3])   # first words, never cut mid-word
+    jobs = [{'name': f'{stem}-{i}', 'style': style, 'subject': subject, 'ratio': ratio, 'mode': 'text'}
+            for i in range(1, n + 1)]
+    return {'kind': 'single', 'title': f'{st.get("name", style)}: {subject[:50]}', 'batch': batch, 'jobs': jobs,
+            'styles': [style], 'n': n, 'subject': subject, 'ratio': ratio, 'expected': [j['name'] for j in jobs]}
+
+
+def spec_remix(body):
+    """A new image from one I made, with a rewritten prompt: {batch, file, prompt, change, keep, ref: bool, n: 1-4}."""
+    src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+    prompt = clean(body.get('prompt'), 4000)
+    if not prompt:
+        raise ApiError(400, 'the prompt is empty')
+    change = clean(body.get('change'), 200)
+    n = max(1, min(4, int(body.get('n') or 1)))
+    style = rate.batch_runs(src.parent.name).get(src.stem, {}).get('style', '')
+    _, batch = free_slug(f'{src.stem}-remix')
+    jobs = [{'name': f'remix-{i}', 'prompt': prompt, 'style': style, 'mode': 'remix',
+             'change': f'remix: {change}' if change else 'remix: prompt edited',
+             'ref': str(src) if body.get('ref') else ''} for i in range(1, n + 1)]
+    return {'kind': 'remix', 'title': f'Remix of {src.stem}' + (f': {change[:40]}' if change else ''), 'batch': batch,
+            'jobs': jobs, 'source': {'batch': src.parent.name, 'file': src.name}, 'change': change,
+            'keep': [k for k in body.get('keep') or [] if k in KEEPABLE], 'styles': [style] if style else [], 'n': n,
+            'expected': [j['name'] for j in jobs]}
+
+
+def spec_retry(body):
+    """Try a failed image again, same prompt, same batch and name: {batch, name}."""
+    batch, name = str(body.get('batch', '')), str(body.get('name', ''))
+    if not is_batch(batch):
+        raise ApiError(404, f'no batch "{batch}"')
+    row = next((f for f in failed_images(batch, set(rate.batch_images(batch))) if f['name'] == name), None)
+    if not row:
+        raise ApiError(404, f'"{name}" did not fail in this batch (or it has an image now)')
+    if any(s['batch'] == batch and name in s['expected'] for s in QUEUE):
+        raise ApiError(409, 'this retry is already in the queue')
+    ref = ''
+    if row['seed']:   # it had a reference image: the batch's seed copy, else the source named in run.json
+        if seed_file(batch):
+            ref = str(BASE / batch / seed_file(batch))
+        elif (run_record(batch) or {}).get('source'):
+            src = run_record(batch)['source']
+            if (BASE / src['batch'] / src['file']).is_file():
+                ref = str(BASE / src['batch'] / src['file'])
+    job = {'name': name, 'prompt': row['prompt'], 'style': row['style'], 'mode': row['mode'] or 'test',
+           'change': row['change'], 'ref': ref}
+    return {'kind': 'retry', 'title': f'Retry {name}', 'batch': batch, 'jobs': [job],
+            'styles': [row['style']] if row['style'] else [], 'n': 1, 'expected': [name]}
+
+
+def spec_variations(body):
+    src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+    style = str(body.get('style', ''))
+    style_file(style)
+    changes = [c for c in body.get('changes') or [] if c in CHANGES]
+    if not changes:
+        n = body.get('n', 3)
+        if n not in (3, 4):
+            raise ApiError(400, 'pick what changes')
+        changes = CHANGES[:n]
+    changes = [c for c in CHANGES if c in changes]   # the order variations.py makes them in
+    stem = src.stem if src.stem != 'seed' else src.parent.name[11:] + '-seed'
+    slug, batch = free_slug(stem)
+    return {'kind': 'variations', 'title': f'Variations of {src.stem}', 'batch': batch, 'slug': slug,
+            'source': {'batch': src.parent.name, 'file': src.name}, 'style': style, 'styles': [style],
+            'changes': changes, 'subject': clean(body.get('subject')), 'note': clean(body.get('note')),
+            'n': len(changes), 'expected': [f'{i}-{c}' for i, c in enumerate(changes, 1)]}
 
 
 # ---------------------------------------------------------------- HTTP
@@ -271,6 +630,16 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/allowance'): 'get_allowance',
         ('POST', 'api/guess'): 'post_guess',
         ('POST', 'api/variations'): 'post_variations',
+        ('POST', 'api/run'): 'post_run',
+        ('POST', 'api/preview'): 'post_preview',
+        ('POST', 'api/stop'): 'post_stop',
+        ('POST', 'api/queue/cancel'): 'post_queue_cancel',
+        ('POST', 'api/text/subjects'): 'post_text_subjects',
+        ('POST', 'api/text/rewrite'): 'post_text_rewrite',
+        ('POST', 'api/reveal'): 'post_reveal',
+        ('GET', 'api/notes'): 'get_notes',
+        ('POST', 'api/notes/delete'): 'post_notes_delete',
+        ('POST', 'api/notes'): 'post_notes',
         ('GET', 'api/job'): 'get_job',
         ('GET', 'api/overview'): 'get_overview',
         ('GET', 'api/distil'): 'get_distil',
@@ -374,7 +743,16 @@ class Handler(BaseHTTPRequestHandler):
         if not is_batch(batch):
             raise ApiError(404, f'no batch "{batch}"')
         images = batch_images(batch)
-        return {**summary(batch, images), 'items': images}
+        lin = lineage()
+        children = []
+        for c, src in sorted(lin.items()):
+            if src.get('batch') == batch:
+                names = rate.batch_images(c)
+                children.append({'batch': c, 'file': src['file'], 'kind': kind_of_batch(c, [], run_record(c)),
+                                 'images': len(names), 'preview': names[0] + '.png' if names else None})
+        return {**summary(batch, images), 'items': images, 'run': run_record(batch), 'parent': lin.get(batch),
+                'children': children, 'failed': failed_images(batch, {im['name'] for im in images}),
+                'path': str(BASE / batch), 'rel_path': f'generated/codex/{batch}'}
 
     def put_draft(self):
         """Set or clear one draft: {batch, name, rating: keep (up)|no (down)|null, why}."""
@@ -440,24 +818,120 @@ class Handler(BaseHTTPRequestHandler):
         return guess_styles(source_image(str(body.get('batch', '')), str(body.get('file', ''))))
 
     def post_variations(self):
-        """Start variations.py on one image: {batch, file, style, subject, note, n}. Spends Codex allowance
-        (unless --dry-run), so the page only calls this after Marc confirmed the style and the cost."""
-        body = self.read_body()
-        src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
-        style, n = str(body.get('style', '')), body.get('n', 3)
-        subject = ' '.join(str(body.get('subject') or '').split())[:200]
-        note = ' '.join(str(body.get('note') or '').split())[:200]
-        if not (ROOT / 'taste' / 'styles' / f'{style}.json').exists():
-            raise ApiError(400, f'unknown style "{style}"')
-        if n not in (3, 4):
-            raise ApiError(400, 'n must be 3 or 4')
-        with LOCK:
-            if JOB.get('running'):
-                raise ApiError(409, 'a variation job is already running: one at a time')
-            if (chat_run() or {}).get('running'):
-                raise ApiError(409, 'images started from chat are still being made: one run at a time')
-            start_job(src, style, subject, n, note)
+        """Variations of one image: {batch, file, style, changes: [palette, subject, composition, mood] (or n: 3|4),
+        subject, note}. Queued: spends Codex allowance when it runs (unless --dry-run)."""
+        return self.post_run({**self.read_body(), 'kind': 'variations'})
+
+    def post_run(self, body=None):
+        """Queue one run. kind: batch | single | remix | retry | variations (see the spec_* helpers)."""
+        body = body or self.read_body()
+        make = {'batch': spec_batch, 'single': spec_single, 'remix': spec_remix, 'retry': spec_retry,
+                'variations': spec_variations}.get(body.get('kind'))
+        if not make:
+            raise ApiError(400, f'unknown kind "{body.get("kind")}"')
+        with _QLOCK:
+            spec = make(body)
+        spec.pop('placeholders', None)
+        return enqueue(spec)
+
+    def post_preview(self):
+        """The prompts a batch would use, without running Codex (batch.py --dry-run). Missing subjects are
+        filled with the style's own examples, marked, so the preview never spends anything."""
+        import subprocess, tempfile
+        spec = spec_batch(self.read_body(), preview=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / 'subjects.json'
+            write_json(f, spec['subjects'])
+            r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(Path(tmp) / 'out'),
+                                '--subjects', str(f), '--styles', ','.join(spec['styles']), '--n', str(spec['n']),
+                                '--wildcards', str(spec['wildcards']), '--ratio', spec['ratio'], '--dry-run'],
+                               cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=120)
+        out = []
+        for line in r.stdout.splitlines():
+            if line.startswith('{'):
+                d = json.loads(line)
+                d['placeholder'] = d['name'] in spec['placeholders']
+                out.append(d)
+        if not out:
+            raise ApiError(500, (r.stderr or r.stdout).strip()[-300:] or 'no prompts')
+        return {'prompts': out}
+
+    def post_stop(self):
+        self.read_body()
+        stop_current()
         return job_state()
+
+    def post_queue_cancel(self):
+        qid = str(self.read_body().get('id', ''))
+        with _QLOCK:
+            before = len(QUEUE)
+            QUEUE[:] = [s for s in QUEUE if s['id'] != qid]
+            if len(QUEUE) == before:
+                raise ApiError(404, 'not in the queue any more (it may have started)')
+            save_queue()
+        return job_state()
+
+    def post_text_subjects(self):
+        """Codex writes fresh subjects for one style: {style, n, hint}. About 15 s; spends a little allowance."""
+        body = self.read_body()
+        style_file(str(body.get('style', '')))
+        n = max(1, min(12, int(body.get('n') or 4)))
+        return text_job('subjects', '--style', body['style'], '--n', str(n), '--hint', clean(body.get('hint'), 200))
+
+    def post_text_rewrite(self):
+        """Codex rewrites an image prompt: {prompt, change, keep: [...]}. About 15 s."""
+        body = self.read_body()
+        prompt, change = clean(body.get('prompt'), 4000), clean(body.get('change'), 400)
+        if not prompt or not change:
+            raise ApiError(400, 'give the prompt and what should change')
+        keep = ', '.join(k for k in body.get('keep') or [] if k in KEEPABLE)
+        return text_job('rewrite', '--prompt', prompt, '--change', change, '--keep', keep)
+
+    def post_reveal(self):
+        """Open a batch folder in Windows Explorer (this machine only)."""
+        import subprocess
+        batch = str(self.read_body().get('batch', ''))
+        if not is_batch(batch):
+            raise ApiError(404, f'no batch "{batch}"')
+        subprocess.Popen(['explorer.exe', str(BASE / batch)])
+        return {'ok': True}
+
+    def get_notes(self):
+        return {'notes': read_json(NOTES, {'notes': []})['notes']}
+
+    def post_notes(self):
+        """A note for Claude Code: {text, style?, batch?, name?}. Claude reads them with scripts/notes.py."""
+        import time
+        body = self.read_body()
+        text = ' '.join(str(body.get('text') or '').split())[:1000]
+        if not text:
+            raise ApiError(400, 'write the note first')
+        style, batch, name = str(body.get('style') or ''), str(body.get('batch') or ''), str(body.get('name') or '')
+        if style:
+            style_file(style)
+        if batch and not is_batch(batch):
+            raise ApiError(404, f'no batch "{batch}"')
+        if name and name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in "{batch}"')
+        note = {'id': f'{int(time.time() * 1000)}', 'created': time.strftime('%Y-%m-%d %H:%M'), 'text': text,
+                'style': style, 'batch': batch, 'name': name, 'status': 'open', 'answer': '', 'answered': ''}
+        with LOCK:
+            d = read_json(NOTES, {'notes': []})
+            d['notes'].append(note)
+            write_json(NOTES, d)
+        return note
+
+    def post_notes_delete(self):
+        """Take back a note Claude hasn't answered yet."""
+        nid = str(self.read_body().get('id', ''))
+        with LOCK:
+            d = read_json(NOTES, {'notes': []})
+            keep = [n for n in d['notes'] if not (n['id'] == nid and n['status'] == 'open')]
+            if len(keep) == len(d['notes']):
+                raise ApiError(404, 'no open note with that id (answered notes stay)')
+            d['notes'] = keep
+            write_json(NOTES, d)
+        return {'ok': True}
 
     def get_job(self):
         return job_state()
@@ -525,7 +999,7 @@ def main():
     ap.add_argument('--port', type=int, default=8777)
     ap.add_argument('--no-browser', action='store_true', help='do not open the browser')
     ap.add_argument('--dry-run', action='store_true',
-                    help='variation jobs run variations.py --dry-run: no Codex call, no allowance spent')
+                    help='every run and text job is a dry run: no Codex call, no allowance spent')
     a = ap.parse_args()
     global DRY_RUN
     DRY_RUN = a.dry_run
@@ -539,8 +1013,13 @@ def main():
             continue
     else:
         sys.exit(f'no free port between {a.port} and {a.port + 9}')
+    global QUEUE_FILE
+    if DRY_RUN:   # its own queue: a dry-run item must never become a real run after a restart
+        QUEUE_FILE = BASE / 'app-queue.dry.json'
+    QUEUE[:] = [q for q in read_json(QUEUE_FILE, []) if isinstance(q, dict) and q.get('id')]
+    threading.Thread(target=worker, daemon=True).start()
     url = f'http://127.0.0.1:{port}/'
-    print(f'taste app on {url}  (Ctrl+C to stop)' + ('  [dry run: variations spend nothing]' if DRY_RUN else ''))
+    print(f'taste app on {url}  (Ctrl+C to stop)' + ('  [dry run: runs spend nothing]' if DRY_RUN else ''))
     if not a.no_browser:
         webbrowser.open(url)
     try:

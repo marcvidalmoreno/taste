@@ -15,9 +15,9 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
   their styles (see "Feed a style"), `ingest.py` adds a whole folder of images (see "Add a collection"), `build/` is how the styles were found (`restyle.py`: tags to style
   members, measured palettes, exemplars; the older scripts did the 8 Nov colour clustering).
   Codex route: `codex_run.py`, `variations.py`, `sheet.py`, `rate.py`, `distil.py`, `nearest.py` (below).
-- [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to look at the Codex
-  batches, mark thumbs up / down with a reason, ignore broken images, save ratings, start variations and see
-  ratings per style. Plain HTML, CSS (Pico.css, vendored) and JavaScript modules; Python standard library + Pillow.
+- [`app/`](app/) + [`scripts/app.py`](scripts/app.py): a local web app (127.0.0.1 only) to start runs (batches
+  with fresh subjects, single images, remixes, variations; one queue), look at the Codex batches, mark thumbs up /
+  down with a reason, ignore broken images, save ratings, leave notes for Claude and see ratings per style. Plain HTML, CSS (Pico.css, vendored) and JavaScript modules; Python standard library + Pillow.
   Also read-only pages: **Gallery** (every image in justified rows, filters by style, rating and batch),
   **Taste** (the styles with my kept and rejected images as examples) and **About** (`app/about.html`: why,
   history, how it works, decisions, how we work).
@@ -83,7 +83,9 @@ ratings stay on my laptop in `generated/codex/` (git-ignored). Run everything fr
 
 | Step | Command |
 |---|---|
-| **View, mark and save ratings in the browser** (also starts variations, shows the overview) | `.venv/Scripts/python -I scripts/app.py` → http://127.0.0.1:8777 (`--dry-run`: the variations button spends nothing) |
+| **The web app: start runs, remix, rate, leave notes for Claude** | `.venv/Scripts/python -I scripts/app.py` → http://127.0.0.1:8777 (`--dry-run`: every run and text job spends nothing) |
+| Fresh subjects or a rewritten prompt (what the web app asks Codex) | `.venv/Scripts/python -I scripts/codex_text.py subjects --style S --n 4 [--hint "..."]` or `rewrite --prompt "..." --change "..."` |
+| Notes Marc left in the web app ("process my app notes") | `.venv/Scripts/python -I scripts/notes.py`, then `notes.py done <id> "<answer>"` |
 | Variations of an image I like (3, or `--n 4`) | `.venv/Scripts/python -I scripts/variations.py <image> --style S [--subject "..."]` (no `--style`: prints the top-3 guess) |
 | One image from a style and subject (e.g. for a text) | `.venv/Scripts/python -I scripts/codex_run.py gen --out generated/codex/<batch> --name <name> --style <style> --subject "..." [--ratio wide\|square\|portrait] --mode text` |
 | **Batch with fresh subjects, mixed looks and one wildcard per style** | Claude writes `generated/codex/<batch>/subjects.json` (`{style: [subjects]}`), then `.venv/Scripts/python -I scripts/batch.py --out generated/codex/<batch> --subjects generated/codex/<batch>/subjects.json [--styles a,b] [--dry-run]` |
@@ -110,6 +112,21 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **21 Nov 2026** – Web app: start and steer runs from the page instead of from chat (Marc chose "Codex text + queue").
+  **New run** page: pick styles, images per style, shape, wildcard; subjects one per line, empty lines written by
+  Codex (new `scripts/codex_text.py`, read-only text jobs, ~15 s) or the style's examples; free prompt preview;
+  cost always in view; a **One image** mode. **One queue**, one image run at a time (runs from chat hold it):
+  header chip shows "+N queued", Log has Stop and the queue, desktop notification and a mark in the tab title when
+  a run ends. **Batches** page: "Now and next" on top, search, filter by kind, grouped by day. **Batch** page:
+  folder path (copy, open in Explorer), "made from" with a link to the source image, "how it was made", batches made
+  from its images, failed images with **Retry once**. **Viewer**: **Remix** (R: say what changes, Codex rewrites the
+  prompt, read the word diff, edit, make 1–4), **Variations** (V: any mix of palette, subject, composition, mood) and
+  **Note for Claude** (C). Notes wait in `generated/codex/claude-notes.json` (new `scripts/notes.py`); the Overview
+  page lists them with Claude's answers. Every run started here writes `run.json` in its folder. New
+  `scripts/run_list.py`; `batch.py --ratio`; `variations.py --changes`; `progress.py` records the run's pid (for
+  Stop). CLAUDE.md: Codex may write subjects and prompts, never style files. Taste page: list-valued facts shown as
+  lists, swatch sizes scoped to the Taste cards. Restart the app server once to pick it up.
+  Undo: `git revert` this commit.
 - **21 Nov 2026** – New [`docs/local-route.md`](docs/local-route.md): plan for a local, unfiltered image model on Marc's
   personal PC (set-up steps, limits, what Claude Code builds there). Undo: `git revert` this commit.
 - **21 Nov 2026** – New style `kalahari-documentary` from the 95 Kalahari documentary photos of the 19 Nov collection

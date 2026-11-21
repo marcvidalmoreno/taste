@@ -1,0 +1,164 @@
+"""Text jobs for Codex CLI (ChatGPT plan, no API key): fresh subjects for a style, or a rewritten image prompt.
+
+Usage (from the project root):
+  .venv/Scripts/python -I scripts/codex_text.py subjects --style <style> [--n 4] [--hint "winter, at night"]
+  .venv/Scripts/python -I scripts/codex_text.py rewrite --prompt "<old prompt>" --change "<what should change>"
+        [--keep subject,palette,composition,light]
+  add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
+
+Prints one JSON object on stdout: {"subjects": [...]} or {"prompt": "...", "summary": "..."}.
+
+Added 21 Nov 2026 (Marc chose "Codex text + queue"): Codex may write subjects and prompts, never style files.
+The taste stays with Claude Code: these jobs read taste/styles/*.json and taste/taste.json, write nothing there.
+One fresh `codex exec` per job, read-only sandbox, in an empty folder (generated/codex/.text/), low reasoning:
+about 10-30 s. One line per job goes to generated/codex/text-runs.csv (git-ignored).
+"""
+import argparse, csv, datetime, json, random, re, shutil, subprocess, sys, time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+BASE = ROOT / 'generated' / 'codex'
+WORK = BASE / '.text'
+LOG = BASE / 'text-runs.csv'
+
+SUBJECTS = """You write subjects for image prompts. Do not run commands, do not read or write files. Answer with JSON only.
+
+Style: {name}
+What it is: {description}
+Medium: {medium}
+Subjects that fit (examples, do not repeat them): {examples}
+Never: {avoid}
+Already used recently (do not repeat or closely echo): {recent}
+{hint}
+Write {n} new subjects for this style. Each one: a concrete scene in 8-20 words, different from the others in place,
+scale and main shape. No text, letters, logos, brands, real named people or characters from films, games or comics.
+Answer exactly: {{"subjects": ["...", "..."]}}"""
+
+REWRITE = """You edit one image prompt. Do not run commands, do not read or write files. Answer with JSON only.
+
+Old prompt:
+{prompt}
+
+What Marc wants changed: {change}
+Keep as it is: {keep}
+
+Rewrite the prompt so it makes that change and nothing else. Keep its structure (first the ratio sentence, then
+"Subject: ...", then the style notes) and keep every part that the change does not touch word for word.
+If the change contradicts a style note, change that note too. No text, logos or real named people.
+Answer exactly: {{"prompt": "<the new prompt>", "summary": "<what you changed, under 15 words>"}}"""
+
+
+def style_info(key):
+    p = ROOT / 'taste' / 'styles' / f'{key}.json'
+    if not p.exists():
+        sys.exit(f'unknown style "{key}"')
+    return json.load(open(p, encoding='utf-8'))
+
+
+def recent_subjects(style, limit=40):
+    """Subjects already used for this style, newest first (from the 'Subject: ...' part of logged prompts)."""
+    runs = BASE / 'runs.csv'
+    if not runs.exists():
+        return []
+    out = []
+    for r in csv.DictReader(open(runs, encoding='utf-8')):
+        if r.get('style') == style:
+            m = re.search(r'Subject: (.+?)\.(?: |$)', r.get('prompt') or '')
+            if m:
+                out.append(m.group(1))
+    return list(dict.fromkeys(reversed(out)))[:limit]
+
+
+def ask(task, text):
+    """One codex exec, read-only, empty folder. Returns (answer text, seconds)."""
+    WORK.mkdir(parents=True, exist_ok=True)
+    out = WORK / f'answer-{int(time.time() * 1000)}.txt'
+    cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'read-only',
+           '-c', 'model_reasoning_effort="low"', '-o', str(out)]
+    start = time.time()
+    res = subprocess.run(cmd, input=text, cwd=WORK, capture_output=True, text=True, encoding='utf-8',
+                         errors='replace', timeout=300)
+    secs = round(time.time() - start)
+    answer = out.read_text(encoding='utf-8') if out.exists() else ''
+    out.unlink(missing_ok=True)
+    log(task, secs, bool(answer.strip()))
+    if not answer.strip():
+        tail = (res.stderr or res.stdout or '').strip().splitlines()[-1:] or ['no answer']
+        sys.exit(f'Codex gave no answer (exit {res.returncode}): {tail[0][:200]}')
+    return answer, secs
+
+
+def log(task, secs, ok):
+    new = not LOG.exists()
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG, 'a', encoding='utf-8', newline='') as fh:
+        w = csv.writer(fh)
+        if new:
+            w.writerow(['date', 'time', 'task', 'seconds', 'ok'])
+        now = datetime.datetime.now()
+        w.writerow([now.date().isoformat(), now.strftime('%H:%M'), task, secs, 'yes' if ok else 'no'])
+
+
+def parse_json(answer):
+    m = re.search(r'\{.*\}', answer, re.S)
+    if not m:
+        sys.exit('Codex answered without JSON: ' + answer.strip()[:200])
+    try:
+        return json.loads(m.group(0))
+    except json.JSONDecodeError:
+        sys.exit('Codex answered with broken JSON: ' + answer.strip()[:200])
+
+
+def clean(s, n=300):
+    return ' '.join(str(s).split())[:n]
+
+
+def subjects(a):
+    s = style_info(a.style)
+    if a.dry_run:
+        pool = list(s.get('subjects') or ['a quiet scene that suits the style'])
+        random.shuffle(pool)
+        return {'subjects': [f'{pool[i % len(pool)]} (dry run)' for i in range(a.n)], 'seconds': 0, 'dry_run': True}
+    text = SUBJECTS.format(name=s.get('name', a.style), description=s.get('description', ''),
+                           medium=s.get('camera_or_medium', ''), examples='; '.join(s.get('subjects') or []),
+                           avoid='; '.join(s.get('avoid') or []) or 'nothing listed',
+                           recent='; '.join(recent_subjects(a.style)) or 'none yet',
+                           hint=f'Marc asks for: {a.hint}\n' if a.hint else '', n=a.n)
+    answer, secs = ask(f'subjects:{a.style}', text)
+    got = [clean(x, 200) for x in parse_json(answer).get('subjects', []) if str(x).strip()]
+    if not got:
+        sys.exit('Codex returned no subjects')
+    return {'subjects': got[:a.n], 'seconds': secs}
+
+
+def rewrite(a):
+    keep = a.keep or 'everything the change does not touch'
+    if a.dry_run:
+        return {'prompt': f'{a.prompt} Change: {a.change}.', 'summary': f'dry run: added "{a.change}"', 'seconds': 0,
+                'dry_run': True}
+    answer, secs = ask('rewrite', REWRITE.format(prompt=a.prompt, change=a.change, keep=keep))
+    d = parse_json(answer)
+    prompt = clean(d.get('prompt', ''), 3000)
+    if not prompt:
+        sys.exit('Codex returned an empty prompt')
+    return {'prompt': prompt, 'summary': clean(d.get('summary', ''), 160), 'seconds': secs}
+
+
+if __name__ == '__main__':
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest='cmd', required=True)
+    s = sub.add_parser('subjects')
+    s.add_argument('--style', required=True)
+    s.add_argument('--n', type=int, default=4)
+    s.add_argument('--hint', default='')
+    s.add_argument('--dry-run', action='store_true')
+    r = sub.add_parser('rewrite')
+    r.add_argument('--prompt', required=True)
+    r.add_argument('--change', required=True)
+    r.add_argument('--keep', default='')
+    r.add_argument('--dry-run', action='store_true')
+    a = ap.parse_args()
+    a.n = max(1, min(12, getattr(a, 'n', 4)))
+    print(json.dumps(subjects(a) if a.cmd == 'subjects' else rewrite(a), ensure_ascii=False))

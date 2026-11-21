@@ -3,6 +3,8 @@
 import { store, item, styleName, kindOf, onChange, visible } from './store.js';
 import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons } from './marks.js';
 import { openVariations } from './variations.js';
+import { openRemix } from './remix.js';
+import { openNote } from './notes.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
@@ -124,7 +126,8 @@ function drawPanel(im) {
     details(im),
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),
-      ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'V'), ' variations  ', h('kbd', {}, 'F'), ' 1:1  ',
+      ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
+      h('kbd', {}, 'C'), ' note  ', h('kbd', {}, 'F'), ' 1:1  ',
       h('kbd', {}, 'Esc'), ' close'));
 }
 
@@ -151,12 +154,25 @@ function markSection(im) {
 
 function actions(im) {
   return h('section', { class: 'actions' },
-    h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Make variations… ', h('kbd', {}, 'V')),
+    h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'Say what should change; Codex rewrites the prompt' }, 'Remix… ', h('kbd', {}, 'R')),
+    h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Variations… ', h('kbd', {}, 'V')),
+    h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C')),
     !im.saved && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
       im.status === 'ignored' ? 'Restore' : 'Ignore', ' ', h('kbd', {}, 'I')));
 }
 
 const variationsOf = (im) => openVariations({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style });
+const remixOf = (im) => openRemix({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style, prompt: im.prompt });
+const noteOn = (im) => openNote({ batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}`, style: im.style });
+
+// Batches made from this image (variations, remixes), newest last: where its "children" went.
+function madeFromThis(im) {
+  const kids = (store.data.children || []).filter((c) => c.file === im.file);
+  if (!kids.length) return '–';
+  return h('ul', { class: 'plain kid-links' }, kids.map((c) => h('li', {},
+    h('a', { href: batchHref(c.batch) }, `${c.kind === 'remix' ? 'Remix' : 'Variations'} · ${batchTitle(c.batch)}`),
+    h('small', { class: 'muted' }, ` (${c.images})`))));
+}
 
 function details(im) {
   const st = store.styles[im.style];
@@ -165,6 +181,7 @@ function details(im) {
       st.palette.map((c) => h('i', { style: { background: c } }))))],
     ['Change', im.change ? h('span', {}, h('strong', {}, im.change), h('br'), h('small', { class: 'muted' }, CHANGES[im.change] || '')) : '–'],
     ['Made as', im.mode || '–'],
+    ['Made from this', madeFromThis(im)],
     ['Seed', im.seed ? h('span', { class: 'seed-cell' },
       store.data.seed && h('img', { src: thumbUrl(store.data.batch, store.data.seed), alt: '' }), im.seed) : '–'],
     ['Size', im.width ? `${im.width} × ${im.height}` : '–'],
@@ -231,6 +248,8 @@ function onKey(e) {
   else if (key === 'i') { if (!im.saved) ignoreAndMove(im.name); }
   else if (key === 'f') toggleFit();
   else if (key === 'v') variationsOf(im);
+  else if (key === 'r') remixOf(im);
+  else if (key === 'c') noteOn(im);
   else if (key === 's') { if (!e.repeat) showSeed(true); }
   else if (key === 'Enter' && !e.target.closest('button, a')) panel.querySelector('.why:not([disabled])')?.focus();
   else return;

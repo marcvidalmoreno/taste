@@ -3,6 +3,7 @@
 // style and the amount of evidence behind it can be read at a glance. A table holds the same numbers.
 import { api, styles } from './api.js';
 import { h, batchHref, batchTitle, plural, RATING_LABELS, showError } from './ui.js';
+import { notesCard } from './notes.js';
 
 let scope = 'since';   // 'since' the last distil (what the distil will read) or 'all'
 
@@ -16,12 +17,14 @@ export async function renderOverview(view) {
     return showError(err);
   }
   document.title = 'Overview · taste';
+  const notes = await notesCard();   // built once: its own redraws don't touch the chart
   const draw = () => view.replaceChildren(
     h('hgroup', { class: 'page-head' }, h('h1', {}, 'Overview'),
       h('p', {}, `${plural(o.total, 'saved rating')} in total`)),
     h('div', { class: 'overview' },
       distilCard(o),
       unsavedCard(o),
+      notes,
       chartCard(o, all, draw)));
   draw();
 }

@@ -6,14 +6,16 @@
 //   #/gallery?style=&rating=&batch=   every image, read-only
 //   #/taste[/<style>]           the styles with my images as examples
 //   #/about[/<section>]         story, reasoning, decisions
+//   #/new?mode=batch|one&style=a,b   start a run (batch with fresh subjects, or one image)
 import { renderBatches } from './batches.js';
 import { renderBatch } from './grid.js';
 import { renderOverview } from './overview.js';
 import { renderGallery } from './gallery.js';
 import { renderTaste } from './taste.js';
 import { renderAbout } from './about.js';
+import { renderNewRun } from './newrun.js';
 import { closeViewer } from './viewer.js';
-import './job.js';   // picks up a variation job that may already be running
+import './job.js';   // picks up a run that may already be going
 
 const view = document.getElementById('view');
 
@@ -25,7 +27,7 @@ function parseHash() {
 
 async function route() {
   const { parts, query } = parseHash();
-  const pages = { overview: 'overview', b: 'batch', gallery: 'gallery', taste: 'taste', about: 'about' };
+  const pages = { overview: 'overview', b: 'batch', gallery: 'gallery', taste: 'taste', about: 'about', new: 'new' };
   const page = pages[parts[0]] || 'batches';
   for (const a of document.querySelectorAll('[data-nav]')) {
     a.toggleAttribute('aria-current', a.dataset.nav === page);
@@ -36,6 +38,7 @@ async function route() {
   if (page === 'gallery') return renderGallery(view, query);
   if (page === 'taste') return renderTaste(view, parts[1]);
   if (page === 'about') return renderAbout(view, parts[1]);
+  if (page === 'new') return renderNewRun(view, query);
   await renderBatches(view);
 }
 

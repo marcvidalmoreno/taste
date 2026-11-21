@@ -27,7 +27,7 @@ def clock(secs):
 class Progress:
     def __init__(self, out, expected, kind):
         now = time.time()
-        self.d = {'kind': kind, 'batch': Path(out).name, 'expected': list(expected), 'failed': [],
+        self.d = {'kind': kind, 'batch': Path(out).name, 'expected': list(expected), 'failed': [], 'pid': os.getpid(),
                   'current': None, 'started': now, 'updated': now, 'finished': None, 'log': []}
         self.lock = threading.Lock()
         self.write()

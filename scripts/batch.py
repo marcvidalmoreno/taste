@@ -2,7 +2,7 @@
 
 Usage (from the project root):
   .venv/Scripts/python -I scripts/batch.py --out generated/codex/<batch> --subjects <subjects.json>
-        [--styles a,b] [--n 4] [--start 0] [--wildcards 1] [--seed S] [--dry-run]
+        [--styles a,b] [--n 4] [--start 0] [--wildcards 1] [--ratio mixed|wide|portrait|square] [--seed S] [--dry-run]
   --start K: begin at subject K (image names K+1...), to use a subjects file's later subjects in a second batch
 
 <subjects.json> is {"<style>": ["subject", ...], ...}, written fresh by Claude Code for each batch (keep it in
@@ -33,6 +33,8 @@ ap.add_argument('--styles', default='')
 ap.add_argument('--n', type=int, default=4)
 ap.add_argument('--start', type=int, default=0)
 ap.add_argument('--wildcards', type=int, default=1)
+ap.add_argument('--ratio', default='mixed', choices=['mixed', 'wide', 'portrait', 'square'],
+                help='mixed (default): wide, portrait, square, wide in turn; or one ratio for every image')
 ap.add_argument('--seed', default='')
 ap.add_argument('--dry-run', action='store_true')
 a = ap.parse_args()
@@ -53,7 +55,7 @@ for style in styles:
         name = f'{style}-{i + 1}'
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'gen', '--out', a.out, '--name', name,
                '--style', style, '--subject', subjects[style][i % len(subjects[style])],
-               '--ratio', RATIOS[i % len(RATIOS)], '--mix', seed, '--slot', str(i), '--mode', 'test']
+               '--ratio', RATIOS[i % len(RATIOS)] if a.ratio == 'mixed' else a.ratio, '--mix', seed, '--slot', str(i), '--mode', 'test']
         if i >= a.start + a.n - a.wildcards:
             cmd += ['--extreme', rnd.choice(sorted(EXTREMES))]
         if a.dry_run:

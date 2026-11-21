@@ -4,6 +4,7 @@
 //   #/taste/<style>    the same page, scrolled to one style
 import { h, thumbUrl, plural, RATING_LABELS, showError } from './ui.js';
 import { loadGallery, openLarge, galleryHref } from './gallery.js';
+import { openNote } from './notes.js';
 
 const FACTS = [['light', 'Light'], ['composition', 'Composition'], ['camera_or_medium', 'Medium'],
   ['mood', 'Mood'], ['texture_detail', 'Detail']];
@@ -50,12 +51,16 @@ function styleCard(key, s, imgs) {
 
   return h('article', { class: 'card style-card', id: 'style-' + key },
     h('header', {},
-      h('h2', {}, s.name),
+      h('div', { class: 'style-title' },
+        h('h2', {}, s.name),
+        h('a', { href: '#/new?mode=batch&style=' + encodeURIComponent(key), role: 'button', class: 'secondary outline small-btn' }, 'New run'),
+        h('a', { href: '#/new?mode=one&style=' + encodeURIComponent(key), class: 'small' }, 'One image'),
+        h('button', { class: 'ghost small', onClick: () => openNote({ style: key }) }, 'Note for Claude…')),
       h('p', {}, s.description),
       h('div', { class: 'swatches', role: 'list', 'aria-label': 'Palette' },
         s.palette.map((c) => h('span', { role: 'listitem', title: c }, h('i', { style: { background: c } }), h('code', {}, c))))),
     h('div', { class: 'style-body' },
-      h('dl', { class: 'facts' }, FACTS.filter(([k]) => s[k]).map(([k, label]) => [h('dt', {}, label), h('dd', {}, s[k])]),
+      h('dl', { class: 'facts' }, FACTS.filter(([k]) => s[k]).map(([k, label]) => [h('dt', {}, label), h('dd', {}, Array.isArray(s[k]) ? h('ul', { class: 'plain fact-list' }, s[k].map((x) => h('li', {}, x))) : s[k])]),
         s.avoid?.length && [h('dt', {}, 'Avoid'), h('dd', {}, h('ul', { class: 'chips' }, s.avoid.map((a) => h('li', {}, a))))],
         s.use?.length && [h('dt', {}, 'Good for'), h('dd', {}, s.use.map((u) => USES[u] || u).join(' · '))]),
       h('div', { class: 'evidence' },

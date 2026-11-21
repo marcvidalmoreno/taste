@@ -2,7 +2,8 @@
 
 Usage (from the project root):
   .venv/Scripts/python -I scripts/variations.py <seed image> [--style <style>] [--subject "<new subject>"] [--n 3|4]
-        [--note "<instruction for every image>"] [--slug <name>] [--dry-run]
+        [--note "<instruction for every image>"] [--changes palette,subject,composition,mood] [--slug <name>] [--dry-run]
+  --changes (21 Nov 2026): pick which variations to make, in any combination; overrides --n
 
 - Style: give --style (Claude looks at the seed once, or Marc names it). Without it the script prints the
   top-3 guesses from scripts/nearest.py and stops: the guess alone is right only about a third of the time.
@@ -30,6 +31,7 @@ ap.add_argument('--style', default='')
 ap.add_argument('--subject', default='')
 ap.add_argument('--note', default='', help='one instruction for every image, e.g. "no planet in the sky"')
 ap.add_argument('--n', type=int, default=3, choices=[3, 4])
+ap.add_argument('--changes', default='', help='comma list of palette, subject, composition, mood; overrides --n')
 ap.add_argument('--slug', default='')
 ap.add_argument('--dry-run', action='store_true')
 a = ap.parse_args()
@@ -56,7 +58,15 @@ batch = ROOT / 'generated' / 'codex' / f'{datetime.date.today().isoformat()}-{sl
 jobs = [('palette', 'Keep the subject and composition of the seed; change only the colour palette and light to match the style notes.'),
         ('subject', f'Keep the palette, light and composition of the seed; change only the subject to: {subject}.'),
         ('composition', f'Keep the palette, light and kind of subject of the seed; change only the composition to {random.choice(COMPOSITIONS)}.'),
-        ('mood', 'Keep the subject and composition of the seed; change only the time of day and mood (dawn if the seed is dark, dusk if it is bright).')][:a.n]
+        ('mood', 'Keep the subject and composition of the seed; change only the time of day and mood (dawn if the seed is dark, dusk if it is bright).')]
+if a.changes:
+    want = [c.strip() for c in a.changes.split(',') if c.strip()]
+    bad = [c for c in want if c not in dict(jobs)]
+    if bad or not want:
+        sys.exit(f'--changes: unknown {", ".join(bad) or "(empty)"}; pick from palette, subject, composition, mood')
+    jobs = [j for j in jobs if j[0] in want]
+else:
+    jobs = jobs[:a.n]
 print(f'batch: {batch}')
 if a.dry_run:
     for change, text in jobs:
