@@ -121,6 +121,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – scripts/publish.py writes daily counts instead of weekly: per style and for all styles together, plus totals and a fixed label for how each style edit was made; a cleared rating now counts as unrated. The gallery's Evolution page uses them to show whether each edit raised the thumbs-up share, and the changelog moved to its own page.
+  Undo: `git revert` this commit.
+- **23 Nov 2026** – Remix: "Write the new prompt" now works for images with no prompt on record; Codex looks at
+  the image and writes a prompt with the change made (`codex_text.py rewrite --image`). Guide updated.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – Cost block: the week is now Codex's own weekly window (since its reset, read from Codex's log),
   not a rolling 7 days; FLUX images no longer count; the fixed ~200 budget is replaced by this run's share of the
   week, measured from `runs.csv`, with a warning when a run may reach the weekly limit. Guide updated.

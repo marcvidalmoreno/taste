@@ -7,7 +7,8 @@
 Only the picks are exported (generated/codex/publish.json, written by the app). Public text per picture: style name,
 date and the subject line. Never style text (styles are private in taste-private), never prompts, ratings' "why",
 paths or names. Besides the pictures it writes aggregate evolution data: per style the dates of style edits
-(dates only), runs and thumbs-up rate per week, and the public README changelog (first sentences).
+(dates only, plus a fixed label for how: distilled, feedback in the app, with Claude), runs and ratings per day for each
+style and for all styles together, and the public README changelog (first sentences).
 
 Every run ends with a privacy check on everything it would write; if it finds a local path, 'refs/', 'taste/data',
 a name or a piece of style text in a subject, it stops before writing anything (exit 2).
@@ -16,7 +17,7 @@ Output (OUT = ../taste-gallery/docs by default):
   OUT/data/images.json      one row per pick: id, style, date, subject, mode, w, h, group, rating
   OUT/data/styles.json      style key -> display name (names only)
   OUT/data/data.js          the three files above as one script (the site opens by double-click, where fetch() is blocked)
-  OUT/data/evolution.json   per style: first/last date, edit dates, weekly runs and keep rate; plus the changelog
+  OUT/data/evolution.json   per style: first date, edit dates and kinds, daily runs and ratings; totals; the changelog
   OUT/img/<id>.webp         about 1600 px on the long side;  OUT/img/t/<id>.webp  about 800 px
 Ids are a short hash of batch/name: folder names never go public.
 """
@@ -115,7 +116,8 @@ def latest_ratings():
     if p.exists():
         for r in csv.DictReader(open(p, encoding='utf-8')):
             out[(r['batch'], r['name'])] = r['rating']
-    return out
+    # 'cleared' means Marc took a rating back: the picture counts as unrated
+    return {k: v for k, v in out.items() if v in ('keep', 'almost', 'no')}
 
 
 def read_runs():
@@ -161,11 +163,15 @@ def git_style_dates():
     return out
 
 
+EDIT_KIND = {'distil': 'distilled from ratings', 'codex': 'feedback in the app', 'words': 'feedback in the app'}
+
+
 def edit_dates():
-    out = defaultdict(set)
+    """{style: {date: kind}} for edits made from the web app. Kind is a fixed public label, never the edit's text."""
+    out = defaultdict(dict)
     for e in read_json(BASE / 'style-edits.json', []):
         if isinstance(e, dict) and not e.get('undone') and e.get('style') and e.get('at'):
-            out[e['style']].add(e['at'][:10])
+            out[e['style']][e['at'][:10]] = EDIT_KIND.get(e.get('how'), 'feedback in the app')
     return out
 
 
@@ -210,23 +216,33 @@ def build(picks, styles, runs, ratings):
     # evolution: every style that has a pick, or any run at all? Only styles with a pick, to keep the site small.
     used = sorted({i['style'] for i in images if i['style']})
     gdates, edates = git_style_dates(), edit_dates()
-    weekly = defaultdict(lambda: defaultdict(lambda: {'runs': 0, 'up': 0, 'rated': 0}))
+    daily = defaultdict(lambda: defaultdict(lambda: {'runs': 0, 'up': 0, 'almost': 0, 'down': 0}))
+    every = defaultdict(lambda: {'runs': 0, 'up': 0, 'almost': 0, 'down': 0, 'styles': set()})
     for (batch, name), r in runs.items():
-        st = r.get('style', '')
-        if st not in used or not r.get('date'):
+        st, d = r.get('style', ''), r.get('date', '')
+        if not d or r.get('ok', 'yes') != 'yes':
             continue
-        w = weekly[st][week_of(r['date'])]
-        w['runs'] += 1
-        rt = ratings.get((batch, name))
-        if rt:
-            w['rated'] += 1
-            w['up'] += rt == 'keep'
+        rt = {'keep': 'up', 'almost': 'almost', 'no': 'down'}.get(ratings.get((batch, name)))
+        rows = [every[d]] + ([daily[st][d]] if st in used else [])
+        for row in rows:
+            row['runs'] += 1
+            if rt:
+                row[rt] += 1
+        if st:
+            every[d]['styles'].add(st)
     evo = {}
     for st in used:
-        dates = sorted(gdates.get(st, set()) | edates.get(st, set()))
-        evo[st] = {'name': keys.get(st, st), 'first': dates[0] if dates else '', 'edits': dates[1:] if len(dates) > 1 else [],
-                   'weeks': [{'week': w, **v} for w, v in sorted(weekly[st].items())]}
-    return images, {k: keys[k] for k in used if k in keys}, {'styles': evo, 'changelog': changelog()}, skipped
+        made = sorted(gdates.get(st, set()) | set(edates.get(st, {})))
+        evo[st] = {'name': keys.get(st, st), 'first': made[0] if made else '', 'edits': made[1:],
+                   'kinds': {d: edates.get(st, {}).get(d, 'edited with Claude') for d in made[1:]},
+                   'days': [{'day': d, **v} for d, v in sorted(daily[st].items())]}
+    days = [{'day': d, **{k: v for k, v in r.items() if k != 'styles'}, 'styles': len(r['styles'])} for d, r in sorted(every.items())]
+    n_edits = sum(len(dates) - 1 for st in set(gdates) | set(edates)
+                  for dates in [gdates.get(st, set()) | set(edates.get(st, {}))] if dates)
+    totals = {'runs': sum(r['runs'] for r in days), 'up': sum(r['up'] for r in days), 'almost': sum(r['almost'] for r in days),
+              'down': sum(r['down'] for r in days), 'styles': len({s for r in every.values() for s in r['styles']}),
+              'edits': n_edits, 'days': days}
+    return images, {k: keys[k] for k in used if k in keys}, {'styles': evo, 'all': totals, 'changelog': changelog()}, skipped
 
 
 # ------------------------------------------------------------------ privacy check
