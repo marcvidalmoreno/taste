@@ -57,6 +57,17 @@ export function markBadge(im) {
   return h('span', { class: `mark ${r} saved`, title: `${RATING_LABELS[r].label} (saved)` }, RATING_LABELS[r].glyph);
 }
 
+// Full screen for the large views (24 Nov 2026): F, like most video and photo viewers. The whole page goes full
+// screen (Chrome refuses a <dialog> itself); the open view already covers it, so stepping and redraws keep it.
+// CSS hides the side panel there. The browser's own Esc leaves it.
+export const toggleFullscreen = () =>
+  (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
+const fsLabel = () => (document.fullscreenElement ? 'Exit full screen' : 'Full screen');
+export const fullscreenButton = () =>
+  h('button', { class: 'ghost fs-btn', onClick: toggleFullscreen, title: 'F: full screen (Esc leaves it)' }, fsLabel());
+document.addEventListener('fullscreenchange', () =>
+  document.querySelectorAll('.fs-btn').forEach((b) => b.replaceChildren(fsLabel())));
+
 // A key press in a text field is typing, not a shortcut.
 export const isTyping = (e) => !!e.target.closest?.('input, textarea, select, [contenteditable]');
 

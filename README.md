@@ -121,6 +121,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **24 Nov 2026** – Large view (batch and Gallery): the image always opens fitted to the window, whole (tall images
+  had their bottom cut off and didn't scroll at wide widths), and the page behind no longer scrolls (its second
+  scrollbar moved nothing). New **Full screen** button on <kbd>F</kbd> (image only, <kbd>Esc</kbd> leaves it);
+  real pixels moved to a steady **1 : 1** button on the <kbd>1</kbd> key (the "Fit" label named the state, not the
+  action). Undo: `git revert` this commit.
 - **23 Nov 2026** – Batch grid: **Publish** under each tile (in the free third column beside Up / Down, also on
   rated tiles) and the <kbd>P</kbd> key on the focused tile; publishing from the large view now updates the tile too.
   Undo: `git revert` this commit.

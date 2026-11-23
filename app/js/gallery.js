@@ -18,7 +18,7 @@ import { openRemix } from './remix.js';
 import { openVariations } from './variations.js';
 import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // Target row height in px; rows end up a little taller to fill the width. Large stays within the 640 px thumbnails.
 const SIZES = [['s', 'Small', 130], ['m', 'Medium', 220], ['l', 'Large', 360]];
@@ -231,7 +231,7 @@ function keep(im) {
 }
 
 // ------------------------------------------------------------------ large view
-// Same layout, actions and keys as the batch large view (viewer.js, 23 Nov 2026): image on a stage with Fit / 1 : 1,
+// Same layout, actions and keys as the batch large view (viewer.js, 23 Nov 2026): image on a stage with 1 : 1, full screen,
 // the panel with thumbs, Keep, Remix, Variations, Change the style, Note for Claude, More like this and the details.
 // It steps through the gallery's own list (or the Taste / "More like this" list it was opened from).
 // Not here: Ignore (the gallery leaves ignored images out) and Hold S (images come from many batches).
@@ -256,7 +256,7 @@ function ensureDialog() {
     if (skipCancel) { e.preventDefault(); skipCancel = false; }
     else if (trail.length) { e.preventDefault(); back(); }
   });
-  dlg.addEventListener('close', () => { flushWhy(); trail = []; if (urlSync) leaveUrl(); urlSync = false; });
+  dlg.addEventListener('close', () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); flushWhy(); trail = []; if (urlSync) leaveUrl(); urlSync = false; });
   document.body.append(dlg);
 }
 
@@ -344,7 +344,8 @@ function draw() {
         h('span', { class: 'spacer' }),
         downloadLink(im.batch, im.file),
         fitBtn = h('button', { class: 'ghost', onClick: toggleFit, 'aria-pressed': String(!fit),
-                               title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1')),
+                               title: '1: real pixels (scroll to look around); press again to fit' }, '1 : 1'),
+        fullscreenButton()),
       canvas,
       h('button', { class: 'nav prev', 'aria-label': 'Previous image', onClick: () => step(-1), disabled: index === 0 }, '‹'),
       h('button', { class: 'nav next', 'aria-label': 'Next image', onClick: () => step(1), disabled: index === stepList.length - 1 }, '›')),
@@ -365,7 +366,7 @@ function draw() {
         h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ',
         h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
         h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'P'), ' publish  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ',
-        h('kbd', {}, 'F'), ' 1:1  ', h('kbd', {}, 'Esc'), trail.length ? ' previous image' : ' close')));
+        h('kbd', {}, '1'), ' real pixels  ', h('kbd', {}, 'F'), ' full screen  ', h('kbd', {}, 'Esc'), trail.length ? ' previous image' : ' close')));
   drawMarks(im);
   drawKeep(im);
   // Load the neighbours now, so the next arrow press shows the image at once.
@@ -404,7 +405,6 @@ async function copy(text) {
 function toggleFit() {
   fit = !fit;
   canvas.className = `canvas ${fit ? 'fit' : 'actual'}`;
-  fitBtn.replaceChildren(fit ? 'Fit' : '1 : 1');
   fitBtn.setAttribute('aria-pressed', String(!fit));
   if (!fit) canvas.scrollTo((canvas.scrollWidth - canvas.clientWidth) / 2, (canvas.scrollHeight - canvas.clientHeight) / 2);
 }
@@ -425,7 +425,8 @@ function onKey(e) {
   else if (key === 'End') step(stepList.length);
   else if (key === 'x') keep(im);
   else if (key === 'p') publish(im);
-  else if (key === 'f') toggleFit();
+  else if (key === '1') toggleFit();
+  else if (key === 'f') toggleFullscreen();
   else if (key === 'Backspace') back();
   else if (key === 'r') remixOf(im);
   else if (key === 'v') variationsOf(im);

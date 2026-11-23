@@ -7,7 +7,7 @@ import { openRemix } from './remix.js';
 import { openNote } from './notes.js';
 import { openStyleEdit } from './styleedit.js';
 import { similarRow } from './similar.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, downloadLink } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
 const CHANGES = {
@@ -70,6 +70,7 @@ export function openViewer(name, { push = false } = {}) {
 // Returns true when the view was open.
 export function closeViewer({ refocus = true } = {}) {
   if (!dlg?.open) return false;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   const name = order[index];
   flushWhy();
   showSeed(false);
@@ -114,8 +115,10 @@ function draw() {
     h('span', { class: 'spacer' }),
     d.seed && h('span', { class: 'muted small' }, 'Hold ', h('kbd', {}, 'S'), ' to see the seed'),
     downloadLink(d.batch, im.file),
+    // One steady label with a pressed state: "Fit" named the state, so it read like an action that did nothing.
     h('button', { class: 'ghost', onClick: toggleFit, 'aria-pressed': String(!fit),
-                  title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1')].filter(Boolean));
+                  title: '1: real pixels (scroll to look around); press again to fit' }, '1 : 1'),
+    fullscreenButton()].filter(Boolean));
   drawPanel(im);
   // Load the neighbours now, so the next arrow press shows the image at once.
   for (const j of [index - 1, index + 1]) {
@@ -136,8 +139,8 @@ function drawPanel(im) {
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),
       ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
-      h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'P'), ' publish  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ', h('kbd', {}, 'F'), ' 1:1  ',
-      h('kbd', {}, 'Esc'), ' close'));
+      h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'P'), ' publish  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ', h('kbd', {}, '1'), ' real pixels  ',
+      h('kbd', {}, 'F'), ' full screen  ', h('kbd', {}, 'Esc'), ' close'));
 }
 
 function markSection(im) {
@@ -271,7 +274,8 @@ function onKey(e) {
   else if (key === 'x') keepOf(im);
   else if (key === 'p') publishOf(im);
   else if (key === 'i') { if (!im.draft?.rating) ignoreAndMove(im.name); }
-  else if (key === 'f') toggleFit();
+  else if (key === '1') toggleFit();
+  else if (key === 'f') toggleFullscreen();
   else if (key === 'v') variationsOf(im);
   else if (key === 'r') remixOf(im);
   else if (key === 'c') noteOn(im);
