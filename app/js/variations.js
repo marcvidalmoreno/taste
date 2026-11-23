@@ -3,7 +3,7 @@
 // Runs join the queue (one image run at a time), so a busy queue never blocks the button.
 import { api, styles } from './api.js';
 import { job, enqueueRun } from './job.js';
-import { allowance, costBlock } from './cost.js';
+import { allowance, costBlock, route, routeBlocker } from './cost.js';
 import { h, thumbUrl, plural, showError, toast } from './ui.js';
 
 // What each variation keeps and changes (scripts/variations.py); any mix of them since 21 Nov 2026.
@@ -43,7 +43,7 @@ export async function openVariations(src) {
     if (focus) body.querySelector(focus)?.focus();
     const a = state.allowance;
     const n = state.changes.length;
-    const blocked = !state.style ? 'Pick a style first.' : !n ? 'Pick at least one change.' : !a ? 'Reading the allowance…' : '';
+    const blocked = !state.style ? 'Pick a style first.' : !n ? 'Pick at least one change.' : !a ? 'Reading the allowance…' : routeBlocker(a);
     startBtn.disabled = !!blocked;
     startBtn.title = blocked;
     startBtn.textContent = a?.dry_run ? `Dry run: make nothing (${n})`
@@ -94,14 +94,14 @@ export async function openVariations(src) {
   }
 
   function costSection() {
-    return costBlock(state.allowance, state.changes.length);
+    return costBlock(state.allowance, state.changes.length, { onRoute: () => draw() });
   }
 
   async function start() {
     startBtn.setAttribute('aria-busy', 'true');
     startBtn.disabled = true;
     try {
-      const res = await enqueueRun({ kind: 'variations', batch: src.batch, file: src.file, style: state.style, changes: state.changes,
+      const res = await enqueueRun({ kind: 'variations', route: route(), batch: src.batch, file: src.file, style: state.style, changes: state.changes,
         subject: state.changes.includes('subject') ? state.subject : '', note: state.note });
       dlg.close();
       toast(res.position <= 1 ? `Making ${plural(state.changes.length, 'variation')} of ${src.label}` : `Variations of ${src.label} queued, number ${res.position}`);

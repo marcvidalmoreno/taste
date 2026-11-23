@@ -139,9 +139,7 @@ function report(job) {
     text = `${noun(job.kind, made)} ready: ${title}`;
     toast(text, { action: 'Rate them', onAction: open, timeout: 12000 });
   } else {
-    text = `${title}: ${made} of ${total} made, ${missing} failed. The run stopped as the repo rules say.`;
-    // Nothing made: there is no batch to open, so the button shows what went wrong instead.
-    toast(text, { action: made ? 'See them' : 'Details', onAction: made ? open : () => showLog(job), tone: 'error', timeout: 0 });
+    text = reportFailed(job);
   }
   // Marc is in another window or tab: a desktop notification, and a mark in the tab title until he's back.
   if (document.hidden || !document.hasFocus()) {
@@ -152,6 +150,64 @@ function report(job) {
     doneMark = job.error || job.stopped || missing ? '! ' : '✓ ';
     drawTitle();
   }
+}
+
+// ---------------------------------------------------------------- failed runs
+// Failed runs share one toast that updates as more end (23 Nov 2026): ten queued runs failing for one reason
+// (a Resume all while a script was broken) stacked ten toasts over the page, each saying the same thing.
+let failedRuns = [];       // runs reported as failed since Marc last closed that toast
+let closeFailed = null;
+let replacing = false;
+
+// Why a run failed, from its log's last "FAILED name: reason" line, in plain words where we know them.
+function failReason(r) {
+  const line = [...(r.log || [])].reverse().find((l) => / FAILED /.test(l));
+  const why = line ? line.replace(/^.*? FAILED [^:]+:\s*/, '').trim() : '';
+  if (/^(SyntaxError|IndentationError|NameError|ImportError|ModuleNotFoundError|Traceback)\b/.test(why)) {
+    return 'a bug in the image script, so nothing reached Codex and nothing was spent';
+  }
+  return why.length > 120 ? `${why.slice(0, 117)}…` : why;
+}
+
+function reportFailed(r) {
+  failedRuns.push(r);
+  const runs = failedRuns;
+  const made = runs.reduce((n, x) => n + x.made.length, 0);
+  const total = runs.reduce((n, x) => n + x.expected.length, 0);
+  const reasons = [...new Set(runs.map(failReason))];
+  const same = reasons.length === 1 && reasons[0];
+  let text, action, onAction;
+  if (runs.length === 1) {
+    text = `${runTitle(r)}: ${made} of ${total} made, ${total - made} failed` + (same ? `: ${same}.` : '. The run stopped as the repo rules say.');
+    // Nothing made: there is no batch to open, so the button shows what went wrong instead.
+    [action, onAction] = made ? ['See them', () => { location.hash = batchHref(r.batch); }] : ['Details', () => showLog(r)];
+  } else {
+    text = `${runs.length} runs failed, ${made} of ${total} images made.` + (same ? ` Same reason for all: ${same}.` : '');
+    [action, onAction] = ['Details', () => showFailed(runs)];
+  }
+  if (closeFailed) { replacing = true; closeFailed(); replacing = false; }
+  closeFailed = toast(text, { action, onAction, tone: 'error', timeout: 0,
+    onClose: () => { if (!replacing) { failedRuns = []; closeFailed = null; } } });
+  return text;
+}
+
+// The failed runs behind a grouped toast: each with what it made, why it failed, and its log.
+// One shared reason is said once, under the heading, not on every line.
+function showFailed(runs) {
+  const reasons = [...new Set(runs.map(failReason))];
+  const same = reasons.length === 1 ? reasons[0] : '';
+  const dlg = h('dialog', { class: 'review log-dialog' }, h('article', {},
+    h('header', {}, h('hgroup', {}, h('h3', {}, `${plural(runs.length, 'run')} failed`),
+      same && h('p', { class: 'muted small' }, `Same reason for all: ${same}.`))),
+    h('ul', { class: 'failed-runs' }, runs.map((r) => h('li', {},
+      h('strong', {}, runTitle(r)), ' ',
+      h('span', { class: 'muted small' }, `${r.made.length} of ${r.expected.length} made` + (!same && failReason(r) ? ` · ${failReason(r)}` : '')), ' ',
+      r.made.length > 0 && h('a', { href: batchHref(r.batch), onClick: () => dlg.close() }, 'See them'), ' ',
+      h('button', { class: 'ghost small', onClick: () => showLog(r) }, 'Log')))),
+    h('footer', {}, h('button', { onClick: () => dlg.close() }, 'Close'))));
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  dlg.showModal();
 }
 
 // ---------------------------------------------------------------- tab title

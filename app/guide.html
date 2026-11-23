@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 23 Nov 2026 (why an image failed). This guide changes with the app.</p>
+<p class="muted small">Last updated 23 Nov 2026 (Made with: ChatGPT or FLUX, free). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -248,6 +248,18 @@
       references</strong> (on by default; up to 2 with each image, no extra images spent). The result then stays closer
       to those examples; untick it for a fresh start. The preview shows which images go with which prompt.</li>
     <li>The cost block shows images, minutes and allowance (see Allowance).</li>
+    <li><strong>Made with</strong>, at the top of the cost block (also in Remix and Variations): <strong>ChatGPT</strong>
+      (default: best quality, closest to the style, uses the Codex allowance) or <strong>FLUX</strong> (free, about 95
+      images a day on Cloudflare; good for drafts and simpler scenes). The choice is remembered.
+      <ul>
+        <li>The first time you pick FLUX, <strong>Connect Cloudflare</strong> asks for a free Cloudflare account, an
+          API token (from the "Workers AI" template) and your account ID: paste the two and Save. They stay on this
+          laptop; <strong>Disconnect</strong> forgets them.</li>
+        <li>With FLUX the block shows how many images are left today and when more come (01:00 in winter). A run
+          past the limit stops; the rest wait for <strong>Finish this batch</strong> once the day turns.</li>
+        <li>Subjects you leave empty are still written by Codex (a small text job). "How it was made" on a batch
+          says which model made it.</li>
+      </ul></li>
     <li><strong>Start · make N images</strong>, or <strong>Add to queue</strong> when a run is busy.
       <kbd>Ctrl</kbd> + <kbd>Enter</kbd> does the same.</li>
   </ul>

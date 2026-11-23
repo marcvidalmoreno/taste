@@ -4,7 +4,7 @@
 //   2. Read the new prompt, with the changed words marked against the old one, edit it if needed, then make 1-4.
 // The image itself can go along as a reference (closer result) or not (more freedom).
 import { api, allStyles } from './api.js';
-import { allowance, costBlock } from './cost.js';
+import { allowance, costBlock, route, routeBlocker } from './cost.js';
 import { job, enqueueRun } from './job.js';
 import { h, thumbUrl, plural, toast, showError } from './ui.js';
 
@@ -133,7 +133,7 @@ export async function openRemix(src) {
           h('div', { class: 'rseg', role: 'group', 'aria-label': 'How many' }, [1, 2, 4].map((n) => h('button', {
             type: 'button', class: 'rseg-btn', 'aria-pressed': String(st.n === n), onClick: () => { st.n = n; draw(); } }, n)))),
         h('div', {}, refToggle())),
-      costBlock(st.alw, st.n, { compact: true }),
+      costBlock(st.alw, st.n, { compact: true, onRoute: () => draw() }),
     ];
   }
 
@@ -153,7 +153,8 @@ export async function openRemix(src) {
   function drawFootTwo() {
     if (!makeBtn) return;
     const busy = job.running || job.queue?.length;
-    makeBtn.disabled = !st.prompt.trim();
+    makeBtn.disabled = !st.prompt.trim() || !!routeBlocker(st.alw);
+    makeBtn.title = routeBlocker(st.alw);
     makeBtn.textContent = st.alw?.dry_run ? `Dry run: ${plural(st.n, 'image')}` : busy ? `Add to queue · ${plural(st.n, 'image')}`
       : `Spend allowance: make ${plural(st.n, 'image')}`;
   }
@@ -162,7 +163,7 @@ export async function openRemix(src) {
     makeBtn.disabled = true;
     makeBtn.setAttribute('aria-busy', 'true');
     try {
-      const res = await enqueueRun({ kind: 'remix', batch: src.batch, file: src.file, prompt: st.prompt, change: st.change.trim() || (st.edited ? 'prompt edited' : ''),
+      const res = await enqueueRun({ kind: 'remix', route: route(), batch: src.batch, file: src.file, prompt: st.prompt, change: st.change.trim() || (st.edited ? 'prompt edited' : ''),
         keep: st.keep, ref: st.ref, n: st.n });
       dlg.close();
       toast(res.position <= 1 ? `Remixing ${src.label}: about ${st.n} min` : `Remix of ${src.label} queued, number ${res.position}`);

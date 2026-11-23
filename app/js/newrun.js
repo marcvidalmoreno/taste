@@ -5,7 +5,7 @@
 // The form survives leaving the page (sessionStorage), so a look at another batch never loses a half-made run.
 // Nothing spends until "Start": the preview prints the exact prompts for free, the cost is always in view.
 import { api, styles } from './api.js';
-import { allowance, costBlock } from './cost.js';
+import { allowance, costBlock, route, routeBlocker } from './cost.js';
 import { job, enqueueRun, onJob } from './job.js';
 import { h, plural, toast, showError } from './ui.js';
 
@@ -70,7 +70,7 @@ function draw() {
 
 function drawForm(focusSel) {
   const keep = focusSel || selectorOf(document.activeElement);
-  form.replaceChildren(...(state.mode === 'one' ? oneForm() : batchForm()));
+  form.replaceChildren(...(state.mode === 'one' ? oneForm() : batchForm()).filter(Boolean));   // no stray "null" when a part is hidden
   if (keep) form.querySelector(keep)?.focus();
 }
 
@@ -292,7 +292,7 @@ function drawSummary() {
         ? `${plural(state.styles.length, 'style')} × ${state.n} = ${plural(n, 'image')}, ${RATIOS[state.ratio].toLowerCase()} shapes${state.wildcards && state.n > 1 ? ', one wildcard each' : ''}.`
         : 'Pick at least one style.')
       : h('p', { class: 'small' }, `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
-    costBlock(alw, n, { extra: codexStyles ? `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.` : '' }),
+    costBlock(alw, n, { onRoute: drawSummary, extra: codexStyles ? `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.` : '' }),
     h('p', { class: 'muted small' }, 'Images land in generated/codex/<date>-<name>/ (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.'),
     h('div', { class: 'nr-actions' }, startBtn, state.mode === 'batch' && previewBtn),
     h('p', { class: 'muted small keys' }, h('kbd', {}, 'Ctrl'), ' + ', h('kbd', {}, 'Enter'), ' starts'));
@@ -300,6 +300,7 @@ function drawSummary() {
 }
 
 function blocker() {
+  if (routeBlocker(alw)) return routeBlocker(alw);
   if (state.mode === 'batch') return !state.styles.length ? 'Pick at least one style.' : '';
   return !state.one.subject.trim() ? 'Write a subject.' : '';
 }
@@ -319,9 +320,9 @@ function drawStart() {
 function body() {
   if (state.mode === 'one') {
     const o = state.one;
-    return { kind: 'single', style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
+    return { kind: 'single', route: route(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
   }
-  return { kind: 'batch', styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, name: state.name, use_kept: state.useKept,
+  return { kind: 'batch', route: route(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, name: state.name, use_kept: state.useKept,
     subjects: Object.fromEntries(state.styles.map((k) => [k, lines(k)])), hints: state.hints };
 }
 

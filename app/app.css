@@ -287,6 +287,17 @@ dialog.variations legend { font-weight: 600; margin-bottom: .25rem; }
 .cost p:last-child { margin-bottom: 0; }
 .cost .over { color: var(--almost); }
 .notice { border-left: 3px solid #8a8a8a; padding-left: .6rem; font-size: .88rem; }
+/* Made with: ChatGPT or FLUX (Cloudflare route, 23 Nov 2026) */
+.route-pick { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; margin-bottom: .7rem;
+              padding-bottom: .7rem; border-bottom: 1px solid var(--line); }
+.route-pick .nr-label { margin: 0; }
+.route-pick p { flex-basis: 100%; margin: 0; }
+.cost .meter { margin-bottom: .4rem; }
+.cf-connect ol { margin: .2rem 0 .6rem 1.2rem; padding: 0; }
+.cf-connect ol li { margin-bottom: .2rem; }
+.cf-connect a { display: inline; }
+.cf-connect .nr-row { flex-wrap: wrap; }
+.cf-connect .nr-row input { flex: 1 1 100%; margin: 0; }
 .meters { display: grid; gap: .35rem; margin-bottom: .6rem; }
 .meter { display: grid; grid-template-columns: 9rem 1fr 6rem; align-items: center; gap: .75rem; font-size: .88rem; }
 .meter .bar { height: 6px; background: #2e2e2e; border-radius: 3px; overflow: hidden; }

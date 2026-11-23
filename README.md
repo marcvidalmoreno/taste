@@ -117,6 +117,14 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Cloudflare route built ([`docs/cloudflare-route.md`](docs/cloudflare-route.md)): **Made with**
+  at the top of the cost block in New run, Remix and Variations, *ChatGPT* (default) or *FLUX* (FLUX.2 klein 4B on
+  Cloudflare Workers AI's free allowance, ~95 images a day). New `scripts/cf_run.py`; `codex_run.py gen --route`
+  (or `TASTE_ROUTE`); runs.csv gains a `route` column (header rewritten once, old rows read as codex; FLUX rows keep
+  estimated neurons in `tokens`). Connect Cloudflare card (account ID and token saved in `%USERPROFILE%\.taste\`,
+  outside the repo), "How it was made" says which model, Guide updated. Also: New run › One image no longer shows a
+  stray "null" when no kept examples exist. Undo: `git revert` this commit (then delete `%USERPROFILE%\.taste\cloudflare.json`
+  if you connected).
 - **23 Nov 2026** – Why an image failed: the batch page's empty tiles now say exactly why, read from Codex's log –
   blocked by the safety filter (what it flagged, and whether it refused the prompt or the finished image), usage
   limit, or timed out. `codex_run.py` now logs a timeout (over 900 s) and writes its runs.csv row instead of

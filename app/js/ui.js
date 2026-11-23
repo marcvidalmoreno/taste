@@ -60,16 +60,38 @@ export function markBadge(im) {
 // A key press in a text field is typing, not a shortcut.
 export const isTyping = (e) => !!e.target.closest?.('input, textarea, select, [contenteditable]');
 
+// Toasts stay clickable over a modal dialog (23 Nov 2026): an open modal makes everything outside it inert, the
+// top layer included, so toasts showed on top but their buttons did nothing. The toast area moves into the open
+// modal and back to the page when it closes (or is removed).
+const toastBox = document.getElementById('toasts');
+function placeToasts() {
+  const host = [...document.querySelectorAll('dialog[open]')].filter((d) => d.matches(':modal')).at(-1) || document.body;
+  if (toastBox.parentElement === host && toastBox.isConnected) return;
+  host.append(toastBox);   // moving it closes the popover: open it again if it holds toasts
+  if (toastBox.children.length && !toastBox.matches(':popover-open')) toastBox.showPopover();
+}
+new MutationObserver(placeToasts).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
+
 // Toasts: one line, optional action button (e.g. Undo). Calm: most leave on their own; every one has a × to close it.
-export function toast(message, { action, onAction, timeout = 5000, tone = '' } = {}) {
-  const box = document.getElementById('toasts');
-  const close = () => { el.remove(); if (!box.children.length && box.matches(':popover-open')) box.hidePopover(); };
+// onClose runs however it closes (×, its button, timeout, or the close function this returns).
+export function toast(message, { action, onAction, onClose, timeout = 5000, tone = '' } = {}) {
+  placeToasts();
+  const box = toastBox;
+  let done = false;
+  const close = () => {
+    if (done) return;
+    done = true;
+    el.remove();
+    if (!box.children.length && box.matches(':popover-open')) box.hidePopover();
+    onClose?.();
+  };
   const el = h('div', { class: `toast ${tone}` },
     h('span', {}, message),
     action && h('button', { class: 'secondary outline', onClick: () => { close(); onAction(); } }, action),
     h('button', { class: 'toast-close', 'aria-label': 'Close this message', title: 'Close', onClick: close }, '×'));
   box.append(el);
-  // The toast area is a popover: shown again on each toast, it sits in the top layer above any open dialog.
+  // The toast area is a popover: shown again on each toast, it sits in the top layer above any open dialog
+  // (and inside a modal one, see placeToasts, so its buttons work there).
   if (box.matches(':popover-open')) box.hidePopover();
   box.showPopover();
   if (timeout) setTimeout(close, timeout);

@@ -54,6 +54,7 @@ from urllib.parse import urlparse, unquote, parse_qs
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 import rate  # noqa: E402  (shared paths and the one writer of ratings.csv)
+import cf_run  # noqa: E402  (the Cloudflare route: FLUX on the free daily allowance, docs/cloudflare-route.md)
 
 BASE = rate.BASE
 APP_DIR = ROOT / 'app'
@@ -251,7 +252,8 @@ def allowance():
                    if row['ok'] == 'yes' and row['date'] >= since)
     queued = sum(len(s['expected']) for s in QUEUE)
     return {'now': now, 'unknown_reason': None if now else (r.stderr or r.stdout).strip()[-300:],
-            'week_images': week, 'week_budget': WEEK_BUDGET, 'dry_run': DRY_RUN, 'queued_images': queued}
+            'week_images': week, 'week_budget': WEEK_BUDGET, 'dry_run': DRY_RUN, 'queued_images': queued,
+            'cloudflare': cf_run.today()}   # FLUX's free day: connected, images today and left (an estimate)
 
 
 def source_image(batch, file):
@@ -399,8 +401,9 @@ def unmade_images(batch, have):
     for n in reversed(names):
         log = BASE / batch / f'{n}.codex.log'
         if log.is_file():
-            if 'usage limit' in log.read_text(encoding='utf-8', errors='replace'):
-                why = 'Codex hit its usage limit'
+            text = log.read_text(encoding='utf-8', errors='replace')
+            if 'usage limit' in text:
+                why = "Cloudflare's free images for today ran out" if 'Cloudflare' in text else 'Codex hit its usage limit'
             break
     return names, why
 
@@ -576,15 +579,17 @@ def launch(spec):
             write_json(folder / 'run.json', rec)
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
-                                         'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs')
+                                         'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs', 'route')
                if spec.get(k) not in (None, '', [], {})}
         rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
         write_json(folder / 'run.json', rec)
     if CUR.get('cancel'):
         raise RuntimeError('stopped before the first image')
-    CUR['phase'] = 'Making images' if not DRY_RUN else 'Dry run: printing the prompts'
+    CUR['phase'] = ('Making images' + (' with FLUX' if spec.get('route') == 'cloudflare' else '')) if not DRY_RUN else 'Dry run: printing the prompts'
+    # the route reaches codex_run.py gen through batch.py / run_list.py / variations.py, which pass the environment on
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=True, encoding='utf-8', errors='replace')
+                            text=True, encoding='utf-8', errors='replace',
+                            env={**os.environ, 'TASTE_ROUTE': spec.get('route') or 'codex'})
     PROC['p'] = proc
     for line in proc.stdout:
         CUR['log'] = (CUR['log'] + [line.rstrip()])[-200:]
@@ -1451,6 +1456,8 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/ignore'): 'post_ignore',
         ('POST', 'api/save'): 'post_save',
         ('GET', 'api/allowance'): 'get_allowance',
+        ('POST', 'api/cloudflare/connect'): 'post_cloudflare_connect',
+        ('POST', 'api/cloudflare/disconnect'): 'post_cloudflare_disconnect',
         ('POST', 'api/guess'): 'post_guess',
         ('POST', 'api/variations'): 'post_variations',
         ('POST', 'api/run'): 'post_run',
@@ -1753,7 +1760,35 @@ class Handler(BaseHTTPRequestHandler):
         with _QLOCK:
             spec = make(body)
         spec.pop('placeholders', None)
+        # Made with (23 Nov 2026): codex, or cloudflare (FLUX, scripts/cf_run.py). A finish, retry or resume keeps
+        # the route of the run it continues unless the page says otherwise.
+        route = body.get('route') if body.get('route') in ('codex', 'cloudflare') else \
+            (run_record(spec.get('batch', '')) or {}).get('route') if body.get('kind') in ('finish', 'retry', 'resume') else None
+        spec['route'] = route or 'codex'
+        if spec['route'] == 'cloudflare':
+            if not cf_run.creds():
+                raise ApiError(409, 'Connect Cloudflare first (New run, Made with: FLUX).')
+            if spec.get('title') and 'FLUX' not in spec['title']:
+                spec['title'] += ' · FLUX'
         return enqueue(spec)
+
+    def post_cloudflare_connect(self):
+        """Save the Cloudflare account ID and API token (Connect Cloudflare), after Cloudflare's free verify call.
+        Kept in %USERPROFILE%\\.taste\\cloudflare.json, outside the repo; never logged or sent back."""
+        body = self.read_body()
+        account, token = str(body.get('account_id', '')).strip(), str(body.get('token', '')).strip()
+        if not account or not token or len(account) > 64 or len(token) > 200 or not account.isalnum():
+            raise ApiError(400, 'Paste the account ID (letters and numbers) and the API token.')
+        ok, why = cf_run.verify(account, token)
+        if not ok:
+            raise ApiError(400, why)
+        cf_run.save_creds(account, token)
+        return {'connected': True}
+
+    def post_cloudflare_disconnect(self):
+        self.read_body()
+        cf_run.forget_creds()
+        return {'connected': False}
 
     def get_stopped(self):
         """Runs Codex's usage limit cut short, with what each still has to make (for "Resume all")."""

@@ -163,6 +163,7 @@ function downloadAll(d) {
 function runDetails(r) {
   const rows = [
     ['Started', r.started && `${shortDate(r.started.slice(0, 10))} ${r.started.slice(11)} · from the ${r.by || 'web app'}`],
+    ['Made with', r.route === 'cloudflare' ? 'FLUX on Cloudflare (free)' : 'ChatGPT (Codex)'],
     ['Styles', r.styles?.map(styleName).join(', ')],
     ['Shape', r.ratio],
     ['Wildcard', r.kind === 'batch' ? (r.wildcards ? 'last image of each style' : 'none') : null],

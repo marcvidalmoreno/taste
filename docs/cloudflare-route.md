@@ -1,8 +1,8 @@
 # Cloudflare route (plan, 23 Nov 2026)
 
 A third way to make images, next to Codex and the [local route](local-route.md): open FLUX models on Cloudflare
-Workers AI, on its free daily allowance. Same styles, same subjects, same rating app. Status: **plan, waiting on
-Marc's OK**; nothing built yet.
+Workers AI, on its free daily allowance. Same styles, same subjects, same rating app. Status: **built 23 Nov
+2026**; waiting for Marc to connect Cloudflare, then the first comparison batch.
 
 ## Why
 - Free: 10,000 "neurons" a day, no card. Past the limit calls fail instead of billing (Workers Free plan).
@@ -15,23 +15,25 @@ Marc's OK**; nothing built yet.
 
 | Model | Cost of one ~1 MP image | Free images a day | Ratios | References |
 |---|---|---|---|---|
-| `flux-2-klein-4b` (**default**) | ~104 neurons (4 output tiles); ~147 with 2 references | **~95**, ~68 with references | to check | to check |
+| `flux-2-klein-4b` (**used**) | ~104 neurons (4 output tiles); ~115 with 2 references | **~95**, ~87 with references | yes, 256–1920 px a side | yes, up to 4, each under 512 px |
 | `flux-1-schnell` (fallback) | ~58 neurons (4 tiles, 4 steps) | **~170** | square only (no size option documented) | no |
 | `flux-2-klein-9b`, `flux-2-dev`, `lucid-origin` (Leonardo), `phoenix-1.0` | 1,300–3,000+ | 3–7 | – | some |
 
-The big models cost too much for the free allowance; they are out. Step 1 checks the two open cells of the
-default (size option, reference images) with three test images before anything else is built. If `klein-4b`
-has no size option, wide and portrait images are cropped from a larger square (logged in "change").
+The big models cost too much for the free allowance; they are out. Cloudflare's changelog for `klein-4b`
+(15 Jan 2026) settled the size and reference questions, so no probe was needed: fixed 4 steps, `width` /
+`height`, `input_image_0..3` (each under 512 × 512), multipart form. Sizes used (4 output tiles each): wide
+1024 × 576, portrait 816 × 1024, square 1024 × 1024. References are shrunk to 496 px.
 
-## What gets built
-1. **Probe** (`scripts/cf_run.py probe`): one wide, one portrait, one with a reference image on `klein-4b`; one
-   square on `schnell`. Writes the answers into this doc's table. ~400 neurons.
+## What was built
+1. (Probe dropped: the docs answered it. The first real images are the check.)
 2. **`scripts/cf_run.py`**: the Cloudflare call (`POST https://api.cloudflare.com/client/v4/accounts/<id>/ai/run/@cf/black-forest-labs/<model>`),
    JPEG → PNG, same file names as Codex. One attempt and one retry; "allowance used up" (HTTP 429 / 4006) stops
    the run with "Free images for today are used up; they come back at 01:00".
-3. **`codex_run.py gen --route codex|cloudflare`** (default `codex`): same prompt from `compose()`, so styles,
-   looks, mixes, wildcards and leaning work unchanged; the Codex-only job text (image_gen, copy the PNG) is not
-   sent. `batch.py`, `run_list.py` and `variations.py` pass `--route` through.
+3. **`codex_run.py gen --route codex|cloudflare`** (default `codex`, or the `TASTE_ROUTE` environment variable):
+   same prompt from `compose()`, so styles, looks, mixes, wildcards and leaning work unchanged; the Codex-only job
+   text (image_gen, copy the PNG) is not sent. The web app sets `TASTE_ROUTE` for its run, and `batch.py`,
+   `run_list.py` and `variations.py` pass their environment on, so they needed no change. From chat:
+   `TASTE_ROUTE=cloudflare .venv/Scripts/python -I scripts/batch.py ...`.
 4. **Run log**: a `route` column at the end of `generated/codex/runs.csv` (the header is rewritten once; old rows
    read as `codex`). Neurons per image go in `tokens`, computed from the documented price, labelled as an
    estimate (Cloudflare's run reply doesn't report them).
@@ -42,8 +44,9 @@ has no size option, wide and portrait images are cropped from a larger square (l
    - **New run, One image, Remix, Variations**: a calm "Made with" choice, *ChatGPT* (default) or *FLUX, free*,
      with "~62 left today" next to it. Variations that need the seed as a reference offer FLUX only if the
      probe shows reference images work.
-   - Header chip: Cloudflare images today next to the Codex allowance.
-   - "How it was made" and the large view show the route; Insights can filter ratings by route.
+   - The cost block shows FLUX images made today, about how many are left and when more come.
+   - "How it was made" on a batch shows the route. (Not built yet: a header chip and an Insights filter by route;
+     worth adding once there are FLUX ratings to compare.)
 6. **Guide** (`app/guide.html`): Connect Cloudflare, the "Made with" choice, the daily limit. README changelog.
 
 ## Ratings and leaning
