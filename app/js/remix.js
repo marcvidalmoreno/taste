@@ -4,7 +4,7 @@
 //   2. Read the new prompt, with the changed words marked against the old one, edit it if needed, then make 1-4.
 // The image itself can go along as a reference (closer result) or not (more freedom).
 import { api, allStyles } from './api.js';
-import { allowance, costBlock, route, routeBlocker } from './cost.js';
+import { allowance, costBlock, makeLabel, route, routeBlocker } from './cost.js';
 import { job, enqueueRun } from './job.js';
 import { h, thumbUrl, plural, toast, showError } from './ui.js';
 
@@ -156,7 +156,7 @@ export async function openRemix(src) {
     makeBtn.disabled = !st.prompt.trim() || !!routeBlocker(st.alw);
     makeBtn.title = routeBlocker(st.alw);
     makeBtn.textContent = st.alw?.dry_run ? `Dry run: ${plural(st.n, 'image')}` : busy ? `Add to queue · ${plural(st.n, 'image')}`
-      : `Spend allowance: make ${plural(st.n, 'image')}`;
+      : makeLabel(st.n);
   }
 
   async function make() {

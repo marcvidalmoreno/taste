@@ -76,6 +76,9 @@ function routePicker(onRoute) {
     h('p', { class: 'muted small' }, ROUTE_NOTE[r]));
 }
 
+// The make button: FLUX costs nothing, so it says "free" instead of "spend allowance".
+export const makeLabel = (n) => (route() === 'cloudflare' ? `Make ${plural(n, 'free image')}` : `Spend allowance: make ${plural(n, 'image')}`);
+
 // Why Start can't go yet on this route ('' = it can).
 export function routeBlocker(a) {
   return route() === 'cloudflare' && a && !a.error && !a.cloudflare?.connected ? 'Connect Cloudflare first.' : '';

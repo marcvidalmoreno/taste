@@ -3,7 +3,7 @@
 // Runs join the queue (one image run at a time), so a busy queue never blocks the button.
 import { api, styles } from './api.js';
 import { job, enqueueRun } from './job.js';
-import { allowance, costBlock, route, routeBlocker } from './cost.js';
+import { allowance, costBlock, makeLabel, route, routeBlocker } from './cost.js';
 import { h, thumbUrl, plural, showError, toast } from './ui.js';
 
 // What each variation keeps and changes (scripts/variations.py); any mix of them since 21 Nov 2026.
@@ -47,7 +47,7 @@ export async function openVariations(src) {
     startBtn.disabled = !!blocked;
     startBtn.title = blocked;
     startBtn.textContent = a?.dry_run ? `Dry run: make nothing (${n})`
-      : job.running || job.queue?.length ? `Add to queue · ${plural(n, 'image')}` : `Spend allowance: make ${plural(n, 'image')}`;
+      : job.running || job.queue?.length ? `Add to queue · ${plural(n, 'image')}` : makeLabel(n);
   }
 
   function styleSection() {

@@ -117,6 +117,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – On FLUX, the make button in Remix and Variations says "Make 4 free images" instead of
+  "Spend allowance: make 4 images" (FLUX costs nothing). ChatGPT keeps the old label.
 - **23 Nov 2026** – FLUX takes Marc's examples along: an A/B test (18 prompts of a rated ChatGPT batch, FLUX with
   words only vs. with 3 of his thumbs-up images of the style) showed the references pull FLUX much closer to the
   style in science-fiction, cyberpunk-poster and anime-megacity, a little in retro-future-rooms and erotic, mixed in
