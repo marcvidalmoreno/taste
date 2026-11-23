@@ -7,7 +7,7 @@ import { openRemix } from './remix.js';
 import { openNote } from './notes.js';
 import { openStyleEdit } from './styleedit.js';
 import { similarRow } from './similar.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, downloadLink } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
 const CHANGES = {
@@ -113,6 +113,7 @@ function draw() {
     h('span', { class: 'muted' }, `${index + 1} of ${order.length}`),
     h('span', { class: 'spacer' }),
     d.seed && h('span', { class: 'muted small' }, 'Hold ', h('kbd', {}, 'S'), ' to see the seed'),
+    downloadLink(d.batch, im.file),
     h('button', { class: 'ghost', onClick: toggleFit, 'aria-pressed': String(!fit),
                   title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1')].filter(Boolean));
   drawPanel(im);

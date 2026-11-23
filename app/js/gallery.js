@@ -16,7 +16,7 @@ import { openRemix } from './remix.js';
 import { openVariations } from './variations.js';
 import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink } from './ui.js';
 
 // Target row height in px; rows end up a little taller to fill the width. Large stays within the 640 px thumbnails.
 const SIZES = [['s', 'Small', 130], ['m', 'Medium', 220], ['l', 'Large', 360]];
@@ -266,6 +266,7 @@ function draw() {
         h('button', { class: 'ghost', onClick: () => dlg.close() }, '← ', onGallery ? 'Gallery' : 'Back'),
         h('span', { class: 'muted' }, `${index + 1} of ${stepList.length}`),
         h('span', { class: 'spacer' }),
+        downloadLink(im.batch, im.file),
         fitBtn = h('button', { class: 'ghost', onClick: toggleFit, 'aria-pressed': String(!fit),
                                title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1')),
       canvas,

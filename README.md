@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Download: both large views (batch and Gallery) have **Download** in the top bar, which saves the
+  full-size image as `<batch>-<file>.png`. A batch's folder line has **Download all** (one zip of its images; on a
+  filter, **Download these N** zips only what the grid shows). New server route `/zip/<batch>`. Guide updated.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – Fix: About › How it grew showed each date as a narrow vertical strip, one letter per line. The
   style page's Evolution list shared its class name; its layout now applies only there.
 - **23 Nov 2026** – New run: **Per style** goes up to 24 (1–8 one at a time, then 10, 12, 16, 20, 24); the

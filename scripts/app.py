@@ -46,10 +46,10 @@ until it ends. Codex also writes subjects and rewrites prompts (codex_text.py, r
 Marks are saved at once (21 Nov 2026): each Up / Down / take-back appends a row to ratings.csv, the latest row per
 image wins (rate.latest). app-drafts.json is only read once, to save marks left from before.
 """
-import argparse, csv, json, os, sys, threading, webbrowser
+import argparse, csv, io, json, os, sys, threading, webbrowser, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qs
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -1442,6 +1442,30 @@ class Handler(BaseHTTPRequestHandler):
                 # The URL carries ?v=<mtime>, so the browser may keep the file: a new image gets a new URL.
                 src = thumbnail(batch, file) if parts[0] == 'thumb' else BASE / batch / file
                 return self.send_file(src, cache='private, max-age=31536000, immutable')
+            # 2a. A batch as one zip: /zip/<batch>?files=a.png,b.png (no files: every image; 23 Nov 2026). PNGs are already
+            #     compressed, so they are stored as they are: fast, same size.
+            if parts[0] == 'zip' and len(parts) == 2:
+                batch = parts[1]
+                if not is_batch(batch):
+                    raise ApiError(404, f'no batch "{batch}"')
+                images = {f'{n}.png' for n in rate.batch_images(batch)}   # the batch's own images: no seed, no sheet
+                asked = parse_qs(urlparse(self.path).query).get('files', [''])[0]
+                files = sorted(images & set(asked.split(','))) if asked else sorted(images)
+                if not files:
+                    raise ApiError(404, 'no images to zip')
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, 'w', zipfile.ZIP_STORED) as z:
+                    for f in files:
+                        z.write(BASE / batch / f, f)
+                self.send_response(200)
+                body = buf.getvalue()
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Length', str(len(body)))
+                self.send_header('Content-Disposition', f'attachment; filename="{batch}.zip"')
+                self.send_header('Cache-Control', 'no-store')
+                self.end_headers()
+                self.wfile.write(body)
+                return
             # 2b. Reference images of a style: /ref/<style>/ref-N.jpg
             if parts[0] == 'ref' and len(parts) == 3:
                 folder, file = parts[1], parts[2]

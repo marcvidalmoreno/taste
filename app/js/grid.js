@@ -7,7 +7,7 @@ import { job, enqueueRun, KIND } from './job.js';
 import { api as call } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { COST } from './cost.js';
-import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError, toast } from './ui.js';
+import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError, toast, zipUrl } from './ui.js';
 
 let view;
 
@@ -131,6 +131,7 @@ function batchMeta(d) {
       h('code', { class: 'path', title: d.path }, d.rel_path),
       h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(d.path).then(() => toast('Folder path copied', { timeout: 2000 })) }, 'Copy path'),
       h('button', { class: 'ghost small', onClick: () => call('reveal', { method: 'POST', body: { batch: d.batch } }).catch(showError) }, 'Open folder'),
+      downloadAll(d),
       h('span', { class: 'spacer' }),
       styles.length === 1 && h('button', { class: 'ghost small', onClick: () => openStyleEdit({ style: styles[0] }) }, 'Change the style…'),
       styles.length > 0 && h('a', { class: 'small', href: '#/new?mode=batch&style=' + styles.map(encodeURIComponent).join(',') },
@@ -147,6 +148,16 @@ function batchMeta(d) {
           c.preview ? h('img', { src: thumbUrl(c.batch, c.preview), alt: '' }) : h('span', { class: 'no-img' }),
           h('span', { class: 'small' }, `${KIND[c.kind]?.label || c.kind} of ${c.file.replace(/\.[^.]+$/, '')}`, h('br'),
             h('span', { class: 'muted' }, plural(c.images, 'image')))))))));
+}
+
+// The images the grid shows, as one zip: the whole batch on "All", only those on another filter.
+function downloadAll(d) {
+  const list = visible();
+  if (!list.length) return null;
+  const files = list.length === d.items.length ? null : list.map((im) => im.file);
+  return h('a', { class: 'ghost small', href: zipUrl(d.batch, files), download: `${d.batch}.zip`,
+                  title: 'Save the full-size images the grid shows, as one zip' },
+    files ? `Download these ${list.length}` : 'Download all');
 }
 
 function runDetails(r) {

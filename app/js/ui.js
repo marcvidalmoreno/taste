@@ -21,6 +21,11 @@ export function h(tag, attrs = {}, ...children) {
 const enc = encodeURIComponent;
 // ?v=<mtime>: the server lets the browser keep images; a changed file gets a new URL.
 export const imgUrl = (batch, file, v = 0) => `/img/${enc(batch)}/${enc(file)}?v=${v}`;
+// Download links (23 Nov 2026). Same origin, so the "download" attribute names the saved file:
+// '<batch>-<file>', unique across batches. A zip holds the files given, or the whole batch.
+export const downloadLink = (batch, file, text = 'Download', cls = 'ghost') =>
+  h('a', { class: cls, href: `/img/${enc(batch)}/${enc(file)}`, download: `${batch}-${file}`, title: 'Save the full-size image' }, text);
+export const zipUrl = (batch, files) => `/zip/${enc(batch)}${files ? '?files=' + files.map(enc).join(',') : ''}`;
 export const thumbUrl = (batch, file, v = 0) => `/thumb/${enc(batch)}/${enc(file)}?v=${v}`;
 export const batchHref = (batch, show) => `#/b/${enc(batch)}${show ? '?show=' + show : ''}`;
 
