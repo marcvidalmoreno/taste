@@ -169,7 +169,7 @@ def batch_images(batch, shared=None):
             'name': name, 'file': f'{name}.png', 'number': i, 'status': status,
             'mtime': int((BASE / batch / f'{name}.png').stat().st_mtime),
             'style': run.get('style', ''), 'mode': run.get('mode', ''), 'change': run.get('change', ''),
-            'seed': run.get('seed', ''), 'prompt': run.get('prompt', ''),
+            'seed': run.get('seed', ''), 'prompt': run.get('prompt', ''), 'route': run.get('route') or 'codex',
             'width': run.get('width', ''), 'height': run.get('height', ''),
             'date': run.get('date', ''), 'time': run.get('time', ''), 'seconds': run.get('seconds', ''),
             'draft': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
@@ -281,11 +281,16 @@ def slugify(text, fallback='run'):
     return '-'.join(''.join(c if c.isalnum() else ' ' for c in text.lower()).split())[:32].strip('-') or fallback
 
 
-def free_slug(stem):
+def flux_end(body):
+    """New FLUX runs get folders ending in -flux, so they stand out in Explorer and the batch list (23 Nov 2026)."""
+    return '-flux' if (body or {}).get('route') == 'cloudflare' else ''
+
+
+def free_slug(stem, end=''):
     """Folders are generated/codex/<today>-<slug>/; never reuse one (it would overwrite), nor one a queued
-    run has already reserved."""
+    run has already reserved. end: kept after the 24-character cut (-flux)."""
     import datetime
-    base = slugify(stem, 'variations')[:24]
+    base = slugify(stem, 'variations')[:24] + end
     day, slug, i = datetime.date.today().isoformat(), base, 2
     taken = {s['batch'] for s in QUEUE} | ({CUR['batch']} if CUR.get('running') else set())
     while (BASE / f'{day}-{slug}').exists() or f'{day}-{slug}' in taken:
@@ -591,7 +596,8 @@ def worker():
 def launch(spec):
     import shutil, subprocess, time
     if spec['kind'] == 'variations' and not DRY_RUN:   # variations.py names its folder by today's date
-        spec['slug'], spec['batch'] = free_slug(spec['slug'])
+        end = '-flux' if spec.get('route') == 'cloudflare' else ''
+        spec['slug'], spec['batch'] = free_slug(spec['slug'].removesuffix(end) if end else spec['slug'], end)
         CUR['batch'] = spec['batch']
     folder = SPECS / spec['id'] if DRY_RUN else BASE / spec['batch']
     folder.mkdir(parents=True, exist_ok=True)
@@ -804,7 +810,7 @@ def spec_batch(body, preview=False):
                 placeholders.add(f'{s}-{i + 1}')
     names = [info[s].get('name', s) for s in styles]
     title = clean(body.get('name'), 60) or (', '.join(names[:3]) + (f' +{len(names) - 3}' if len(names) > 3 else ''))
-    _, batch = free_slug(clean(body.get('name'), 60) or '-'.join(styles[:2]))
+    _, batch = free_slug(clean(body.get('name'), 60) or '-'.join(styles[:2]), flux_end(body))
     return {'kind': 'batch', 'title': title, 'batch': batch, 'styles': styles, 'n': n, 'ratio': ratio,
             'use_kept': bool(body.get('use_kept')), 'wildcards': wildcards, 'subjects': subjects, 'hints': hints, 'placeholders': placeholders,
             'expected': [f'{s}-{i + 1}' for s in styles for i in range(n)]}
@@ -821,7 +827,7 @@ def spec_single(body):
     if ratio not in RATIO_CHOICES[1:]:
         raise ApiError(400, 'ratio: wide, portrait or square')
     n = max(1, min(4, int(body.get('n') or 1)))
-    _, batch = free_slug(subject[:24])
+    _, batch = free_slug(subject[:24], flux_end(body))
     stem = '-'.join(slugify(subject, 'image').split('-')[:3])   # first words, never cut mid-word
     jobs = [{'name': f'{stem}-{i}', 'style': style, 'subject': subject, 'ratio': ratio, 'mode': 'text'}
             for i in range(1, n + 1)]
@@ -839,7 +845,7 @@ def spec_remix(body):
     change = clean(body.get('change'), 200)
     n = max(1, min(4, int(body.get('n') or 1)))
     style = rate.batch_runs(src.parent.name).get(src.stem, {}).get('style', '')
-    _, batch = free_slug(f'{src.stem}-remix')
+    _, batch = free_slug(f'{src.stem}-remix', flux_end(body))
     jobs = [{'name': f'remix-{i}', 'prompt': prompt, 'style': style, 'mode': 'remix',
              'change': f'remix: {change}' if change else 'remix: prompt edited',
              'ref': str(src) if body.get('ref') else ''} for i in range(1, n + 1)]
@@ -943,7 +949,7 @@ def spec_variations(body):
         changes = CHANGES[:n]
     changes = [c for c in CHANGES if c in changes]   # the order variations.py makes them in
     stem = src.stem if src.stem != 'seed' else src.parent.name[11:] + '-seed'
-    slug, batch = free_slug(stem)
+    slug, batch = free_slug(stem, flux_end(body))
     return {'kind': 'variations', 'title': f'Variations of {src.stem}', 'batch': batch, 'slug': slug,
             'source': {'batch': src.parent.name, 'file': src.name}, 'style': style, 'styles': [style],
             'changes': changes, 'subject': clean(body.get('subject')), 'note': clean(body.get('note')),
@@ -2256,7 +2262,7 @@ class Handler(BaseHTTPRequestHandler):
                             'style': im['style'], 'mode': im['mode'], 'change': im['change'],
                             'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
                             'date': im['date'] or b[:10], 'number': im['number'], 'seed': im['seed'],
-                            'time': im['time'], 'seconds': im['seconds'],
+                            'time': im['time'], 'seconds': im['seconds'], 'route': im['route'],
                             'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept']})
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return out

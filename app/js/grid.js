@@ -298,6 +298,7 @@ function tile(im) {
       h('div', { class: 'caption' },
         h('span', { class: 'num' }, im.number),
         h('span', { class: 'style' }, styleName(im.style)),
+        im.route === 'cloudflare' && h('span', { class: 'route-badge', title: 'Made with FLUX on Cloudflare' }, 'FLUX'),
         h('span', { class: 'kind', title: kindOf(im) }, kindOf(im))),
       why && h('div', { class: 'why' }, why)),
     // Mark without opening the image. Saved ratings are read-only, ignored images can't be marked.

@@ -141,12 +141,13 @@ function tile(im, i) {
   const r = ratio(im);
   return h('button', {
     class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 calc(${r.toFixed(4)} * var(--row-h, 220px))`, aspectRatio: String(r) },
-    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.why ? ': ' + im.why : ''}`,
+    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.route === 'cloudflare' ? ', made with FLUX' : ''}${im.why ? ': ' + im.why : ''}`,
     onClick: () => openLarge(i),
   },
   h('img', { src: thumbUrl(im.batch, im.file, im.mtime), alt: '', loading: 'lazy', decoding: 'async' }),
   im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph),
-  im.kept && h('span', { class: 'kept-star', title: 'Kept as an example', 'aria-hidden': 'true' }, '★'));
+  im.kept && h('span', { class: 'kept-star', title: 'Kept as an example', 'aria-hidden': 'true' }, '★'),
+  im.route === 'cloudflare' && h('span', { class: 'route-badge on-image', 'aria-hidden': 'true' }, 'FLUX'));
 }
 
 const keyOf = (im) => `${im.batch}/${im.name}`;

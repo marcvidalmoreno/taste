@@ -293,7 +293,7 @@ function drawSummary() {
         : 'Pick at least one style.')
       : h('p', { class: 'small' }, `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
     costBlock(alw, n, { onRoute: drawSummary, extra: codexStyles ? `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.` : '' }),
-    h('p', { class: 'muted small' }, 'Images land in generated/codex/<date>-<name>/ (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.'),
+    h('p', { class: 'muted small' }, (route() === 'cloudflare' ? 'Images land in generated/codex/<date>-<name>-flux/' : 'Images land in generated/codex/<date>-<name>/') + ' (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.'),
     h('div', { class: 'nr-actions' }, startBtn, state.mode === 'batch' && previewBtn),
     h('p', { class: 'muted small keys' }, h('kbd', {}, 'Ctrl'), ' + ', h('kbd', {}, 'Enter'), ' starts'));
   drawStart();
