@@ -1,8 +1,9 @@
 // Batches view: every folder in generated/codex/, newest first, grouped by day, with what is left to rate.
 // On top, "Now and next": the run being made and the queue, so a run started anywhere is never out of sight.
 import { api } from './api.js';
-import { job, onJob, KIND, runTitle, statusLine, stopButton, queueList, showLog } from './job.js';
-import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, showError } from './ui.js';
+import { job, onJob, KIND, runTitle, statusLine, stopButton, queueList, showLog, resumeAll } from './job.js';
+import { COST } from './cost.js';
+import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, showError, toast } from './ui.js';
 
 // Filters live for the session: coming back from a batch finds the list as it was left.
 const KINDS = { all: 'All', batch: 'Batches', derived: 'Variations & remixes', single: 'Single' };
@@ -10,7 +11,7 @@ const ui = JSON.parse(sessionStorage.getItem('taste-batches') || '{"kind":"all",
 const saveUi = () => sessionStorage.setItem('taste-batches', JSON.stringify(ui));
 const kindGroup = (k) => (k === 'variations' || k === 'remix' ? 'derived' : k === 'single' ? 'single' : 'batch');
 
-let batches = [], view, listEl, nowEl, unsub;
+let batches = [], view, listEl, nowEl, stoppedEl, unsub;
 
 export async function renderBatches(el) {
   view = el;
@@ -23,6 +24,7 @@ export async function renderBatches(el) {
   }
   document.title = 'Batches · taste';
   nowEl = h('section', { class: 'now-next', 'aria-label': 'Now and next', 'aria-live': 'polite' });
+  stoppedEl = h('div');
   listEl = h('div');
   const left = batches.reduce((n, b) => n + b.to_rate, 0);
   view.replaceChildren(
@@ -30,15 +32,19 @@ export async function renderBatches(el) {
       h('hgroup', {}, h('h1', {}, 'Batches'), h('p', {}, left ? `${plural(left, 'image')} to rate` : 'Everything is rated')),
       h('a', { href: '#/new', role: 'button', class: 'secondary outline' }, 'New run…')),
     nowEl,
+    stoppedEl,
     batches.length ? toolbar() : '',
     listEl);
   drawNow(job);
   drawList();
+  drawStopped();
   unsub?.();
-  let lastMade = job.made?.length;
+  let lastMade = job.made?.length, lastBusy = busyKey(job);
   unsub = onJob((j) => {
     if (!nowEl.isConnected) { unsub(); unsub = null; return; }
     drawNow(j);
+    // A run started or ended, or the queue changed: what still waits to be resumed may have changed too.
+    if (busyKey(j) !== lastBusy) { lastBusy = busyKey(j); drawStopped(); }
     // A new image or a new batch folder: read the list again so its row and counts are current.
     if (j.made?.length !== lastMade) { lastMade = j.made?.length; api('batches').then((d) => { batches = d.batches; drawList(); }).catch(() => {}); }
   });
@@ -67,6 +73,42 @@ function drawNow(j) {
         h('button', { class: 'secondary outline', onClick: showLog }, 'Log'),
         j.running && stopButton())),
     j.queue?.length > 0 && queueList(j.queue)].filter(Boolean));
+}
+
+// ---------------------------------------------------------------- runs the usage limit cut short
+// When Codex hits its usage limit mid-queue, every run after it stops with nothing or half made. Once the
+// limit resets, one calm line and one button queue them all again (23 Nov 2026). Images blocked by the
+// filter are not counted: they would only fail again.
+
+const busyKey = (j) => `${j.running ? j.batch : ''}|${(j.queue || []).map((q) => q.id).join(',')}`;
+
+async function drawStopped() {
+  let d;
+  try { d = await api('stopped'); } catch { return; }
+  if (!stoppedEl?.isConnected) return;
+  if (!d.images) { stoppedEl.replaceChildren(); return; }
+  const n = d.images;
+  stoppedEl.replaceChildren(h('section', { class: 'finish-bar' },
+    h('p', {},
+      h('strong', {}, `${plural(d.runs.length, 'run')} stopped when Codex hit its usage limit.`),
+      ` ${plural(n, 'image')} never made.`, h('br'),
+      h('span', { class: 'muted small' }, `Same prompts and folders as before · about ${n * COST.minutes} min · ≈ `
+        + `${(n * COST.fiveLow).toFixed(0)}–${(n * COST.fiveHigh).toFixed(0)} % of the five-hour window`)),
+    h('button', { class: 'small-btn', onClick: (e) => resume(e.currentTarget) }, `Resume all (${plural(n, 'image')})`)));
+}
+
+async function resume(btn) {
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    const res = await resumeAll();
+    toast(`${plural(res.runs, 'run')} queued again, ${plural(res.images, 'image')}`);
+    drawStopped();
+  } catch (err) {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    showError(err);
+  }
 }
 
 // ---------------------------------------------------------------- list

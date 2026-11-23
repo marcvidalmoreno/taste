@@ -183,26 +183,29 @@ function runDetails(r) {
 
 // A batch that stopped early (usage limit, 3 failures in a row, Stop): one calm line and one button that makes
 // the rest with the batch's own subjects and picks. Hidden while a run for this batch is running or queued.
+// Remixes, variations and single images cut short by Codex's usage limit get the same bar (23 Nov 2026).
 function finishBar(d) {
-  const n = d.unmade?.length || 0;
+  const resume = d.kind !== 'batch' && d.resume?.length > 0;
+  const n = resume ? d.resume.length : d.unmade?.length || 0;
   if (!n || !growing()) return null;
   const busy = (job.running && job.batch === d.batch) || (job.queue || []).some((q) => q.batch === d.batch);
   if (busy) return null;
   return h('section', { class: 'finish-bar' },
     h('p', {},
-      h('strong', {}, `${n} of ${d.planned} images were never made.`),
-      ' ', d.unmade_why ? `The run stopped early: ${d.unmade_why}.` : 'The run stopped before the end.',
+      h('strong', {}, resume ? `${plural(n, 'image')} never made.` : `${n} of ${d.planned} images were never made.`),
+      ' ', resume ? 'The run stopped early: Codex hit its usage limit.'
+        : d.unmade_why ? `The run stopped early: ${d.unmade_why}.` : 'The run stopped before the end.',
       h('br'),
-      h('span', { class: 'muted small' }, `Same subjects and picks as the first run · about ${n * COST.minutes} min · ≈ `
+      h('span', { class: 'muted small' }, (resume ? 'Same prompts as the first run' : 'Same subjects and picks as the first run') + ` · about ${n * COST.minutes} min · ≈ `
         + `${(n * COST.fiveLow).toFixed(0)}–${(n * COST.fiveHigh).toFixed(0)} % of the five-hour window`)),
-    h('button', { class: 'small-btn', onClick: (e) => finish(d, n, e.currentTarget) }, `Finish this batch (${plural(n, 'image')})`));
+    h('button', { class: 'small-btn', onClick: (e) => finish(d, n, e.currentTarget, resume) }, `Finish this batch (${plural(n, 'image')})`));
 }
 
-async function finish(d, n, btn) {
+async function finish(d, n, btn, resume) {
   btn.disabled = true;
   btn.setAttribute('aria-busy', 'true');
   try {
-    const res = await enqueueRun({ kind: 'finish', batch: d.batch });
+    const res = await enqueueRun({ kind: resume ? 'resume' : 'finish', batch: d.batch });
     toast(res.position <= 1 ? `Making the last ${plural(n, 'image')}` : `Finish queued, number ${res.position}`);
     draw();
   } catch (err) {

@@ -388,6 +388,54 @@ def unmade_images(batch, have):
     return names, why
 
 
+def planned_names(rec):
+    """Every image a run from the app set out to make, by name, from its run.json."""
+    kind, n = rec.get('kind'), int(rec.get('n') or 0)
+    if kind == 'batch':
+        return [f'{s}-{i + 1}' for s in rec.get('styles') or [] for i in range(n)]
+    if kind == 'variations':
+        return [f'{i}-{c}' for i, c in enumerate(rec.get('changes') or CHANGES[:n], 1)]
+    if kind == 'remix':
+        return [f'remix-{i}' for i in range(1, n + 1)]
+    if kind == 'single' and rec.get('subject'):
+        stem = '-'.join(slugify(rec['subject'], 'image').split('-')[:3])
+        return [f'{stem}-{i}' for i in range(1, n + 1)]
+    return []
+
+
+def limit_stopped(batch, have=None):
+    """A run that Codex's usage limit cut short (23 Nov 2026): the images it refused for the limit, plus the
+    ones the run never reached (it stops after 2 failures). Images blocked by the filter are left out: they
+    would only fail again. Names already queued are left out too. run.json's limit_hit keeps the evidence once
+    a retry has overwritten the log."""
+    rec = run_record(batch) or {}
+    have = set(rate.batch_images(batch)) if have is None else have
+    queued = {n for s in QUEUE if s['batch'] == batch for n in s.get('expected') or []}
+    names = [n for n in planned_names(rec) if n not in have and n not in queued]
+    log = lambda n: BASE / batch / f'{n}.codex.log'  # noqa: E731
+    hit = {n for n in names if log(n).is_file() and 'usage limit' in log(n).read_text(encoding='utf-8', errors='replace')}
+    if not hit and not rec.get('limit_hit'):
+        return []
+    if rec['kind'] in ('remix', 'single') and not (BASE / batch / '.jobs.json').is_file():
+        return []   # nothing to rebuild the prompts from
+    return [n for n in names if n in hit or not log(n).is_file()]
+
+
+def all_limit_stopped():
+    """Every batch with images to resume, oldest run first. Skips the batch being made right now."""
+    running = CUR.get('batch') if CUR.get('running') else (chat_run() or {}).get('batch') if (chat_run() or {}).get('running') else None
+    out = []
+    for p in BASE.iterdir() if BASE.exists() else []:
+        if not is_batch(p.name) or p.name == running or not (p / 'run.json').is_file():
+            continue
+        names = limit_stopped(p.name)
+        if names:
+            rec = run_record(p.name)
+            out.append({'batch': p.name, 'title': rec.get('title') or p.name, 'kind': rec.get('kind'),
+                        'started': rec.get('started', ''), 'names': names})
+    return sorted(out, key=lambda b: (b['started'], b['batch']))
+
+
 # -- the queue
 
 def save_queue():
@@ -475,7 +523,15 @@ def launch(spec):
                '--ratio', spec['ratio'], '--only', ','.join(spec['expected'])]
         if (folder / '.kept-refs.json').is_file():
             cmd += ['--kept-refs', str(folder / '.kept-refs.json')]
-    elif spec['kind'] in ('remix', 'single', 'retry'):
+    elif spec['kind'] == 'resume' and not spec.get('jobs'):   # variations cut short: same seed, folder and numbers
+        cmd = [PY, '-I', str(ROOT / 'scripts' / 'variations.py'), str(BASE / spec['batch'] / seed_file(spec['batch'])),
+               '--style', spec['style'], '--changes', ','.join(spec['changes']), '--out', str(folder),
+               '--only', ','.join(spec['expected'])]
+        if spec.get('subject'):
+            cmd += ['--subject', spec['subject']]
+        if spec.get('note'):
+            cmd += ['--note', spec['note']]
+    elif spec['kind'] in ('remix', 'single', 'retry', 'resume'):
         if spec['kind'] == 'single' and spec.get('use_kept'):
             paths = kept_paths(spec['styles'][0])
             if paths:
@@ -495,7 +551,7 @@ def launch(spec):
             cmd += ['--note', spec['note']]
     if DRY_RUN:
         cmd.append('--dry-run')
-    elif spec['kind'] in ('finish', 'retry') and run_record(spec['batch']):
+    elif spec['kind'] in ('finish', 'retry', 'resume') and run_record(spec['batch']):
         # keep the first run's record ("How it was made"); a retry used to overwrite it (fixed 23 Nov 2026)
         if spec['kind'] == 'finish':
             rec = run_record(spec['batch'])
@@ -517,6 +573,12 @@ def launch(spec):
         CUR['log'] = (CUR['log'] + [line.rstrip()])[-200:]
     CUR.update(running=False, returncode=proc.wait(), finished=time.time(), phase='')
     PROC.clear()
+    if not DRY_RUN and run_record(spec['batch']):   # remember the usage limit: a later retry overwrites the log
+        logs = [folder / f'{n}.codex.log' for n in spec['expected']]
+        if any(p.is_file() and 'usage limit' in p.read_text(encoding='utf-8', errors='replace') for p in logs):
+            rec = run_record(spec['batch'])
+            rec['limit_hit'] = time.strftime('%Y-%m-%d %H:%M')
+            write_json(folder / 'run.json', rec)
     if DRY_RUN:
         shutil.rmtree(folder, ignore_errors=True)
     elif spec['kind'] in ('batch', 'finish'):
@@ -718,6 +780,43 @@ def spec_finish(body):
     return {'kind': 'finish', 'title': f'Finish {rec.get("title") or batch}', 'batch': batch, 'styles': styles,
             'n': int(rec['n']), 'all_styles': rec['styles'], 'ratio': rec.get('ratio') or 'mixed',
             'wildcards': int(rec.get('wildcards') or 0), 'expected': names}
+
+
+def spec_resume(body):
+    """Make what Codex's usage limit cut short in one run, in its own folder, as the first run set it: {batch}."""
+    batch = str(body.get('batch', ''))
+    if not is_batch(batch):
+        raise ApiError(404, f'no batch "{batch}"')
+    if CUR.get('running') and CUR.get('batch') == batch:
+        raise ApiError(409, 'a run for this batch is running')
+    names = limit_stopped(batch)
+    if not names:
+        raise ApiError(409, 'nothing in this batch waits to be made again')
+    rec = run_record(batch)
+    title = f'Resume {rec.get("title") or batch}'
+    if rec['kind'] == 'batch':
+        styles = [s for s in rec['styles'] if any(n.startswith(s + '-') and n[len(s) + 1:].isdigit() for n in names)]
+        return {'kind': 'finish', 'title': title, 'batch': batch, 'styles': styles, 'n': int(rec['n']),
+                'all_styles': rec['styles'], 'ratio': rec.get('ratio') or 'mixed',
+                'wildcards': int(rec.get('wildcards') or 0), 'expected': names}
+    if rec['kind'] == 'variations':
+        if not seed_file(batch):
+            raise ApiError(409, 'this batch has no seed to vary')
+        return {'kind': 'resume', 'title': title, 'batch': batch, 'style': rec.get('style', ''), 'styles': rec.get('styles') or [],
+                'changes': rec.get('changes') or CHANGES[:int(rec.get('n') or 3)], 'subject': rec.get('subject', ''),
+                'note': rec.get('note', ''), 'n': len(names), 'expected': names}
+    # remix / single: every job of the run shares its prompt (or style, subject, ratio): copy one, rename it
+    template = read_json(BASE / batch / '.jobs.json', [])[0]
+    jobs = []
+    for nm in names:
+        j = {**template, 'name': nm}
+        if j.get('kept'):
+            paths = [p for p in (rec.get('kept_refs') or {}).get(j.get('style'), []) if Path(p).is_file()]
+            j['ref'] = pick_refs(paths, int(nm.rsplit('-', 1)[-1]) - 1) if paths else ''
+            j['kept'] = bool(j['ref'])
+        jobs.append(j)
+    return {'kind': 'resume', 'title': title, 'batch': batch, 'jobs': jobs, 'styles': rec.get('styles') or [],
+            'n': len(jobs), 'expected': names}
 
 
 def spec_variations(body):
@@ -1338,6 +1437,8 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/guess'): 'post_guess',
         ('POST', 'api/variations'): 'post_variations',
         ('POST', 'api/run'): 'post_run',
+        ('GET', 'api/stopped'): 'get_stopped',
+        ('POST', 'api/resume-all'): 'post_resume_all',
         ('POST', 'api/preview'): 'post_preview',
         ('POST', 'api/stop'): 'post_stop',
         ('POST', 'api/queue/cancel'): 'post_queue_cancel',
@@ -1512,6 +1613,7 @@ class Handler(BaseHTTPRequestHandler):
         return {**summary(batch, images), 'items': images, 'run': run_record(batch), 'parent': lin.get(batch),
                 'children': children, 'failed': failed_images(batch, {im['name'] for im in images}),
                 'unmade': unmade[0], 'unmade_why': unmade[1], 'planned': len(unmade[0]) + len(images),
+                'resume': limit_stopped(batch, {im['name'] for im in images}) if run_record(batch) else [],
                 'path': str(BASE / batch), 'rel_path': f'generated/codex/{batch}'}
 
     def put_mark(self):
@@ -1625,16 +1727,41 @@ class Handler(BaseHTTPRequestHandler):
         return self.post_run({**self.read_body(), 'kind': 'variations'})
 
     def post_run(self, body=None):
-        """Queue one run. kind: batch | single | remix | retry | finish | variations (see the spec_* helpers)."""
+        """Queue one run. kind: batch | single | remix | retry | finish | resume | variations (see the spec_* helpers)."""
         body = body or self.read_body()
         make = {'batch': spec_batch, 'single': spec_single, 'remix': spec_remix, 'retry': spec_retry,
-                'finish': spec_finish, 'variations': spec_variations}.get(body.get('kind'))
+                'finish': spec_finish, 'resume': spec_resume, 'variations': spec_variations}.get(body.get('kind'))
         if not make:
             raise ApiError(400, f'unknown kind "{body.get("kind")}"')
         with _QLOCK:
             spec = make(body)
         spec.pop('placeholders', None)
         return enqueue(spec)
+
+    def get_stopped(self):
+        """Runs Codex's usage limit cut short, with what each still has to make (for "Resume all")."""
+        with _QLOCK:
+            runs = all_limit_stopped()
+        return {'runs': runs, 'images': sum(len(r['names']) for r in runs)}
+
+    def post_resume_all(self):
+        """Queue one resume run per batch the usage limit cut short, oldest first. One click on the Batches page."""
+        self.read_body()
+        queued, res, images = [], None, 0
+        with _QLOCK:
+            runs = all_limit_stopped()
+        for r in runs:
+            try:
+                with _QLOCK:
+                    spec = spec_resume({'batch': r['batch']})
+            except ApiError:
+                continue   # its state changed meanwhile (a run started, images arrived)
+            res = enqueue(spec)
+            queued.append(res['queued_id'])
+            images += len(spec['expected'])
+        if not queued:
+            raise ApiError(409, 'nothing waits to be made again')
+        return {**res, 'queued_ids': queued, 'runs': len(queued), 'images': images}
 
     def post_preview(self):
         """The prompts a batch would use, without running Codex (batch.py --dry-run). Missing subjects are

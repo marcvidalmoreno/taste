@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 23 Nov 2026 (Download buttons). This guide changes with the app.</p>
+<p class="muted small">Last updated 23 Nov 2026 (Resume all). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -92,6 +92,11 @@
       <strong>Stop</strong> while running.</li>
     <li><strong>Next</strong>: the runs waiting in the queue, each with <strong>Remove</strong>.</li>
   </ul>
+  <h3>Runs the usage limit cut short</h3>
+  <p>When Codex hits its usage limit mid-queue, every run after it stops with nothing or half made. Below Now and
+    next, one line then says how many runs and images that left, with the cost. <strong>Resume all</strong> queues
+    them all again, oldest first, each in its own folder with the same prompts and numbers. Images blocked by the
+    filter are not counted: they would only fail again. The line hides once nothing waits.</p>
   <h3>Finding a batch</h3>
   <ul>
     <li><strong>Search</strong> by batch name or style.</li>
@@ -137,7 +142,8 @@
   <p>If a run stopped before the end (Codex hit its usage limit, 3 failures in a row, or you pressed Stop), a line
     above the grid says how many images were never made and why. <strong>Finish this batch</strong> makes them
     with the same subjects, looks and kept examples as the first run, and shows the cost next to the button. It
-    hides while a run for this batch is running or queued.</p>
+    hides while a run for this batch is running or queued. Remixes, variations and single images that the usage
+    limit cut short get the same line.</p>
   <h3>Tiles</h3>
   <ul>
     <li>Each tile shows the number, the style and the kind of change. A thumb badge shows once it is rated, and your
@@ -579,8 +585,9 @@
   <ol>
     <li>In the batch, the No image tile: <strong>Retry once</strong>, or <strong>Copy prompt</strong> to try it
       elsewhere.</li>
-    <li>Many missing because the run stopped (usage limit): wait for the five-hour window to reset, then
-      <strong>Finish this batch</strong> above the grid.</li>
+    <li>Many missing because the run stopped (usage limit): wait for the limit to reset, then
+      <strong>Resume all</strong> on Batches (every run at once), or <strong>Finish this batch</strong> above one
+      batch's grid.</li>
   </ol>
 
   <h3>Use an image or prompt outside the app</h3>

@@ -27,6 +27,7 @@ export const KIND = {
   remix: { label: 'Remix', noun: 'remix', nounMany: 'remixes' },
   retry: { label: 'Retry', noun: 'image' },
   finish: { label: 'Finish', noun: 'image' },
+  resume: { label: 'Resume', noun: 'image' },
   variations: { label: 'Variations', noun: 'variation' },
   list: { label: 'Run', noun: 'image' },
 };
@@ -44,6 +45,17 @@ export async function enqueueRun(body, { go } = {}) {
   mine.add(res.queued_id);
   if (go && location.hash !== go) location.hash = go;
   if (res.position <= 1) { followId = res.queued_id; followHash = location.hash; }
+  job = res;
+  seen = -1;
+  poll();
+  return res;
+}
+
+// Resume every run Codex's usage limit cut short: one queued run per batch (23 Nov 2026).
+export async function resumeAll() {
+  askToNotify();
+  const res = await api('resume-all', { method: 'POST', body: {} });
+  res.queued_ids.forEach((id) => mine.add(id));
   job = res;
   seen = -1;
   poll();

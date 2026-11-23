@@ -4,6 +4,7 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/variations.py <seed image> [--style <style>] [--subject "<new subject>"] [--n 3|4]
         [--note "<instruction for every image>"] [--changes palette,subject,composition,mood] [--slug <name>] [--dry-run]
   --changes (21 Nov 2026): pick which variations to make, in any combination; overrides --n
+  --out <batch folder> --only 3-composition,4-mood (23 Nov 2026): resume a stopped run in its own folder
 
 - Style: give --style (Claude looks at the seed once, or Marc names it). Without it the script prints the
   top-3 guesses from scripts/nearest.py and stops: the guess alone is right only about a third of the time.
@@ -33,6 +34,8 @@ ap.add_argument('--note', default='', help='one instruction for every image, e.g
 ap.add_argument('--n', type=int, default=3, choices=[3, 4])
 ap.add_argument('--changes', default='', help='comma list of palette, subject, composition, mood; overrides --n')
 ap.add_argument('--slug', default='')
+ap.add_argument('--out', default='', help='an existing batch folder to add to (resume, 23 Nov 2026); overrides --slug')
+ap.add_argument('--only', default='', help='comma list of names to make (e.g. 3-composition,4-mood); numbering stays')
 ap.add_argument('--dry-run', action='store_true')
 a = ap.parse_args()
 if hasattr(sys.stdout, 'reconfigure'):
@@ -54,7 +57,7 @@ s = taste[style]
 subject = a.subject or (random.choice(s['subjects']) if s['subjects'] else
                         'a different subject that suits the same kind of scene (your choice)')
 slug = a.slug or seed.stem.lower().replace(' ', '-')[:30]
-batch = ROOT / 'generated' / 'codex' / f'{datetime.date.today().isoformat()}-{slug}'
+batch = Path(a.out).resolve() if a.out else ROOT / 'generated' / 'codex' / f'{datetime.date.today().isoformat()}-{slug}'
 jobs = [('palette', 'Keep the subject and composition of the seed; change only the colour palette and light to match the style notes.'),
         ('subject', f'Keep the palette, light and composition of the seed; change only the subject to: {subject}.'),
         ('composition', f'Keep the palette, light and kind of subject of the seed; change only the composition to {random.choice(COMPOSITIONS)}.'),
@@ -67,20 +70,27 @@ if a.changes:
     jobs = [j for j in jobs if j[0] in want]
 else:
     jobs = jobs[:a.n]
+jobs = [(i, c, t) for i, (c, t) in enumerate(jobs, 1)]
+if a.only:   # resume: make only these, with the numbers they had in the first run
+    only = {x.strip() for x in a.only.split(',') if x.strip()}
+    jobs = [j for j in jobs if f'{j[0]}-{j[1]}' in only]
+    if not jobs:
+        sys.exit(f'--only: none of {", ".join(sorted(only))} is in this run')
 print(f'batch: {batch}')
 if a.dry_run:
-    for change, text in jobs:
+    for _, change, text in jobs:
         print(f'- {change}: {text}')
     if a.note:
         print(f'- every image: {a.note}')
     sys.exit(0)
 batch.mkdir(parents=True, exist_ok=True)
-shutil.copy2(seed, batch / f'seed{seed.suffix.lower()}')
+if seed != (batch / f'seed{seed.suffix.lower()}').resolve():
+    shutil.copy2(seed, batch / f'seed{seed.suffix.lower()}')
 sys.path.insert(0, str(ROOT / 'scripts'))
 from progress import Progress, CHILD_ENV  # noqa: E402
-prog = Progress(batch, [f'{i}-{c}' for i, (c, _) in enumerate(jobs, 1)], 'variations')
+prog = Progress(batch, [f'{i}-{c}' for i, c, _ in jobs], 'variations')
 failed = 0
-for i, (change, text) in enumerate(jobs, 1):
+for i, change, text in jobs:
     must = f' In every image, and above the style notes: {a.note.rstrip(".")}.' if a.note else ''
     prompt = f'Wide 16:9 desktop wallpaper. {text}{must} Style notes (follow them where the change leaves room): {s["prompt"]}'
     prog.begin(f'{i}-{change}', change)

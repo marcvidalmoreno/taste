@@ -117,6 +117,13 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Resume all: when Codex's usage limit cuts a queue short, Batches shows one line ("8 runs
+  stopped… 30 images never made", with the cost) and **Resume all** queues every cut-short run again, in its own
+  folder with the same prompts and numbers. Covers the images refused for the limit and the ones the run never
+  reached (runs stop after 2 failures), not the ones the filter blocked. Remixes, variations and single images
+  also get the batch page's Finish line. New: `GET /api/stopped`, `POST /api/resume-all`, run kind `resume`,
+  `variations.py --out --only`; `run.json` keeps `limit_hit` so a later retry can't hide it. Undo: `git revert`
+  this commit.
 - **23 Nov 2026** – New [`docs/cloudflare-route.md`](docs/cloudflare-route.md): plan for a free third image route,
   FLUX on Cloudflare Workers AI's daily allowance (~95 images a day), chosen in the app as "Made with". Plan only,
   nothing built. Undo: `git revert` this commit.
