@@ -117,6 +117,13 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – FLUX takes Marc's examples along: an A/B test (18 prompts of a rated ChatGPT batch, FLUX with
+  words only vs. with 3 of his thumbs-up images of the style) showed the references pull FLUX much closer to the
+  style in science-fiction, cyberpunk-poster and anime-megacity, a little in retro-future-rooms and erotic, mixed in
+  dubuffet. So every FLUX image with no image of its own now gets up to 3 examples of its style (kept examples
+  first, then the newest thumbs-up images made by ChatGPT, turning through the 12 newest by image number), named in
+  its log. ~16 neurons more per image: about 80 free images a day instead of 95. `TASTE_FLUX_REFS=0` turns it off.
+  Guide updated. Undo: `git revert` this commit.
 - **23 Nov 2026** – One app per port: on Windows, Python's server let a second copy of the app listen on a port that
   was already taken, without an error, so two apps split the clicks and "next free port" never happened. The app now
   takes its port exclusively: a second copy moves to the next free port (8778…) and says so in its first line;

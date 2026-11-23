@@ -249,17 +249,62 @@ def log_row(row):
         wr.writerow(row)
 
 
+FLUX_REFS, FLUX_POOL = 3, 12   # examples per FLUX image; how many recent ones it turns through
+
+
+def flux_examples(style, name, out):
+    """FLUX's default look references (A/B test, 23 Nov 2026): with words only FLUX drifts to its own look, with
+    3 of Marc's images of the style it stays close. Kept examples of the style first (kept.json), then his newest
+    thumbs-up images made by ChatGPT; never this run's own folder. Turns through the pool by image number, so a
+    batch doesn't lean on the same three. TASTE_FLUX_REFS=0 turns it off (for A/B tests)."""
+    if not style or os.environ.get('TASTE_FLUX_REFS') == '0':
+        return []
+    base = ROOT / 'generated' / 'codex'
+    ok = lambda b, n: b != out.name and (base / b / f'{n}.png').is_file() and ',' not in f'{b}{n}'  # noqa: E731
+    pool = []
+    try:
+        for k in json.load(open(base / 'kept.json', encoding='utf-8')):
+            if isinstance(k, dict) and k.get('style') == style and ok(k.get('batch', ''), k.get('name', '')):
+                pool.append((k['batch'], k['name']))
+    except (OSError, ValueError):
+        pass
+    try:
+        import rate
+        rows = list(csv.DictReader(open(base / 'runs.csv', encoding='utf-8')))
+        made = {(r['batch'], r['name']): r for r in rows}
+        liked = [r for _, r in rate.latest(list(csv.DictReader(open(base / 'ratings.csv', encoding='utf-8'))))
+                 if r['rating'] == 'keep' and r['style'] == style]
+        for r in reversed(liked):   # newest first
+            m = made.get((r['batch'], r['name']), {})
+            if (m.get('route') or 'codex') == 'codex' and ok(r['batch'], r['name']) and (r['batch'], r['name']) not in pool:
+                pool.append((r['batch'], r['name']))
+    except (OSError, KeyError, ImportError):
+        pass
+    pool = pool[:FLUX_POOL]
+    if not pool:
+        return []
+    tail = name.rsplit('-', 1)[-1]
+    i = int(tail) - 1 if tail.isdigit() else random.randrange(len(pool))
+    n = min(FLUX_REFS, len(pool))
+    return [(base / b / f'{nm}.png').resolve() for b, nm in (pool[(i * n + k) % len(pool)] for k in range(n))]
+
+
 def gen_cloudflare(a, out, refs, ref):
-    """The same prompt on FLUX (scripts/cf_run.py). Logged like a Codex run; the allowance columns stay empty."""
+    """The same prompt on FLUX (scripts/cf_run.py). Logged like a Codex run; the allowance columns stay empty.
+    With no image given, flux_examples() adds up to 3 of Marc's images of the style (not logged as a seed, so a
+    retry picks them again rather than reusing one as a seed)."""
     import cf_run
+    examples = [] if refs else flux_examples(a.style, a.name, out)
     prog = None
     if not is_child():
         prog = Progress(out, [a.name], a.mode)
         prog.begin(a.name, a.subject or a.change)
     start = time.time()
     png = out / f'{a.name}.png'
-    ok, spent, text, why = cf_run.make(a.prompt, a.ratio, refs, png)
+    ok, spent, text, why = cf_run.make(a.prompt, a.ratio, refs or examples, png)
     secs = round(time.time() - start)
+    if examples:
+        text = 'style examples (FLUX default): ' + ', '.join(f'{p.parent.name}/{p.name}' for p in examples) + '\n' + text
     (out / f'{a.name}.codex.log').write_text(text + '\n', encoding='utf-8')
     w = h = ''
     if ok:

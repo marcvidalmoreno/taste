@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 23 Nov 2026 (FLUX badge, -flux folders). This guide changes with the app.</p>
+<p class="muted small">Last updated 23 Nov 2026 (FLUX takes your examples along). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -256,7 +256,7 @@
       to those examples; untick it for a fresh start. The preview shows which images go with which prompt.</li>
     <li>The cost block shows images, minutes and allowance (see Allowance).</li>
     <li><strong>Made with</strong>, at the top of the cost block (also in Remix and Variations): <strong>ChatGPT</strong>
-      (default: best quality, closest to the style, uses the Codex allowance) or <strong>FLUX</strong> (free, about 95
+      (default: best quality, closest to the style, uses the Codex allowance) or <strong>FLUX</strong> (free, about 80
       images a day on Cloudflare; good for drafts and simpler scenes). The choice is remembered.
       <ul>
         <li>The first time you pick FLUX, <strong>Connect Cloudflare</strong> asks for a free Cloudflare account, an
@@ -270,6 +270,10 @@
           <code>2026-11-23-winter-flux</code>), and every FLUX image has a small <strong>FLUX</strong> badge on its
           tile, in batches and in the Gallery. Blocked images tried with FLUX stay in their own batch, next to the
           ChatGPT ones.</li>
+        <li>So FLUX stays close to the style, each FLUX image takes along 3 of your images of that style: kept
+          examples first, then your newest thumbs-up images made by ChatGPT, a different three for each image.
+          When a run already has an image to start from (Variations, kept examples ticked), FLUX uses that
+          instead.</li>
       </ul></li>
     <li><strong>Start · make N images</strong>, or <strong>Add to queue</strong> when a run is busy.
       <kbd>Ctrl</kbd> + <kbd>Enter</kbd> does the same.</li>

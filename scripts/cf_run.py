@@ -1,5 +1,5 @@
 """The "cloudflare" route (23 Nov 2026): one image with FLUX.2 [klein] 4B on Cloudflare Workers AI, on its free
-daily allowance (10,000 neurons, ~95 images). Plan and limits: docs/cloudflare-route.md.
+daily allowance (10,000 neurons, ~95 images, ~80 with the 3 style examples codex_run adds). Plan and limits: docs/cloudflare-route.md.
 
 Not run alone for images: codex_run.py gen --route cloudflare calls make() (the web app sets TASTE_ROUTE=cloudflare
 for its runs), so styles, mixes, wildcards, leaning, batches, remixes and variations work unchanged.

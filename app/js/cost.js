@@ -61,7 +61,7 @@ const RKEY = 'taste-route';
 export const route = () => (localStorage.getItem(RKEY) === 'cloudflare' ? 'cloudflare' : 'codex');
 const ROUTE_NOTE = {
   codex: 'Best quality and closest to the style. Uses the Codex allowance.',
-  cloudflare: 'Free, about 95 a day. Quick drafts; simpler scenes come out best.',
+  cloudflare: 'Free, about 80 a day. Quick drafts; simpler scenes come out best.',
 };
 
 function routePicker(onRoute) {
