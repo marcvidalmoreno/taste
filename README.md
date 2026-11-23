@@ -125,6 +125,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   outside the repo), "How it was made" says which model, Guide updated. Also: New run › One image no longer shows a
   stray "null" when no kept examples exist. Undo: `git revert` this commit (then delete `%USERPROFILE%\.taste\cloudflare.json`
   if you connected).
+- **23 Nov 2026** – Failure messages: runs that fail share one message that counts them and says the reason when
+  it's the same for all ("a bug in the image script… nothing was spent" for a script error), with **Details**
+  listing each run, instead of one message per run piling up. Messages can now be closed while a dialog is open
+  (an open dialog made them unclickable). Undo: `git revert` this commit.
 - **23 Nov 2026** – Why an image failed: the batch page's empty tiles now say exactly why, read from Codex's log –
   blocked by the safety filter (what it flagged, and whether it refused the prompt or the finished image), usage
   limit, or timed out. `codex_run.py` now logs a timeout (over 900 s) and writes its runs.csv row instead of
