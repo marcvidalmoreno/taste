@@ -121,6 +121,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   row, Stop), a line above the grid says how many images were never made and why, with one button that makes them
   with the first run's subjects, mix seed, wildcard and kept examples (`batch.py --only`, new run kind `finish`;
   `run.json` keeps the first run's record and gains `finished_later`). Guide updated. Undo: `git revert` this commit.
+- **23 Nov 2026** – Fix: **Retry once** on a failed image overwrote the batch's `run.json` ("How it was made") with a
+  record of just that retry; it now leaves it alone. Undo: `git revert` this commit.
 - **23 Nov 2026** – Styles page: a style's history no longer fails with "Could not read the history" when two of its
   images were made in the same minute and one isn't rated yet.
 - **23 Nov 2026** – Batch page: the **To rate** number drops as soon as you rate an image (it counted the images
