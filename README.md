@@ -117,6 +117,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – `scripts/publish.py` (`--dry-run`, `--sync`) exports the picked images as WebP plus aggregate
+  evolution data for the planned public gallery site, after a privacy check that stops before writing anything.
+  Nothing is published yet. Undo: `git revert` this commit.
 - **23 Nov 2026** – Publish toggle for the planned public gallery site: in both large views a **Publish** button
   (key `P`) picks an image, the Gallery has a **◉ Published** filter and a small dot on picked tiles. Picks are saved
   in `generated/codex/publish.json` (git-ignored); nothing leaves the computer yet. Undo: `git revert` this commit
