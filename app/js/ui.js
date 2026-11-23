@@ -55,13 +55,14 @@ export function markBadge(im) {
 // A key press in a text field is typing, not a shortcut.
 export const isTyping = (e) => !!e.target.closest?.('input, textarea, select, [contenteditable]');
 
-// Toasts: one line, optional action button (e.g. Undo). Calm: they leave on their own.
+// Toasts: one line, optional action button (e.g. Undo). Calm: most leave on their own; every one has a × to close it.
 export function toast(message, { action, onAction, timeout = 5000, tone = '' } = {}) {
   const box = document.getElementById('toasts');
-  const close = () => el.remove();
+  const close = () => { el.remove(); if (!box.children.length && box.matches(':popover-open')) box.hidePopover(); };
   const el = h('div', { class: `toast ${tone}` },
     h('span', {}, message),
-    action && h('button', { class: 'secondary outline', onClick: () => { close(); onAction(); } }, action));
+    action && h('button', { class: 'secondary outline', onClick: () => { close(); onAction(); } }, action),
+    h('button', { class: 'toast-close', 'aria-label': 'Close this message', title: 'Close', onClick: close }, '×'));
   box.append(el);
   // The toast area is a popover: shown again on each toast, it sits in the top layer above any open dialog.
   if (box.matches(':popover-open')) box.hidePopover();

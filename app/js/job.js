@@ -127,7 +127,8 @@ function report(job) {
     toast(text, { action: 'Rate them', onAction: open, timeout: 12000 });
   } else {
     text = `${title}: ${made} of ${total} made, ${missing} failed. The run stopped as the repo rules say.`;
-    toast(text, { action: 'See them', onAction: open, tone: 'error', timeout: 0 });
+    // Nothing made: there is no batch to open, so the button shows what went wrong instead.
+    toast(text, { action: made ? 'See them' : 'Details', onAction: made ? open : () => showLog(job), tone: 'error', timeout: 0 });
   }
   // Marc is in another window or tab: a desktop notification, and a mark in the tab title until he's back.
   if (document.hidden || !document.hasFocus()) {

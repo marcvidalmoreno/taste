@@ -106,6 +106,9 @@ main:focus { outline: none; }
          box-shadow: 0 6px 24px rgba(0, 0, 0, .45); animation: toast-in .18s ease-out; }
 .toast button { margin: 0; padding: .25rem .7rem; font-size: .85rem; }
 .toast.error { border-color: var(--no); }
+.toast button.toast-close { margin-left: -.5rem; padding: .1rem .45rem; font-size: 1.15rem; line-height: 1; background: none;
+                            border: 0; color: var(--pico-muted-color, #999); }
+.toast button.toast-close:hover, .toast button.toast-close:focus-visible { color: inherit; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; transition: none !important; } }
 

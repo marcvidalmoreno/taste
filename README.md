@@ -114,6 +114,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Messages: every message at the bottom of the app has a **×** to close it (failure messages
+  stay until closed and had no way to close them other than their button). A run where nothing was made now offers
+  **Details** (the log) instead of **See them**, which opened a batch that doesn't exist ("not found"). Guide updated.
 - **21 Nov 2026** – New run: **Select all** next to the style filter picks every style (with a filter on, it reads
   "Select the N shown" and picks only those). The cost box shows the size straight away (30 styles × 4 = 120 images).
   Keyboard focus moves to Clear after Select all, and back. Guide updated.
