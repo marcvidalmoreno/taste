@@ -67,9 +67,11 @@ function draw() {
   if (focused) view.querySelector(`.tile[data-name="${CSS.escape(focused)}"]`)?.focus({ preventScroll: true });
 }
 
+// The numbers count by status, not by what the grid shows: an image rated during this visit stays in the
+// "To rate" grid (no tile jumps away) but leaves its count at once, so the number tells what is really left.
 function counts() {
   const c = { 'to-rate': 0, rated: 0, ignored: 0 };
-  for (const im of store.data.items) for (const k in FILTERS) if (FILTERS[k].test(im)) c[k]++;
+  for (const im of store.data.items) c[im.status === 'new' ? 'to-rate' : im.status]++;
   return c;
 }
 
