@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – The app survives a half-finished script edit: when the server crashes (say a session's edit
+  lands in two steps more than 10 s apart, and the reload hits the gap), the supervisor no longer quits. It prints
+  "starts again by itself once scripts/ change", waits for the next change to settle, and starts the app again on
+  the same port. Applies from the next start of the app window. Undo: `git revert` this commit.
 - **23 Nov 2026** – FLUX stands out (e4aa9c0 + this): new FLUX runs get folders ending in `-flux` (kept after the
   24-character cut), and FLUX images carry a small **FLUX** badge on their tile in batches and the Gallery (tiles
   and Gallery items now carry `route`). New run's folder line says `-flux` when FLUX is picked. Guide updated.

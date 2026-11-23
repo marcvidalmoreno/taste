@@ -2278,9 +2278,19 @@ def supervise():
     py = str(venv) if venv.exists() else sys.executable
     env = {**os.environ, 'TASTE_APP_PARENT': str(os.getpid())}
     args = sys.argv[1:]
+    import time
     while True:
         try:
             code = subprocess.call([py, '-I', str(Path(__file__).resolve()), *args], env=env)
+            if code not in (0, RESTART):
+                # A crash, usually a half-finished edit in scripts/ (one session's edit in two steps, 23 Nov 2026):
+                # wait for the next change, settled for 10 s, and try again instead of leaving the app down.
+                print('The app stopped with an error (above). It starts again by itself once scripts/ change.',
+                      flush=True)
+                seen = code_stamp()
+                while code_stamp() <= seen or time.time() - code_stamp() < 10:
+                    time.sleep(2)
+                code = RESTART
         except KeyboardInterrupt:
             return 0
         if code != RESTART:
