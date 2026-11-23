@@ -1,6 +1,10 @@
 # taste – rules for Claude Code
 
 Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, no Claude attribution.
+`taste/` is a separate **private** repo (`marcvidalmoreno/taste-private`, ignored here; Marc, 23 Nov 2026): styles,
+`taste.json`, Gem instructions. Style changes are committed and pushed there (`git -C taste ...`) with an entry in
+`taste/README.md`'s changelog; never copy style text (prompts, prefer/avoid lines) into public files or commit
+messages. Images stay local (`generated/`, `taste/data/`), backed up by Google Drive.
 
 ## How Marc works: the app is the interface (Marc, 21 Nov 2026)
 - Marc gives feedback in the web app, in the element where he feels it (thumbs, remix, change the style,
@@ -9,7 +13,7 @@ Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, n
   one-click element; no tech steps (marking, saving, running scripts) on his side.
 
 ## Pushing (Marc, 13 Nov 2026)
-- Pushes to `origin/main` are automatic in this repo: no need to ask.
+- Pushes to `origin/main` are automatic in this repo and in `taste/`: no need to ask.
 - Before every push, check the staged diff for private data (other people's images, anything under
   `taste/data/`, `generated/codex/`, ratings, names, paths to personal folders). Never force-push.
 
@@ -22,7 +26,8 @@ Public repo `marcvidalmoreno/taste`. Commit with Marc's personal git identity, n
 - Marc can change a style from the web app ("Change the style", Marc, 21 Nov 2026): Codex proposes (read-only),
   Marc applies in the page; that apply is his OK. The app rewrites the style file, runs `build_taste.py` and logs
   before / after in `generated/codex/style-edits.json`, but never commits. When Marc says "commit my style edits":
-  review `git diff taste/`, add a changelog entry from that log, commit and push.
+  review `git -C taste diff`, add an entry to `taste/README.md`'s changelog from that log, commit and push in
+  `taste/`; the public README gets at most one generic line ("style edits committed"), no style text.
 - Distil runs in the web app too (Codex proposes per style, Marc applies; 21 Nov 2026). "Distil my ratings" in chat
   still works the old way, and when Codex proposals miss what the images show, that is the moment to offer it
   (parked options 2 and 3: the "taste – distil automation" doc).

@@ -27,3 +27,6 @@ taste/data/
 
 # All generated images and prompts are local only (Marc, 23 Nov 2026)
 generated/
+
+# Styles, taste.json, Gem instructions: private repo marcvidalmoreno/taste-private, cloned here as taste/ (Marc, 23 Nov 2026)
+taste/

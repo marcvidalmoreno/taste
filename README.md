@@ -4,12 +4,15 @@ My visual taste, written so an image model can use it. I'm Marc, a UX designer, 
 images for my posts and wallpapers, with ChatGPT's image generation through Codex CLI or Google's Nano Banana (Gemini app, prompt packs).
 
 ## What's here
-- [`taste/styles/`](taste/styles/): fifteen styles (fourteen found in about 1,000 wallpapers I've saved over the years,
+- `taste/` (**private**, not in this repo): the styles, `taste.json` and the Gem instructions live in a private
+  repo, cloned into this folder as `taste/` so every path stays the same (since 23 Nov 2026; older versions are
+  still in this repo's history). What they are:
+- `taste/styles/`: fifteen styles (fourteen found in about 1,000 wallpapers I've saved over the years,
   each with a palette, light, composition, medium, mood, an **avoid** list, starter subjects and the uses it suits
   (Teams background, desktop, phone, post). Rebuilt on 13 Nov 2026: every image tagged by eye on contact sheets
   (subject, medium, mood, light), grouped into styles I approved one by one; palettes measured from the images; plus "Fractal worlds", added 14 Nov 2026).
-- [`taste/gem-instructions.md`](taste/gem-instructions.md): instructions for a Gemini Gem that uses the styles.
-- [`taste/taste.json`](taste/taste.json): one short prompt block per style, generated from the style files by
+- `taste/gem-instructions.md`: instructions for a Gemini Gem that uses the styles.
+- `taste/taste.json`: one short prompt block per style, generated from the style files by
   `scripts/build_taste.py`. Never edited by hand.
 - [`scripts/`](scripts/): `pack.py` builds a prompt pack for a post, `inbox.py` feeds a few newly liked images into
   their styles (see "Feed a style"), `ingest.py` adds a whole folder of images (see "Add a collection"), `build/` is how the styles were found (`restyle.py`: tags to style
@@ -28,7 +31,8 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
 
 ## What's not here, on purpose
 The wallpapers themselves and every reference image belong to their creators. They stay on my laptop
-(git-ignored) and are never published. Only the derived descriptions and my own generated images are public.
+(git-ignored) and are never published. Since 23 Nov 2026 my styles, prompts and generated images are private too:
+this repo holds the code, the app and the docs.
 
 ## How it works
 1. For a post, Claude Code picks the styles that fit, writes one subject per style and runs
@@ -71,10 +75,10 @@ The same five steps every time, for any folder: more wallpapers, an art folder, 
 5. **Test**: 2–3 Codex images per new style, rated in the web app; distil after ~20 ratings.
 
 ### Make your own taste
-Fork the repo, empty `taste/styles/`, and run `ingest.py` on your own folder. With no styles yet, every image
+Fork the repo, create an empty `taste/styles/` folder, and run `ingest.py` on your own folder. With no styles yet, every image
 goes to the "new" sheets, and Claude Code (or you) tags them and proposes your first styles. Your reference images
-stay on your machine (`taste/data/` is git-ignored); only the written styles and your own generated images get
-published.
+stay on your machine (`taste/` and `generated/` are git-ignored); keep your styles in a private repo of your own
+if you like, cloned as `taste/`.
 
 ## Codex route (ChatGPT plan, no API key, no bill)
 Claude Code owns the taste; Codex CLI only generates. One fresh `codex exec` per image. Images, the run log and
@@ -113,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Styles go private: `taste/` (styles, `taste.json`, Gem instructions) is now its own private
+  repo, cloned into this folder, and ignored here. No paths changed, the app works as before. Style changes are
+  committed there from now on, with their own changelog; this README only notes that they happened. Guide updated
+  (style edits go to the private repo). Undo: remove the `taste/` line from `.gitignore` and `git add taste/`.
 - **23 Nov 2026** – Style edits from the app committed (21 Nov): `dubuffet` prefers unequal, nested cells with
   white interiors and fine red or blue stripes (distil); `erotic` gets one more "lean towards" line (Marc's edit);
   `fractal-worlds` names Mandelbrot variations (classic, Tricorn, Burning Ship, higher powers) in its description;
