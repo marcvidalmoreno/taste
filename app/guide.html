@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 23 Nov 2026 (Resume all). This guide changes with the app.</p>
+<p class="muted small">Last updated 23 Nov 2026 (why an image failed). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -151,8 +151,10 @@
     <li><strong>Up</strong> and <strong>Down</strong> buttons under each tile let you rate without opening the image.</li>
     <li>While a run is making this batch, <strong>placeholder tiles</strong> say "Making…" (with the subject) or
       "Waiting", and turn into images as they land.</li>
-    <li>A <strong>No image</strong> tile means the image was blocked by the filter or Codex timed out:
-      <strong>Retry once</strong> or <strong>Copy prompt</strong>.</li>
+    <li>A tile without an image says exactly why, read from Codex's log: <strong>Blocked by the safety
+      filter</strong> (with what it flagged, and whether it refused the prompt itself, where a retry gives the same
+      answer, or the finished image, where a retry sometimes passes), <strong>Codex hit its usage limit</strong>, or
+      <strong>Codex timed out</strong> (over 15 minutes). Then <strong>Retry once</strong> or <strong>Copy prompt</strong>.</li>
     <li>For variations, a <strong>Seed</strong> tile shows the original first.</li>
   </ul>
   <p>Keyboard in the grid: arrow keys move between tiles, <kbd>U</kbd> / <kbd>D</kbd> rate the focused one,

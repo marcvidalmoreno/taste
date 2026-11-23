@@ -215,21 +215,31 @@ async function finish(d, n, btn, resume) {
   }
 }
 
-// Images that were tried and gave nothing (blocked by the filter, timed out): say so, offer one retry.
+// Images that were tried and gave nothing: say exactly why (read from Codex's log, 23 Nov 2026), offer one retry.
+function failReason(r = {}) {
+  if (r.code === 'limit') return ['Codex hit its usage limit', 'Not about the image: retry after the limit resets, or Resume all on Batches.'];
+  if (r.code === 'filter') return [
+    'Blocked by the safety filter' + (r.about ? ` (${r.about})` : ''),
+    r.stage === 'input' ? 'It refused the prompt itself: a retry gives the same answer; change the prompt (Remix).'
+      : r.stage === 'output' ? 'It refused the finished image: a retry sometimes passes.' : 'A retry sometimes passes.'];
+  if (r.code === 'timeout') return ['Codex timed out', 'It ran over 15 minutes and was stopped. A retry usually works.'];
+  return ['No image', 'Codex gave no reason.'];
+}
+
 function failedTiles() {
   if (!growing()) return [];
   const waiting = new Set(job.running && job.batch === store.data.batch ? job.expected : []);
   const queued = new Set((job.queue || []).filter((q) => q.batch === store.data.batch).flatMap((q) => q.expected));
-  return (store.data.failed || []).filter((f) => !waiting.has(f.name)).map((f) => h('li', { class: 'failed-tile' },
+  return (store.data.failed || []).filter((f) => !waiting.has(f.name)).map((f) => { const [what, why] = failReason(f.reason); return h('li', { class: 'failed-tile' },
     h('div', { class: 'frame' },
-      h('strong', {}, 'No image'),
-      h('small', {}, 'Blocked by the filter, or Codex timed out. The log is next to it: ', h('code', {}, `${f.name}.codex.log`)),
+      h('strong', {}, what),
+      h('small', {}, why, ' Log: ', h('code', {}, `${f.name}.codex.log`)),
       h('div', { class: 'failed-actions' },
         queued.has(f.name) ? h('span', { class: 'small' }, 'Retry queued')
           : h('button', { class: 'secondary outline small-btn', onClick: (e) => retry(f, e.currentTarget) }, 'Retry once'),
         f.prompt && h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(f.prompt).then(() => toast('Prompt copied', { timeout: 2000 })) }, 'Copy prompt'))),
     h('div', { class: 'caption' }, h('span', { class: 'num' }, '–'), h('span', { class: 'style' }, styleName(f.style)),
-      h('span', { class: 'kind' }, f.name))));
+      h('span', { class: 'kind' }, f.name))); });
 }
 
 async function retry(f, btn) {

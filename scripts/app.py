@@ -358,6 +358,23 @@ def kind_of_batch(batch, images, rec):
     return 'variations' if seed_file(batch) else 'batch'   # older folders: no run.json to say more
 
 
+def failure_reason(batch, name):
+    """Why Codex made no image, read from its log (23 Nov 2026): {code: limit | filter | timeout | unknown, stage, about}.
+    The filter says at which stage it refused: input (the prompt) or output (the finished image)."""
+    import re
+    p = BASE / batch / f'{name}.codex.log'
+    t = p.read_text(encoding='utf-8', errors='replace') if p.is_file() else ''
+    if 'usage limit' in t:
+        return {'code': 'limit'}
+    if 'moderation_blocked' in t or 'safety system' in t:
+        stage = re.search(r'moderation_stage\W+(\w+)', t)
+        about = re.search(r'safety_violations=\[([^\]]*)\]', t)
+        return {'code': 'filter', 'stage': stage.group(1) if stage else '', 'about': about.group(1) if about else ''}
+    if 'TIMED OUT' in t:
+        return {'code': 'timeout'}
+    return {'code': 'unknown'}
+
+
 def failed_images(batch, have):
     """runs.csv rows of this batch that made no image (blocked, timed out), latest try per name."""
     if not rate.RUNS.exists():
@@ -367,7 +384,7 @@ def failed_images(batch, have):
         if r['batch'] == batch:
             rows[r['name']] = r
     return [{'name': n, 'style': r['style'], 'change': r['change'], 'mode': r['mode'], 'prompt': r['prompt'],
-             'date': r['date'], 'time': r['time'], 'seed': r['seed']}
+             'date': r['date'], 'time': r['time'], 'seed': r['seed'], 'reason': failure_reason(batch, n)}
             for n, r in sorted(rows.items()) if r['ok'] != 'yes' and n not in have]
 
 

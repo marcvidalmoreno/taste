@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Why an image failed: the batch page's empty tiles now say exactly why, read from Codex's log –
+  blocked by the safety filter (what it flagged, and whether it refused the prompt or the finished image), usage
+  limit, or timed out. `codex_run.py` now logs a timeout (over 900 s) and writes its runs.csv row instead of
+  crashing, so a timed-out image shows as failed, not "never made". Undo: `git revert` this commit.
 - **23 Nov 2026** – Resume all: when Codex's usage limit cuts a queue short, Batches shows one line ("8 runs
   stopped… 30 images never made", with the cost) and **Resume all** queues every cut-short run again, in its own
   folder with the same prompts and numbers. Covers the images refused for the limit and the ones the run never
