@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Gallery: a **Find** field before the filters. Every word typed must appear in the image's
+  prompt, why, style name, batch or variation (any order, dashes count as spaces); it works with the rating, style
+  and batch filters, narrows the grid as you type and stays in the address (`?q=`). Guide updated. Undo:
+  `git revert` this commit.
 - **23 Nov 2026** – Styles go private: `taste/` (styles, `taste.json`, Gem instructions) is now its own private
   repo, cloned into this folder, and ignored here. No paths changed, the app works as before. Style changes are
   committed there from now on, with their own changelog; this README only notes that they happened. Guide updated

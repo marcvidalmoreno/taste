@@ -1,8 +1,10 @@
-// Gallery: every generated image in justified rows (like Flickr), filtered by style, rating and batch.
+// Gallery: every generated image in justified rows (like Flickr), filtered by words, style, rating and batch.
 // The large view has the same thumbs as the batch view (21 Nov 2026): a mark is saved at once and counts
 // for the style's next runs; the same thumb again takes it back. Filters are not re-applied while you mark,
 // so nothing jumps away under the pointer.
-//   #/gallery?style=<key>&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
+//   #/gallery?q=<words>&style=<key>&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
+// Find (23 Nov 2026): every word must appear in the prompt, the why, the style name, the batch or the variation.
+// Typing redraws only the grid and the count (the field keeps its cursor); the address follows without a reload.
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
 import { api, styles } from './api.js';
@@ -40,8 +42,8 @@ export async function renderGallery(view, query) {
     return showError(err);
   }
   document.title = 'Gallery · taste';
-  const f = { style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '' };
-  shown = all.filter((im) =>
+  const f = { q: query.get('q') || '', style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '' };
+  const base = all.filter((im) =>
     (!f.style || im.style === f.style) &&
     (!f.rating || (f.rating === 'none' ? !im.rating : im.rating === f.rating)) &&
     (!f.batch || im.batch === f.batch));
@@ -51,18 +53,37 @@ export async function renderGallery(view, query) {
       h('p', { class: 'muted' }, 'Images made through Codex show here once a batch exists in generated/codex/.')));
   }
 
-  view.replaceChildren(
-    h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'),
-      h('p', {}, shown.length === all.length ? plural(all.length, 'image') : `${shown.length} of ${plural(all.length, 'image')}`)),
-    filters(f),
-    shown.length
+  const count = h('p', {});
+  const grid = h('div', {});
+  const draw = () => {
+    shown = base.filter(matcher(f.q));
+    count.textContent = shown.length === all.length ? plural(all.length, 'image') : `${shown.length} of ${plural(all.length, 'image')}`;
+    grid.replaceChildren(shown.length
       ? h('div', { class: 'justified' }, shown.map(tile), h('span', { class: 'filler', 'aria-hidden': 'true' }))
-      : h('p', { class: 'empty muted' }, 'No image matches these filters. ',
-          h('a', { href: galleryHref() }, 'Show all'))
-  );
+      : h('p', { class: 'empty muted' }, f.q ? 'No image matches these words. ' : 'No image matches these filters. ',
+          h('a', { href: galleryHref() }, 'Show all')));
+  };
+  const onFind = (q) => {
+    f.q = q;
+    history.replaceState(null, '', galleryHref(f));   // no hashchange: the page is not read again
+    draw();
+  };
+  draw();
+  view.replaceChildren(h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count), filters(f, onFind), grid);
 }
 
-function filters(f) {
+// Words in any order, each one somewhere in the image's text; dashes count as spaces (batch names use them).
+const norm = (t) => t.toLowerCase().replace(/[-_]/g, ' ');
+function matcher(q) {
+  const words = norm(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return () => true;
+  return (im) => {
+    const text = norm([im.prompt, im.why, styleMap[im.style]?.name, im.style, batchTitle(im.batch), im.batch, im.change].filter(Boolean).join(' '));
+    return words.every((w) => text.includes(w));
+  };
+}
+
+function filters(f, onFind) {
   const set = (k, v) => { location.hash = galleryHref({ ...f, [k]: v }); };
   const count = (pred) => all.filter(pred).length;
   const styleKeys = [...new Set(all.map((im) => im.style).filter(Boolean))]
@@ -70,6 +91,8 @@ function filters(f) {
   const batches = [...new Set(all.map((im) => im.batch))].sort().reverse();
   const ratings = [['', 'All'], ['keep', 'Up'], ['no', 'Down'], ['almost', 'Almost (old)'], ['none', 'Not rated']];
   return h('div', { class: 'gallery-filters' },
+    h('input', { type: 'search', class: 'find', placeholder: 'Find words in prompts, notes, styles', value: f.q,
+      'aria-label': 'Find images', onInput: (e) => onFind(e.target.value) }),
     h('div', { role: 'group', class: 'rseg', 'aria-label': 'Rating' },
       ratings.map(([v, label]) => h('button', {
         class: `rseg-btn ${v}`, 'aria-pressed': String(f.rating === v), onClick: () => set('rating', v),
