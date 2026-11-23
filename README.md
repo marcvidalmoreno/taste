@@ -121,6 +121,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – FLUX and people: when an image has a person (in the prompt, or anywhere back along the seed's
+  chain of variations), FLUX gets a positive anatomy line (separate feet, five toes and fingers, natural pose)
+  and rooms styles' "Avoid: people in frame" is dropped for that image. A subject variation that names a body
+  part ("feet separated") goes as an edit that may re-pose the body, instead of "keep the composition of the
+  seed", which made FLUX copy the merged feet. Undo: `git revert` this commit.
 - **23 Nov 2026** – FLUX remix of one image: your change now goes to FLUX as a short edit instruction
   instead of the full scene prompt, which made FLUX copy the image and drop the change (4 of 4 copies).
 - **23 Nov 2026** – New run, Name field: the helper line under the input sits on its own line with a little air

@@ -19,7 +19,7 @@ one row to generated/codex/runs.csv (git-ignored). Numbers are never typed by ha
 One recovery only: if the PNG is not in --out, copy it from ~/.codex/generated_images/<session>/.
 Otherwise the run is logged as failed; stop and report, do not loop.
 """
-import argparse, csv, datetime, json, os, random, shutil, subprocess, sys, time
+import argparse, csv, datetime, json, os, random, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -288,6 +288,71 @@ FLUX_EDIT = ('Edit the attached image. Make this change, clearly visible: {}. '
              'Keep everything else as it is: the same person, pose, setting, palette and drawing style.')
 
 
+# People on FLUX (23 Nov 2026): klein 4B merged feet and bent bodies, copied a flawed seed's anatomy, and got
+# "Avoid: people in frame" from rooms styles while drawing a person. When the image has a person: that Avoid
+# item goes, a positive anatomy line is added (FLUX has no negative prompt), and a subject change that names
+# a body part becomes an edit that may re-pose the body instead of "keep the composition of the seed".
+PERSON = re.compile(r'\b(woman|women|man|men|person|people|girl|boy|lady|figure|model|she|he|her|his|nude|body|'
+                    r'bodies|torso|feet|foot|toes|legs?|arms?|hands?|fingers|portrait|lying|reclin\w*|sitting|posing)\b', re.I)
+BODY_PART = re.compile(r'\b(feet|foot|toes?|legs?|knees?|hands?|fingers?|arms?|body|anatomy|pose|limbs?|neck|torso)\b', re.I)
+FLUX_ANATOMY = (' Anatomy: natural human proportions; each hand has five fingers and each foot five toes; '
+                'both feet are clearly separate; arms and legs join the body naturally; a believable, relaxed pose.')
+FLUX_FIX = ('Edit the attached image. Fix the body so it looks natural: {}. You may change the pose of the arms, '
+            'legs and feet to get there. Keep the same person, face, hair, clothes, setting, light, palette and style.'
+            + FLUX_ANATOMY)
+
+
+def _drop_people_avoid(prompt):
+    """Removes Avoid items about people ("people in frame") from the prompt's Avoid list."""
+    def keep(m):
+        items = [i for i in m.group(2).split(';') if not re.search(r'\b(people|person|figures?|humans?)\b', i, re.I)]
+        return m.group(1) + ';'.join(items).strip() + '.' if items else ''
+    return re.sub(r'(Avoid:\s*)([^.]*)\.', keep, prompt, count=1)
+
+
+def _seed_prompt(ref):
+    """The prompts behind the seed image, back along its chain of variations (runs.csv + each batch's run.json
+    source, up to 6 steps), joined; '' if unknown. A variation's own prompt often says only "keep the subject"."""
+    if not ref:
+        return ''
+    base = ROOT / 'generated' / 'codex'
+    try:
+        prompts = {(r.get('batch'), r.get('name')): r.get('prompt', '')
+                   for r in csv.DictReader(open(base / 'runs.csv', encoding='utf-8'))}
+    except OSError:
+        return ''
+    out, batch, name = [], ref.parent.name, ref.stem
+    for _ in range(6):
+        out.append(prompts.get((batch, name), ''))
+        try:
+            run = json.load(open(base / batch / 'run.json', encoding='utf-8'))
+        except (OSError, ValueError):
+            break
+        out.append(run.get('subject', '') if isinstance(run.get('subject'), str) else '')
+        src = run.get('source') or {}
+        if not (src.get('batch') and src.get('file')):
+            break
+        batch, name = src['batch'], Path(src['file']).stem
+    return ' '.join(p for p in out if p)
+
+
+def has_person(prompt, ref=None):
+    """True if the prompt (minus its Avoid list) or the seed's own prompt shows a person."""
+    strip = lambda p: re.sub(r'Avoid:[^.]*\.', '', p)  # noqa: E731
+    return bool(PERSON.search(strip(prompt)) or PERSON.search(strip(_seed_prompt(ref))))
+
+
+def flux_people(a, prompt, refs, style_only):
+    """The FLUX prompt adjusted for people (see PERSON above); returns (prompt, note for the log) or (prompt, '')."""
+    seed = refs[0] if refs and not style_only else None
+    if not has_person(prompt, seed):
+        return prompt, ''
+    wish = (a.subject or '').strip()
+    if seed and a.mode == 'variations' and a.change == 'subject' and BODY_PART.search(wish):
+        return FLUX_FIX.format(wish), 'person: body fix sent as an edit that may re-pose (FLUX_FIX)'
+    return _drop_people_avoid(prompt) + FLUX_ANATOMY, 'person: anatomy line added, people dropped from Avoid'
+
+
 def flux_examples(style, name, out):
     """FLUX's default look references (A/B test, 23 Nov 2026): with words only FLUX drifts to its own look, with
     3 of Marc's images of the style it stays close. Kept examples of the style first (kept.json), then his newest
@@ -340,11 +405,16 @@ def gen_cloudflare(a, out, refs, ref):
     style_only = bool(examples) or (a.refs_kept and bool(refs))   # examples of a look, not a seed to edit
     sent = (FLUX_STYLE_ONLY if style_only else '') + a.prompt
     wish = (a.change or '').removeprefix('remix:').strip()
+    people = ''
     if a.mode == 'remix' and refs and not style_only and wish and wish != 'prompt edited':
         sent = FLUX_EDIT.format(wish)   # 23 Nov 2026: with the long prompt FLUX copied the seed and ignored the change
+        if has_person(wish, refs[0]):
+            sent += FLUX_ANATOMY
+    else:
+        sent, people = flux_people(a, sent, refs, style_only)
     ok, spent, text, why = cf_run.make(sent, a.ratio, refs or examples, png)
     if sent != (FLUX_STYLE_ONLY if style_only else '') + a.prompt:
-        text = f'sent as an edit (FLUX_EDIT): {sent}\n' + text
+        text = f'sent as {people or "an edit (FLUX_EDIT)"}: {sent}\n' + text
     secs = round(time.time() - start)
     if style_only:
         text = 'prompt starts with the style-only line (FLUX_STYLE_ONLY)\n' + text
