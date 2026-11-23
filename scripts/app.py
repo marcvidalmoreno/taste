@@ -1426,7 +1426,8 @@ def style_busy(key):
     if running or queued:
         return 'a run that uses it is ' + ('running' if running else 'waiting in the queue')
     run = current_run()
-    if run and key in run.get('styles', {}) and (run.get('running') or run['styles'][key].get('status') in ('waiting', 'thinking', 'ready')):
+    # a proposal that is ready and waits for Marc does not lock it (23 Nov 2026): switching off sets it aside
+    if run and run['styles'].get(key, {}).get('status') in ('waiting', 'thinking'):
         return 'Codex is working on suggestions for it'
     return ''
 
@@ -1437,6 +1438,22 @@ def rebuild_taste():
                        capture_output=True, text=True, encoding='utf-8', errors='replace')
     if r.returncode:
         raise ApiError(500, 'build_taste.py failed: ' + (r.stderr or r.stdout).strip()[-300:])
+
+
+def _shelve_proposal(key, off):
+    """Off: a suggestion waiting for this style is set aside (skipped, why 'switched off'). On again: it comes back."""
+    run = current_run()
+    card = (run or {}).get('styles', {}).get(key)
+    if not card:
+        return
+    if off and card.get('status') == 'ready':
+        card.update(status='skipped', why='switched off')
+    elif not off and card.get('status') == 'skipped' and card.get('why') == 'switched off':
+        card['status'] = 'ready'
+        card.pop('why', None)
+    else:
+        return
+    _save_run(run)
 
 
 def set_archived(key, off):
@@ -1463,6 +1480,7 @@ def set_archived(key, off):
         except ApiError:
             os.replace(dst, src)   # leave things as they were
             raise
+        _shelve_proposal(key, off)
         edits = read_json(STYLE_EDITS, [])
         rec = {'id': f'{int(time.time() * 1000)}', 'style': key, 'at': time.strftime('%Y-%m-%d %H:%M'),
                'change': f'Switched {name} {"off" if off else "on"}', 'summary': '', 'how': 'archive' if off else 'unarchive',

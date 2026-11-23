@@ -121,6 +121,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – Styles page: suggestions that are ready and waiting for you no longer lock a style's switch
+  (12 styles were stuck On 🔒 after a round that had finished). The lock now lasts only while a run uses the style
+  or Codex is still writing its suggestions. Switching a style off sets its waiting suggestion aside; switching it
+  back on brings it back. Undo: `git revert` this commit.
 - **23 Nov 2026** – FLUX and people: when an image has a person (in the prompt, or anywhere back along the seed's
   chain of variations), FLUX gets a positive anatomy line (separate feet, five toes and fingers, natural pose)
   and rooms styles' "Avoid: people in frame" is dropped for that image. A subject variation that names a body
