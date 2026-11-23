@@ -356,6 +356,9 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 .rseg-btn small { opacity: .7; }
 .rseg-btn:hover { background: var(--surface-2); color: var(--text); }
 .rseg-btn[aria-pressed=true] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+/* Image size sits apart from the filters, top right: it changes the view, not which images show. */
+.gallery-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.gallery-head .page-head { margin-bottom: 0; }
 
 /* Justified rows: tiles grow by their width/height ratio; the filler keeps the last row from stretching. */
 .justified { display: flex; flex-wrap: wrap; gap: 6px; }

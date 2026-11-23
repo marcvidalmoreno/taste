@@ -117,6 +117,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Gallery: **Small / Medium / Large** at the top right sets the image size (about 5, 3 or 2
+  images a row on a laptop screen). Rows reflow at once and the choice is remembered in this browser. Guide updated.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – Fix: a remix's long instruction under a tile spilled over the next tile and hid the style name.
   The pill now ends in an ellipsis (full text on hover), in the grid and in the large view. Undo: `git revert` this
   commit.

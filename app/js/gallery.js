@@ -7,6 +7,8 @@
 // Typing redraws only the grid and the count (the field keeps its cursor); the address follows without a reload.
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
+// Size (23 Nov 2026): Small / Medium / Large set the target row height through --row-h, so a change reflows the
+// rows without redrawing them; the choice is a view preference, kept in localStorage (not in the address).
 import { api, styles, archivedStyles, allStyles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton } from './marks.js';
@@ -16,7 +18,10 @@ import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast } from './ui.js';
 
-const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
+// Target row height in px; rows end up a little taller to fill the width. Large stays within the 640 px thumbnails.
+const SIZES = [['s', 'Small', 130], ['m', 'Medium', 220], ['l', 'Large', 360]];
+const SIZE_KEY = 'taste-gallery-size';
+const sizeNow = () => SIZES.find(([k]) => k === localStorage.getItem(SIZE_KEY)) || SIZES[1];
 let all = [];        // every image from the server
 let stepList = [];   // what the large view steps through: the grid's list, or a "More like this" row
 let shown = [];      // after the filters, in page order (the large view steps through these)
@@ -58,7 +63,8 @@ export async function renderGallery(view, query) {
   }
 
   const count = h('p', {});
-  const grid = h('div', {});
+  const grid = h('div', { class: 'jgrid' });
+  grid.style.setProperty('--row-h', sizeNow()[2] + 'px');
   const draw = () => {
     shown = base.filter(matcher(f.q));
     count.textContent = shown.length === all.length ? plural(all.length, 'image') : `${shown.length} of ${plural(all.length, 'image')}`;
@@ -73,7 +79,8 @@ export async function renderGallery(view, query) {
     draw();
   };
   draw();
-  view.replaceChildren(h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count), filters(f, onFind), grid);
+  view.replaceChildren(h('div', { class: 'gallery-head' }, h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count), sizeControl(grid)),
+    filters(f, onFind), grid);
 }
 
 // Words in any order, each one somewhere in the image's text; dashes count as spaces (batch names use them).
@@ -110,6 +117,21 @@ function filters(f, onFind) {
       batches.map((b) => h('option', { value: b, selected: f.batch === b }, `${shortDate(b.slice(0, 10))} · ${batchTitle(b)}`))));
 }
 
+// Small / Medium / Large: more images at a glance, or bigger ones to judge. Reflows at once, no reload.
+function sizeControl(grid) {
+  const pick = (k, px, group) => {
+    localStorage.setItem(SIZE_KEY, k);
+    grid.style.setProperty('--row-h', px + 'px');
+    group.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.size === k)));
+  };
+  const group = h('div', { role: 'group', class: 'rseg size-seg', 'aria-label': 'Image size' });
+  const now = sizeNow()[0];
+  group.append(...SIZES.map(([k, label, px]) => h('button', {
+    class: 'rseg-btn', dataset: { size: k }, 'aria-pressed': String(now === k), onClick: () => pick(k, px, group),
+  }, label)));
+  return group;
+}
+
 function ratio(im) {
   const w = +im.width, hh = +im.height;
   return w && hh ? w / hh : 16 / 9;
@@ -118,7 +140,7 @@ function ratio(im) {
 function tile(im, i) {
   const r = ratio(im);
   return h('button', {
-    class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 ${Math.round(r * ROW_H)}px`, aspectRatio: String(r) },
+    class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 calc(${r.toFixed(4)} * var(--row-h, 220px))`, aspectRatio: String(r) },
     'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.why ? ': ' + im.why : ''}`,
     onClick: () => openLarge(i),
   },
