@@ -4,6 +4,8 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/batch.py --out generated/codex/<batch> --subjects <subjects.json>
         [--styles a,b] [--n 4] [--start 0] [--wildcards 1] [--ratio mixed|wide|portrait|square] [--seed S] [--dry-run]
   --start K: begin at subject K (image names K+1...), to use a subjects file's later subjects in a second batch
+  --only a-3,b-1: make only these images of the batch, with the same picks as the first run (Finish this batch,
+        23 Nov 2026: the web app runs it for the images a stopped run never made)
 
 <subjects.json> is {"<style>": ["subject", ...], ...}, written fresh by Claude Code for each batch (keep it in
 the batch folder, git-ignored). Styles default to the keys of that file. Per style, image i gets subject i
@@ -37,6 +39,7 @@ ap.add_argument('--ratio', default='mixed', choices=['mixed', 'wide', 'portrait'
                 help='mixed (default): wide, portrait, square, wide in turn; or one ratio for every image')
 ap.add_argument('--seed', default='')
 ap.add_argument('--kept-refs', default='', help='JSON {style: [image paths]}: kept examples sent along as references (2 per image, turning)')
+ap.add_argument('--only', default='', help='comma-separated image names: make only these (the rest are skipped, picks unchanged)')
 ap.add_argument('--dry-run', action='store_true')
 a = ap.parse_args()
 
@@ -52,6 +55,9 @@ kept = json.load(open(a.kept_refs, encoding='utf-8')) if a.kept_refs else {}
 PER_IMAGE = 2
 fails = 0
 names = [f'{s}-{i + 1}' for s in styles for i in range(a.start, a.start + a.n)]
+only = set(a.only.split(',')) if a.only else None
+if only:
+    names = [n for n in names if n in only]
 prog = None if a.dry_run else Progress(a.out, names, 'batch')
 for style in styles:
     for i in range(a.start, a.start + a.n):
@@ -64,8 +70,10 @@ for style in styles:
             cmd += ['--ref', have[(i * PER_IMAGE + k) % len(have)]]
         if have:
             cmd.append('--refs-kept')
-        if i >= a.start + a.n - a.wildcards:
+        if i >= a.start + a.n - a.wildcards:   # picked before the --only skip, so a finish gets the first run's wildcard
             cmd += ['--extreme', rnd.choice(sorted(EXTREMES))]
+        if only is not None and name not in only:
+            continue
         if a.dry_run:
             out = subprocess.run(cmd + ['--print'], capture_output=True, text=True, encoding='utf-8')
             print(out.stdout.strip() or out.stderr.strip())

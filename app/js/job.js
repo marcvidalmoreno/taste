@@ -26,6 +26,7 @@ export const KIND = {
   single: { label: 'Single image', noun: 'image' },
   remix: { label: 'Remix', noun: 'remix', nounMany: 'remixes' },
   retry: { label: 'Retry', noun: 'image' },
+  finish: { label: 'Finish', noun: 'image' },
   variations: { label: 'Variations', noun: 'variation' },
   list: { label: 'Run', noun: 'image' },
 };

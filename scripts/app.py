@@ -371,6 +371,23 @@ def failed_images(batch, have):
             for n, r in sorted(rows.items()) if r['ok'] != 'yes' and n not in have]
 
 
+def unmade_images(batch, have):
+    """A batch run from the app that stopped early (usage limit, 3 failures in a row, Stop): the images its
+    run.json planned that have no PNG, in run order, and why it stopped if Codex's log says (23 Nov 2026)."""
+    rec = run_record(batch) or {}
+    if rec.get('kind') != 'batch' or not rec.get('styles') or not rec.get('n') or not (BASE / batch / 'subjects.json').is_file():
+        return [], ''
+    names = [f'{s}-{i + 1}' for s in rec['styles'] for i in range(int(rec['n'])) if f'{s}-{i + 1}' not in have]
+    why = ''
+    for n in reversed(names):
+        log = BASE / batch / f'{n}.codex.log'
+        if log.is_file():
+            if 'usage limit' in log.read_text(encoding='utf-8', errors='replace'):
+                why = 'Codex hit its usage limit'
+            break
+    return names, why
+
+
 # -- the queue
 
 def save_queue():
@@ -452,6 +469,12 @@ def launch(spec):
                '--ratio', spec['ratio']]
         if spec.get('kept_refs'):
             cmd += ['--kept-refs', str(folder / '.kept-refs.json')]
+    elif spec['kind'] == 'finish':   # same subjects, seed (the folder name) and kept examples as the first run
+        cmd = [PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(folder), '--subjects', str(folder / 'subjects.json'),
+               '--styles', ','.join(spec['all_styles']), '--n', str(spec['n']), '--wildcards', str(spec['wildcards']),
+               '--ratio', spec['ratio'], '--only', ','.join(spec['expected'])]
+        if (folder / '.kept-refs.json').is_file():
+            cmd += ['--kept-refs', str(folder / '.kept-refs.json')]
     elif spec['kind'] in ('remix', 'single', 'retry'):
         if spec['kind'] == 'single' and spec.get('use_kept'):
             paths = kept_paths(spec['styles'][0])
@@ -472,6 +495,12 @@ def launch(spec):
             cmd += ['--note', spec['note']]
     if DRY_RUN:
         cmd.append('--dry-run')
+    elif spec['kind'] in ('finish', 'retry') and run_record(spec['batch']):
+        # keep the first run's record ("How it was made"); a retry used to overwrite it (fixed 23 Nov 2026)
+        if spec['kind'] == 'finish':
+            rec = run_record(spec['batch'])
+            rec.setdefault('finished_later', []).append(time.strftime('%Y-%m-%d %H:%M'))
+            write_json(folder / 'run.json', rec)
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
                                          'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs')
@@ -490,7 +519,7 @@ def launch(spec):
     PROC.clear()
     if DRY_RUN:
         shutil.rmtree(folder, ignore_errors=True)
-    elif spec['kind'] == 'batch':
+    elif spec['kind'] in ('batch', 'finish'):
         subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'sheet.py'), str(folder)], cwd=ROOT, capture_output=True)
 
 
@@ -672,6 +701,23 @@ def spec_retry(body):
            'change': row['change'], 'ref': ref, 'kept': bool(kept and ref)}
     return {'kind': 'retry', 'title': f'Retry {name}', 'batch': batch, 'jobs': [job],
             'styles': [row['style']] if row['style'] else [], 'n': 1, 'expected': [name]}
+
+
+def spec_finish(body):
+    """Make the images a stopped batch never made, with its own subjects, seed and kept examples: {batch}."""
+    batch = str(body.get('batch', ''))
+    if not is_batch(batch):
+        raise ApiError(404, f'no batch "{batch}"')
+    names, _ = unmade_images(batch, set(rate.batch_images(batch)))
+    if not names:
+        raise ApiError(409, 'every image of this batch is made')
+    if any(s['batch'] == batch for s in QUEUE) or (CUR.get('running') and CUR.get('batch') == batch):
+        raise ApiError(409, 'a run for this batch is already running or queued')
+    rec = run_record(batch)
+    styles = [s for s in rec['styles'] if any(n.startswith(s + '-') and n[len(s) + 1:].isdigit() for n in names)]
+    return {'kind': 'finish', 'title': f'Finish {rec.get("title") or batch}', 'batch': batch, 'styles': styles,
+            'n': int(rec['n']), 'all_styles': rec['styles'], 'ratio': rec.get('ratio') or 'mixed',
+            'wildcards': int(rec.get('wildcards') or 0), 'expected': names}
 
 
 def spec_variations(body):
@@ -1438,8 +1484,10 @@ class Handler(BaseHTTPRequestHandler):
                 names = rate.batch_images(c)
                 children.append({'batch': c, 'file': src['file'], 'kind': kind_of_batch(c, [], run_record(c)),
                                  'images': len(names), 'preview': names[0] + '.png' if names else None})
+        unmade = unmade_images(batch, {im['name'] for im in images})
         return {**summary(batch, images), 'items': images, 'run': run_record(batch), 'parent': lin.get(batch),
                 'children': children, 'failed': failed_images(batch, {im['name'] for im in images}),
+                'unmade': unmade[0], 'unmade_why': unmade[1], 'planned': len(unmade[0]) + len(images),
                 'path': str(BASE / batch), 'rel_path': f'generated/codex/{batch}'}
 
     def put_mark(self):
@@ -1553,10 +1601,10 @@ class Handler(BaseHTTPRequestHandler):
         return self.post_run({**self.read_body(), 'kind': 'variations'})
 
     def post_run(self, body=None):
-        """Queue one run. kind: batch | single | remix | retry | variations (see the spec_* helpers)."""
+        """Queue one run. kind: batch | single | remix | retry | finish | variations (see the spec_* helpers)."""
         body = body or self.read_body()
         make = {'batch': spec_batch, 'single': spec_single, 'remix': spec_remix, 'retry': spec_retry,
-                'variations': spec_variations}.get(body.get('kind'))
+                'finish': spec_finish, 'variations': spec_variations}.get(body.get('kind'))
         if not make:
             raise ApiError(400, f'unknown kind "{body.get("kind")}"')
         with _QLOCK:

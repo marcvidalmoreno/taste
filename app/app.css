@@ -490,6 +490,10 @@ dialog.preview-dialog article { max-width: 52rem; }
 
 /* One batch: where it is, where it came from, how it was made, what came from it */
 .batch-meta { display: grid; gap: .6rem; margin: -.5rem 0 1.5rem; }
+.finish-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  border-left: 3px solid #8a8a8a; padding: .5rem 0 .5rem .8rem; margin: 0 0 1.5rem; }
+.finish-bar p { margin: 0; line-height: 1.5; }
+.finish-bar button { margin: 0; width: auto; }
 .meta-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .path { font-size: .8rem; background: var(--surface); padding: .15rem .5rem; border-radius: 4px; color: #c8c8c8; }
 .made-from { display: inline-flex; align-items: center; gap: .75rem; padding: .35rem .8rem .35rem .35rem; width: fit-content;

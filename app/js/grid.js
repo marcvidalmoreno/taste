@@ -6,6 +6,7 @@ import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { job, enqueueRun, KIND } from './job.js';
 import { api as call } from './api.js';
 import { openStyleEdit } from './styleedit.js';
+import { COST } from './cost.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError, toast } from './ui.js';
 
 let view;
@@ -56,6 +57,7 @@ function draw() {
           .filter(Boolean).join(' · '))),
       filters()),
     batchMeta(d),
+    finishBar(d),
     // A new variations batch has no images yet, only placeholders: still a grid, not "nothing to rate".
     list.length || pendingTiles().length || failedTiles().length
       ? h('ul', { class: 'grid', onKeydown: onGridKey },
@@ -163,6 +165,37 @@ function runDetails(r) {
       h('ol', {}, list.map((x) => h('li', {}, x)))])));
 }
 
+// A batch that stopped early (usage limit, 3 failures in a row, Stop): one calm line and one button that makes
+// the rest with the batch's own subjects and picks. Hidden while a run for this batch is running or queued.
+function finishBar(d) {
+  const n = d.unmade?.length || 0;
+  if (!n || store.show !== 'to-rate') return null;
+  const busy = (job.running && job.batch === d.batch) || (job.queue || []).some((q) => q.batch === d.batch);
+  if (busy) return null;
+  return h('section', { class: 'finish-bar' },
+    h('p', {},
+      h('strong', {}, `${n} of ${d.planned} images were never made.`),
+      ' ', d.unmade_why ? `The run stopped early: ${d.unmade_why}.` : 'The run stopped before the end.',
+      h('br'),
+      h('span', { class: 'muted small' }, `Same subjects and picks as the first run · about ${n * COST.minutes} min · ≈ `
+        + `${(n * COST.fiveLow).toFixed(0)}–${(n * COST.fiveHigh).toFixed(0)} % of the five-hour window`)),
+    h('button', { class: 'small-btn', onClick: (e) => finish(d, n, e.currentTarget) }, `Finish this batch (${plural(n, 'image')})`));
+}
+
+async function finish(d, n, btn) {
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    const res = await enqueueRun({ kind: 'finish', batch: d.batch });
+    toast(res.position <= 1 ? `Making the last ${plural(n, 'image')}` : `Finish queued, number ${res.position}`);
+    draw();
+  } catch (err) {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    showError(err);
+  }
+}
+
 // Images that were tried and gave nothing (blocked by the filter, timed out): say so, offer one retry.
 function failedTiles() {
   if (store.show !== 'to-rate') return [];
@@ -233,6 +266,7 @@ onChange((name, kind) => {
     if (!here && ul?.querySelector('.pending-tile')) return reloadBatch().catch(showError);
     if (store.data?.batch !== job.batch) return;
     if (!ul) return draw();
+    if (!finishBar(store.data)) view.querySelector('.finish-bar')?.remove();   // a run for this batch started
     ul.querySelectorAll('.pending-tile').forEach((li) => li.remove());
     ul.querySelector('.failed-tile') ? ul.querySelector('.failed-tile').before(...pendingTiles()) : ul.append(...pendingTiles());
     return;
