@@ -121,6 +121,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – Styles page: a switch locked by a run or pending suggestions now shows On with a 🔒 instead of
+  fading (faded read as "off"); styles that are off dim their whole row, palette in grey.
 - **23 Nov 2026** – Experimental runs: an "Experimental" switch on New run (batch). Codex writes subjects pushed a bit
   to the extreme (`codex_text.py subjects --wild`), every image gets a palette the style never uses
   (`codex_run.py --new-palette`, logged as `newpalN`), options are picked evenly instead of leaning on the ratings,

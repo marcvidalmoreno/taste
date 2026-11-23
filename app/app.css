@@ -728,7 +728,12 @@ button.switch i::after { content: ""; position: absolute; left: 2px; top: 2px; w
 button.switch[aria-checked="true"] { color: var(--text); }
 button.switch[aria-checked="true"] i { background: var(--keep); }
 button.switch[aria-checked="true"] i::after { transform: translateX(.9rem); background: #fff; }
-button.switch:disabled { opacity: .5; cursor: not-allowed; }
+/* locked = on, but a run or pending suggestions use it: drawn as a normal On plus a lock, never faded (faded read as "off") */
+button.switch:disabled { opacity: 1; cursor: not-allowed; }
+button.switch .lock { font-size: .7rem; margin-left: -.15rem; }
+/* off rows: the whole row recedes (palette in grey, numbers faded) so on and off differ at a glance; the switch stays crisp */
+.style-row.is-off .style-line > :not(.switch) { opacity: .45; }
+.style-row.is-off .mini-swatch { filter: grayscale(1); }
 button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-offset: 2px; }
 .history { grid-column: 1 / -1; padding: .5rem .25rem 1.25rem 3.75rem; }
 .history h3 { font-size: .95rem; margin: 0 0 .4rem; }

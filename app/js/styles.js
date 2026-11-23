@@ -102,8 +102,8 @@ function switchFor(r, redo) {
   const blocked = r.on && r.busy;
   const label = r.on ? 'On' : 'Off';
   return h('button', { type: 'button', role: 'switch', class: 'switch', 'aria-checked': String(r.on),
-    'aria-label': `${r.name}: ${label}`, disabled: blocked ? true : null,
-    title: blocked ? `Cannot switch it off now: ${r.busy}` : r.on ? 'Switch off (archive)' : 'Switch back on',
+    'aria-label': `${r.name}: ${label}${blocked ? ', locked while in use' : ''}`, disabled: blocked ? true : null,
+    title: blocked ? `On. Locked while in use: ${r.busy}` : r.on ? 'Switch off (archive)' : 'Switch back on',
     onClick: async (e) => {
       const btn = e.currentTarget;
       btn.setAttribute('aria-busy', 'true');
@@ -118,7 +118,7 @@ function switchFor(r, redo) {
           } });
       } catch (err) { showError(err); }
       redo();
-    } }, h('i', { 'aria-hidden': 'true' }), h('span', { class: 'switch-word' }, label));
+    } }, h('i', { 'aria-hidden': 'true' }), h('span', { class: 'switch-word' }, label), blocked && h('span', { class: 'lock', 'aria-hidden': 'true' }, '🔒'));
 }
 
 // ---- history panel
