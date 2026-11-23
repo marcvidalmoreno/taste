@@ -45,6 +45,14 @@ messages. Images stay local (`generated/`, `taste/data/`), backed up by Google D
 - Ask Marc before anything that would use a large share of the Codex allowance (see "Allowance" in the README).
 - Each run ends with a link to the batch folder and the rating command.
 
+## Public gallery (taste-gallery, 23 Nov 2026)
+- `../taste-gallery` holds the public site (`docs/`) and a slimmed starter kit (`kit/`). The site syncs by itself
+  (`scripts/gallery_sync.py`, from post-commit hooks and the app's Publish button); reinstall the hooks with
+  `gallery_sync.py --install-hooks` if they go missing.
+- When `scripts/build_taste.py` or `scripts/pack.py` change, bring the same change to `taste-gallery/kit/scripts/`
+  in the same session if it applies (a hook notes it in `generated/kit-update-needed.md`). The kit never holds
+  Marc's styles.
+
 ## Every change
 An undo line in the reply and a changelog entry in the README.
 A change to the web app that adds, removes or renames something Marc can see or do also updates the in-app

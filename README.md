@@ -121,6 +121,13 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – The public gallery site follows by itself: `scripts/gallery_sync.py` runs `publish.py --sync`,
+  then commits `docs/data` and `docs/img` in taste-gallery and pushes when it has a remote. Post-commit hooks here and
+  in `taste/` call it after a major commit (styles, taste.json, README changelog); the app calls it about 5 minutes
+  after the last Publish toggle, once no run is going (that `app.py` part rode along in the Remix commit e28eb52).
+  Nothing happens while there are no picks. Changes to `build_taste.py` or `pack.py` leave a note in
+  `generated/kit-update-needed.md` for the starter kit in taste-gallery/kit/.
+  Undo: `git revert` this commit, delete `.git/hooks/post-commit` and `taste/.git/hooks/post-commit`.
 - **23 Nov 2026** – scripts/publish.py writes daily counts instead of weekly: per style and for all styles together, plus totals and a fixed label for how each style edit was made; a cleared rating now counts as unrated. The gallery's Evolution page uses them to show whether each edit raised the thumbs-up share, and the changelog moved to its own page.
   Undo: `git revert` this commit.
 - **23 Nov 2026** – Remix: "Write the new prompt" now works for images with no prompt on record; Codex looks at
