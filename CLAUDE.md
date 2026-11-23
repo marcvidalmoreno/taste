@@ -18,6 +18,8 @@ messages. Images stay local (`generated/`, `taste/data/`), backed up by Google D
 - Pushes to `origin/main` are automatic in this repo and in `taste/`: no need to ask.
 - Before every push, check the staged diff for private data (other people's images, anything under
   `taste/data/`, `generated/codex/`, ratings, names, paths to personal folders). Never force-push.
+- Several sessions share this checkout: commit with `git commit -- <your files>` and check
+  `git diff --cached --name-only` right before, so another session's staged work never rides along (Marc, 23 Nov 2026).
 
 ## Who owns what
 - Claude Code owns the taste: `taste/styles/*.json`, reading ratings, proposing edits. Style edits need

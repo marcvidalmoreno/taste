@@ -117,6 +117,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Rule: sessions sharing this checkout commit only their own files (`git commit -- <files>`).
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – Try blocked images with FLUX: Batches has a line counting the images ChatGPT's safety filter
   blocked that FLUX hasn't tried (16 today) with **Try with FLUX**, one run per batch, same prompts and references;
   each blocked tile has the same button. FLUX failures say so ("Blocked by FLUX's filter too"). New
