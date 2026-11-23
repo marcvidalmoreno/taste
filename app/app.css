@@ -727,6 +727,7 @@ dialog.variations footer a[role=button] { margin: 0; width: auto; }
 /* Styles page (23 Nov 2026): one row per style, an on / off switch, a history that opens under its row */
 .page-head:has(.find) { display: flex; gap: 1rem; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
 .page-head .find { width: 16rem; margin: 0; }
+.page-head .head-actions { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
 .style-row { border-bottom: 1px solid var(--line); }
 .style-line { display: grid; grid-template-columns: 3rem minmax(9rem, 1.6fr) 5.5rem 6rem 9rem 3.5rem 9rem 4.5rem; gap: .75rem;
   align-items: center; padding: .55rem .25rem; }

@@ -3,9 +3,11 @@
 //   #/styles/<style>    the same page with that style's history open under its row (one at a time, linkable)
 // Off = the style file moves to taste/styles/archived/ (scripts/app.py set_archived): New run, Suggestions and the
 // style guesses stop offering it; its images stay in the Gallery. Switching acts at once and says Undo.
+// "New style from images…" opens the same dialog as on the Taste page (newstyle.js; 24 Nov 2026).
 import { api, refreshStyles } from './api.js';
 import { h, batchHref, shortDate, plural, toast, showError } from './ui.js';
 import { galleryHref } from './gallery.js';
+import { openNewStyle } from './newstyle.js';
 
 let filter = '';
 const enc = encodeURIComponent;
@@ -69,8 +71,11 @@ export async function renderStyles(view, focus) {
     h('div', { class: 'page-head' },
       h('hgroup', {}, h('h1', {}, 'Styles'),
         h('p', {}, `${on.length} on${off.length ? ` · ${off.length} archived` : ''}. Switch a style off to stop using it; its history stays here.`)),
-      h('input', { type: 'search', class: 'find', placeholder: 'Find a style', value: filter, 'aria-label': 'Find a style',
-        onInput: (e) => { filter = e.target.value; draw(); } })),
+      h('div', { class: 'head-actions' },
+        h('input', { type: 'search', class: 'find', placeholder: 'Find a style', value: filter, 'aria-label': 'Find a style',
+          onInput: (e) => { filter = e.target.value; draw(); } }),
+        h('button', { class: 'secondary outline small-btn', onClick: () => openNewStyle({
+          onCreated: (key) => { if (key) location.hash = '#/styles/' + enc(key); else redo(); } }) }, 'New style from images…'))),
     list, archived));
   draw();
   const open = view.querySelector('.style-row.is-open');
