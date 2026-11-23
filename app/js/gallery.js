@@ -3,6 +3,8 @@
 // for the style's next runs; the same thumb again takes it back. Filters are not re-applied while you mark,
 // so nothing jumps away under the pointer.
 //   #/gallery?q=<words>&style=<key>&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
+//   #/gallery/<batch>/<image>?...   the same, with the large view open on one image (23 Nov 2026): the address
+//   follows every step, so an image can be linked and reloaded; Back closes the view (one history entry per opening).
 // Find (23 Nov 2026): every word must appear in the prompt, the why, the style name, the batch or the variation.
 // Typing redraws only the grid and the count (the field keeps its cursor); the address follows without a reload.
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
@@ -28,10 +30,14 @@ let shown = [];      // after the filters, in page order (the large view steps t
 let styleMap = {};
 allStyles().then((st) => { styleMap = st; });   // names for a large view opened from outside this page
 let dlg, index = 0;
+let curF = {};        // the filters on screen: kept in the address while the large view is open
+let pageKey = null;   // which filters the grid on screen was drawn for (the large view opens without a redraw)
+let urlSync = false;  // the large view was opened on the Gallery page, so the address follows the image
 
-export const galleryHref = (q = {}) => {
+// im: also open the large view on that image.
+export const galleryHref = (q = {}, im) => {
   const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v));
-  return '#/gallery' + (p.size ? '?' + p : '');
+  return '#/gallery' + (im ? `/${encodeURIComponent(im.batch)}/${encodeURIComponent(im.name)}` : '') + (p.size ? '?' + p : '');
 };
 
 export const ratingLabel = (r) => (r ? RATING_LABELS[r].label : 'Not rated');
@@ -42,7 +48,16 @@ export async function loadGallery() {
   return { images: g.images, styles: st, archived: off, labels: { ...off, ...st } };
 }
 
-export async function renderGallery(view, query) {
+// open: '<batch>/<image>' from the address, or '' for the grid alone.
+export async function renderGallery(view, query, open = '') {
+  const want = galleryHref(Object.fromEntries(['q', 'style', 'rating', 'batch', 'pub'].map((k) => [k, query.get(k) || ''])));
+  if (want !== pageKey || !view.querySelector('.jgrid')) await drawGallery(view, query);
+  if (open) openFromUrl(open);
+  else if (urlSync && dlg?.open) dlg.close();   // Back from an image: the grid stays as it was
+}
+
+async function drawGallery(view, query) {
+  pageKey = null;
   view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the gallery…'));
   try {
     ({ images: all, labels: styleMap } = await loadGallery());
@@ -52,6 +67,7 @@ export async function renderGallery(view, query) {
   }
   document.title = 'Gallery · taste';
   const f = { q: query.get('q') || '', style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '', pub: query.get('pub') || '' };
+  curF = f;
   const base = all.filter((im) =>
     (!f.style || im.style === f.style) &&
     (!f.rating || (f.rating === 'none' ? !im.rating : im.rating === f.rating)) &&
@@ -76,10 +92,11 @@ export async function renderGallery(view, query) {
   };
   const onFind = (q) => {
     f.q = q;
-    history.replaceState(null, '', galleryHref(f));   // no hashchange: the page is not read again
+    history.replaceState(null, '', pageKey = galleryHref(f));   // no hashchange: the page is not read again
     draw();
   };
   draw();
+  pageKey = galleryHref(f);
   view.replaceChildren(h('div', { class: 'gallery-head' }, h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count), sizeControl(grid)),
     filters(f, onFind), grid);
 }
@@ -239,16 +256,49 @@ function ensureDialog() {
     if (skipCancel) { e.preventDefault(); skipCancel = false; }
     else if (trail.length) { e.preventDefault(); back(); }
   });
-  dlg.addEventListener('close', () => { flushWhy(); trail = []; });
+  dlg.addEventListener('close', () => { flushWhy(); trail = []; if (urlSync) leaveUrl(); urlSync = false; });
   document.body.append(dlg);
+}
+
+// The address back to the grid: Back over the entry the opening added, or a plain swap after a reload or a link.
+function leaveUrl() {
+  if (!/^#\/gallery\/[^?]/.test(location.hash)) return;   // already elsewhere (a Style or Batch link)
+  if (history.state?.glarge) history.back();
+  else history.replaceState(null, '', galleryHref(curF));
+}
+
+// From the address (a link, reload, Forward): open on that image without a new history entry.
+function openFromUrl(key) {
+  let list = shown, i = shown.findIndex((im) => keyOf(im) === key);
+  if (i < 0) { list = all; i = all.findIndex((im) => keyOf(im) === key); }   // hidden by the filters: step through every image
+  if (i < 0) { history.replaceState(null, '', galleryHref(curF)); return toast('That image is no longer in the gallery.', { timeout: 3000 }); }
+  if (dlg?.open && keyOf(stepList[index]) === key) return;
+  if (dlg?.open) flushWhy();
+  trail = [];
+  urlSync = true;
+  stepList = list;
+  ensureDialog();
+  index = i;
+  draw();
+  if (!dlg.open) dlg.showModal();
+  dlg.focus();
+}
+
+// Leaving the Gallery for another page (Back past the grid, a header link) closes a view opened there.
+export function closeGalleryLarge() {
+  if (urlSync && dlg?.open) dlg.close();
 }
 
 export function openLarge(i, list) {
   if (dlg?.open) { flushWhy(); trail.push({ list: stepList, index }); }   // a "More like this" click inside the view
-  else trail = [];
+  else {
+    trail = [];
+    urlSync = location.hash.startsWith('#/gallery');
+  }
   stepList = list || shown;   // the grid's list, or another one (Taste, "More like this"): the grid keeps its own
   ensureDialog();
   index = i;
+  if (urlSync && !dlg.open) history.pushState({ glarge: true }, '', galleryHref(curF, stepList[i]));   // Back closes the view
   draw();
   if (!dlg.open) dlg.showModal();
   dlg.focus();
@@ -281,6 +331,7 @@ function draw() {
   const im = stepList[index];
   const st = styleMap[im.style];
   const onGallery = location.hash.startsWith('#/gallery');
+  if (urlSync) history.replaceState(history.state, '', galleryHref(curF, im));   // every step, "More like this" and Previous image
   canvas = h('div', { class: `canvas ${fit ? 'fit' : 'actual'}`, onClick: toggleFit },
     h('img', { src: imgUrl(im.batch, im.file, im.mtime), alt: `${st?.name || 'No style'}, ${ratingLabel(im.rating)}` }));
   dlg.replaceChildren(

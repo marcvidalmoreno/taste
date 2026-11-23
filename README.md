@@ -117,6 +117,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Gallery: the address follows the large view, one link per image
+  (`#/gallery/<batch>/<image>`, filters kept), so an image can be linked, bookmarked and reloaded; Back closes the
+  view. Guide updated. Undo: `git revert` this commit.
 - **23 Nov 2026** – Large view: after clicking an image in **More like this**, a **← Previous image** button
   (or `Esc`, `Backspace`) walks back to the image you came from, one step at a time. Undo: `git revert` this commit.
 - **23 Nov 2026** – `scripts/publish.py` (`--dry-run`, `--sync`) exports the picked images as WebP plus aggregate

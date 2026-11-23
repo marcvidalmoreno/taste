@@ -4,6 +4,7 @@
 //   #/b/<batch>/<image>?show=   the same, with the large view open on one image
 //   #/overview                  ratings per style
 //   #/gallery?style=&rating=&batch=   every image; the large view has the thumbs
+//   #/gallery/<batch>/<image>?...     the same, with the large view open on one image
 //   #/styles[/<style>]          every style, on / off, its history, runs and 👍 rate
 //   #/taste[/<style>]           the styles with my images as examples
 //   #/guide[/<section>]         how to use the app, page by page, and use cases
@@ -13,7 +14,7 @@
 import { renderBatches } from './batches.js';
 import { renderBatch } from './grid.js';
 import { renderOverview } from './overview.js';
-import { renderGallery } from './gallery.js';
+import { renderGallery, closeGalleryLarge } from './gallery.js';
 import { renderTaste } from './taste.js';
 import { renderStyles } from './styles.js';
 import { renderAbout, renderGuide } from './about.js';
@@ -38,10 +39,11 @@ async function route() {
     a.toggleAttribute('aria-current', a.dataset.nav === page);
   }
   if (page !== 'batch' && closeViewer({ refocus: false })) window.scrollTo(0, 0);   // left the large view for another page
+  if (page !== 'gallery') closeGalleryLarge();
   if (page === 'batch' && parts[1]) return renderBatch(view, parts[1], query.get('show'), parts[2]);
   if (parts[0] === 'distil' || parts[0] === 'suggestions') return renderDistil(view);   // under Overview in the header
   if (page === 'overview') return renderOverview(view);
-  if (page === 'gallery') return renderGallery(view, query);
+  if (page === 'gallery') return renderGallery(view, query, parts[1] && parts[2] ? `${parts[1]}/${parts[2]}` : '');
   if (page === 'styles') return renderStyles(view, parts[1]);
   if (page === 'taste') return renderTaste(view, parts[1]);
   if (page === 'about') return renderAbout(view, parts[1]);
