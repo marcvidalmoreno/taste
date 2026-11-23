@@ -114,6 +114,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – More like this: an app server started before the feature existed answered "not found", and
+  every large view showed it as a message. Now the row just says it shows up the next time the app starts, with
+  no message.
 - **23 Nov 2026** – Messages: every message at the bottom of the app has a **×** to close it (failure messages
   stay until closed and had no way to close them other than their button). A run where nothing was made now offers
   **Details** (the log) instead of **See them**, which opened a batch that doesn't exist ("not found"). Guide updated.

@@ -22,7 +22,12 @@ export function similarRow(im, batch, hasStyle) {
       show(h('p', { class: 'muted small', 'aria-busy': 'true' }, 'Looking…'));
       try {
         cache.set(k, (await api(`similar/${encodeURIComponent(batch)}/${encodeURIComponent(im.name)}${sameStyle ? '/same' : ''}`)).items);
-      } catch (err) { show(h('p', { class: 'muted small' }, 'Could not look: ' + err.message)); return showError(err); }
+      } catch (err) {
+        // A server started before this feature existed doesn't know the route: say so once, quietly, no toast.
+        if (err.status === 404 && err.message === 'not found')
+          return show(h('p', { class: 'muted small' }, 'Shows up the next time the app starts.'));
+        show(h('p', { class: 'muted small' }, 'Could not look: ' + err.message)); return showError(err);
+      }
     }
     const items = cache.get(k);
     if (key() !== k) return;   // the chip moved on while this was loading
