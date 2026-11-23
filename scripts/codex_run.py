@@ -282,6 +282,10 @@ FLUX_REFS, FLUX_POOL = 3, 12   # examples per FLUX image; how many recent ones i
 FLUX_STYLE_ONLY = ('The attached images show only the style to match: palette, linework, texture and light. '
                    'Make one new, single scene from the description below. Do not copy the attached images, '
                    'do not combine them and do not place them side by side. ')   # 23 Nov 2026: 2 of 18 came out stitched
+# A FLUX remix of one image: FLUX edits the seed, so it gets Marc's change as a short edit instruction, not the
+# full scene prompt (with it, 4 of 4 came out as copies and the change was lost; 23 Nov 2026).
+FLUX_EDIT = ('Edit the attached image. Make this change, clearly visible: {}. '
+             'Keep everything else as it is: the same person, pose, setting, palette and drawing style.')
 
 
 def flux_examples(style, name, out):
@@ -334,7 +338,13 @@ def gen_cloudflare(a, out, refs, ref):
     start = time.time()
     png = out / f'{a.name}.png'
     style_only = bool(examples) or (a.refs_kept and bool(refs))   # examples of a look, not a seed to edit
-    ok, spent, text, why = cf_run.make((FLUX_STYLE_ONLY if style_only else '') + a.prompt, a.ratio, refs or examples, png)
+    sent = (FLUX_STYLE_ONLY if style_only else '') + a.prompt
+    wish = (a.change or '').removeprefix('remix:').strip()
+    if a.mode == 'remix' and refs and not style_only and wish and wish != 'prompt edited':
+        sent = FLUX_EDIT.format(wish)   # 23 Nov 2026: with the long prompt FLUX copied the seed and ignored the change
+    ok, spent, text, why = cf_run.make(sent, a.ratio, refs or examples, png)
+    if sent != (FLUX_STYLE_ONLY if style_only else '') + a.prompt:
+        text = f'sent as an edit (FLUX_EDIT): {sent}\n' + text
     secs = round(time.time() - start)
     if style_only:
         text = 'prompt starts with the style-only line (FLUX_STYLE_ONLY)\n' + text
