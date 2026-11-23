@@ -117,6 +117,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Styles page: a style's history no longer fails with "Could not read the history" when two of its
+  images were made in the same minute and one isn't rated yet.
 - **23 Nov 2026** – Batch page: the **To rate** number drops as soon as you rate an image (it counted the images
   rated during the visit, which stay in that grid so nothing jumps). Guide updated.
 - **23 Nov 2026** – New **Styles** page (header, after Gallery, `#/styles`): every style in one list with an on / off

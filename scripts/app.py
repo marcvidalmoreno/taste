@@ -1241,7 +1241,7 @@ def style_history(key):
         min(commits, key=lambda c: c['iso'])['kind'] = 'created'
     events += [{k: v for k, v in c.items() if k not in ('iso', 'private')} | {'undone': False} for c in commits]
     events.sort(key=lambda e: (e['at'], e.get('id') or ''))
-    imgs = sorted(i for b in batches for i in b['imgs'])
+    imgs = sorted((i for b in batches for i in b['imgs']), key=lambda i: i[0])   # by time only: marks can be None
     live = [e for e in events if not e['undone']]
     cuts = [e['at'] for e in live]
 
