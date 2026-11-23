@@ -13,7 +13,7 @@ let view;
 
 export async function renderBatch(el, batch, show, open) {
   view = el;
-  show = FILTERS[show] ? show : 'to-rate';
+  show = FILTERS[show] ? show : 'all';
   const fresh = store.data?.batch !== batch || !view.querySelector('.grid-page');
   if (fresh) {
     store.justRated = new Set();
@@ -61,7 +61,7 @@ function draw() {
     // A new variations batch has no images yet, only placeholders: still a grid, not "nothing to rate".
     list.length || pendingTiles().length || failedTiles().length
       ? h('ul', { class: 'grid', onKeydown: onGridKey },
-          store.show === 'to-rate' && d.seed && seedTile(d), list.map(tile), pendingTiles(), failedTiles())
+          growing() && d.seed && seedTile(d), list.map(tile), pendingTiles(), failedTiles())
       : h('p', { class: 'empty-filter' }, FILTERS[store.show].empty),
     store.show === 'ignored' && list.length > 0 &&
       h('p', { class: 'muted small hint' }, 'To bring one back, open it and choose Restore, or press I on it here.'),
@@ -72,16 +72,21 @@ function draw() {
 // The numbers count by status, not by what the grid shows: an image rated during this visit stays in the
 // "To rate" grid (no tile jumps away) but leaves its count at once, so the number tells what is really left.
 function counts() {
-  const c = { 'to-rate': 0, rated: 0, ignored: 0 };
+  const c = { all: 0, 'to-rate': 0, rated: 0, ignored: 0 };
   for (const im of store.data.items) c[im.status === 'new' ? 'to-rate' : im.status]++;
+  c.all = c['to-rate'] + c.rated;
   return c;
 }
 
+// The filters that show the whole batch as it grows: the seed, placeholders, "No image" tiles, Finish this batch.
+const growing = () => store.show === 'all' || store.show === 'to-rate';
+
 // Filters as links: each one has an address, so Back returns to the filter you were on.
+// Ignored only shows when something is ignored (or you are on it): an empty filter is one more thing to read.
 function filters() {
   const c = counts();
   return h('nav', { class: 'filters', 'aria-label': 'Show' },
-    Object.entries(FILTERS).map(([key, f]) => h('a', {
+    Object.entries(FILTERS).filter(([key]) => key !== 'ignored' || c.ignored > 0 || store.show === 'ignored').map(([key, f]) => h('a', {
       href: batchHref(store.data.batch, key), 'aria-current': store.show === key ? 'page' : null,
     }, f.label, ' ', h('span', { class: 'n' }, c[key]))));
 }
@@ -96,7 +101,7 @@ function splitName(n) {
 }
 
 function pendingTiles() {
-  if (!job.running || job.batch !== store.data.batch || store.show !== 'to-rate') return [];
+  if (!job.running || job.batch !== store.data.batch || !growing()) return [];
   const have = new Set(store.data.items.map((im) => im.name));
   const failed = new Set(job.failed || []);
   const left = job.expected.filter((n) => !have.has(n) && !failed.has(n));
@@ -169,7 +174,7 @@ function runDetails(r) {
 // the rest with the batch's own subjects and picks. Hidden while a run for this batch is running or queued.
 function finishBar(d) {
   const n = d.unmade?.length || 0;
-  if (!n || store.show !== 'to-rate') return null;
+  if (!n || !growing()) return null;
   const busy = (job.running && job.batch === d.batch) || (job.queue || []).some((q) => q.batch === d.batch);
   if (busy) return null;
   return h('section', { class: 'finish-bar' },
@@ -198,7 +203,7 @@ async function finish(d, n, btn) {
 
 // Images that were tried and gave nothing (blocked by the filter, timed out): say so, offer one retry.
 function failedTiles() {
-  if (store.show !== 'to-rate') return [];
+  if (!growing()) return [];
   const waiting = new Set(job.running && job.batch === store.data.batch ? job.expected : []);
   const queued = new Set((job.queue || []).filter((q) => q.batch === store.data.batch).flatMap((q) => q.expected));
   return (store.data.failed || []).filter((f) => !waiting.has(f.name)).map((f) => h('li', { class: 'failed-tile' },

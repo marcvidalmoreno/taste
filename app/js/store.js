@@ -2,7 +2,7 @@
 // a change is made here, then every view that cares hears about it through onChange().
 export const store = {
   data: null,      // GET /api/batch/<batch>: summary + items
-  show: 'to-rate', // grid filter
+  show: 'all',     // grid filter
   styles: {},      // key -> {name, palette, description}
   justRated: new Set(),  // marked since the batch was opened: kept in the "To rate" grid until it is read again
 };
@@ -14,7 +14,9 @@ export const styleName = (key) => store.styles[key]?.name || key || 'no style';
 
 // What the grid shows under each filter. An image marked while the batch is open stays under "To rate" too,
 // so the grid doesn't reflow under the pointer; it moves to "Rated" the next time the batch is opened.
+// "All" (the default since 23 Nov 2026) is every image except the ignored ones: rating never moves a tile.
 export const FILTERS = {
+  all: { label: 'All', test: (im) => im.status !== 'ignored', empty: 'No images in this batch yet.' },
   'to-rate': { label: 'To rate', test: (im) => im.status === 'new' || store.justRated.has(im.name),
                empty: 'Nothing left to rate in this batch.' },
   rated: { label: 'Rated', test: (im) => im.status === 'rated',

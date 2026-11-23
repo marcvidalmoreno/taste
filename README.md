@@ -117,6 +117,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Batch page: new **All** filter (every image except the ignored ones), now where a batch opens,
+  so images you rate stay in view. **Ignored** only shows when the batch has ignored images. Guide updated.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – Batch page: **Finish this batch**. When a batch run stopped early (usage limit, 3 failures in a
   row, Stop), a line above the grid says how many images were never made and why, with one button that makes them
   with the first run's subjects, mix seed, wildcard and kept examples (`batch.py --only`, new run kind `finish`;

@@ -1,6 +1,6 @@
 // Router: the address after # says which view to show, so Back, Forward and reload all work.
 //   #/                          all batches
-//   #/b/<batch>?show=...        one batch (show = to-rate | rated | ignored)
+//   #/b/<batch>?show=...        one batch (show = all | to-rate | rated | ignored; all by default)
 //   #/b/<batch>/<image>?show=   the same, with the large view open on one image
 //   #/overview                  ratings per style
 //   #/gallery?style=&rating=&batch=   every image; the large view has the thumbs
