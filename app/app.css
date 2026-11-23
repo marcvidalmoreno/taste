@@ -459,6 +459,10 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 .nr-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end; margin-bottom: .5rem; }
 .nr-check { display: flex; gap: .55rem; align-items: flex-start; font-size: .9rem; margin: .5rem 0; cursor: pointer; }
 .nr-check input { margin: .2rem 0 0; flex: none; }
+/* Experimental switch: a quiet card that warms up when on, so the mode is visible without shouting */
+.nr-exp { padding: .7rem .85rem; border: 1px solid var(--line); border-radius: var(--radius); margin-top: -.5rem; }
+.nr-exp.on { border-color: #b98a3e; background: rgba(185, 138, 62, .08); }
+.nr-exp small { display: block; margin-top: .15rem; }
 .nr-name input { margin-bottom: .2rem; max-width: 24rem; }
 .style-picker { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
 .style-chip { width: auto; margin: 0; display: inline-flex; align-items: center; gap: .5rem; padding: .35rem .7rem .35rem .45rem;

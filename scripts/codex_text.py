@@ -1,7 +1,7 @@
 """Text jobs for Codex CLI (ChatGPT plan, no API key): fresh subjects for a style, or a rewritten image prompt.
 
 Usage (from the project root):
-  .venv/Scripts/python -I scripts/codex_text.py subjects --style <style> [--n 4] [--hint "winter, at night"]
+  .venv/Scripts/python -I scripts/codex_text.py subjects --style <style> [--n 4] [--hint "winter, at night"] [--wild]
   .venv/Scripts/python -I scripts/codex_text.py rewrite --prompt "<old prompt>" --change "<what should change>"
         [--keep subject,palette,composition,light]
   .venv/Scripts/python -I scripts/codex_text.py rewrite --image <file> --change "<what should change>" [--style <style>]
@@ -45,6 +45,11 @@ Marc rated these down (steer away from what they have in common): {disliked}
 Write {n} new subjects for this style. Each one: a concrete scene in 8-20 words, different from the others in place,
 scale and main shape. No text, letters, logos, brands, real named people or characters from films, games or comics.
 Answer exactly: {{"subjects": ["...", "..."]}}"""
+
+# Experimental runs (23 Nov 2026): subjects pushed a bit to the extreme, still recognisably this style.
+WILD = ('This is an experimental run: push each subject a bit to the extreme. Unusual places, odd scales, surprising '
+        'pairings, strange weather or times, a touch of the surreal; still something this style could paint. '
+        'Make them clearly bolder than the examples and the subjects used before.\n')
 
 REWRITE = """You edit one image prompt. Do not run commands, do not read or write files. Answer with JSON only.
 
@@ -177,7 +182,7 @@ def subjects(a):
                            liked='; '.join(lean.get('liked_subjects') or []) or 'none yet',
                            disliked='; '.join(lean.get('disliked_subjects') or []) or 'none yet',
                            hint=f'Marc asks for: {a.hint}\n' if a.hint else '', n=a.n)
-    answer, secs = ask(f'subjects:{a.style}', text)
+    answer, secs = ask(f'subjects{"-wild" if a.wild else ""}:{a.style}', text)
     got = [clean(x, 200) for x in parse_json(answer).get('subjects', []) if str(x).strip()]
     if not got:
         sys.exit('Codex returned no subjects')
@@ -376,6 +381,7 @@ if __name__ == '__main__':
     s.add_argument('--style', required=True)
     s.add_argument('--n', type=int, default=4)
     s.add_argument('--hint', default='')
+    s.add_argument('--wild', action='store_true', help='experimental: subjects pushed a bit to the extreme')
     s.add_argument('--dry-run', action='store_true')
     r = sub.add_parser('rewrite')
     r.add_argument('--prompt', default='')

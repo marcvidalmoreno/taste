@@ -121,6 +121,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – Experimental runs: an "Experimental" switch on New run (batch). Codex writes subjects pushed a bit
+  to the extreme (`codex_text.py subjects --wild`), every image gets a palette the style never uses
+  (`codex_run.py --new-palette`, logged as `newpalN`), options are picked evenly instead of leaning on the ratings,
+  and every image after the first gets a wildcard (`batch.py --experimental`). Finish and Resume keep it.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – The public gallery site follows by itself: `scripts/gallery_sync.py` runs `publish.py --sync`,
   then commits `docs/data` and `docs/img` in taste-gallery and pushes when it has a remote. Post-commit hooks here and
   in `taste/` call it after a major commit (styles, taste.json, README changelog); the app calls it about 5 minutes

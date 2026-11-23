@@ -2,6 +2,7 @@
 //   #/new                     a batch: one or more styles, N images each, fresh subjects
 //   #/new?mode=one            one image (or a few) from one style and a subject I write
 //   #/new?style=a,b           start with these styles picked (from the Taste page or a batch)
+//   Experimental (23 Nov 2026): a batch switch for bolder subjects, new palettes and a wildcard on all but the first image
 // The form survives leaving the page (sessionStorage), so a look at another batch never loses a half-made run.
 // Nothing spends until "Start": the preview prints the exact prompts for free, the cost is always in view.
 import { api, styles } from './api.js';
@@ -15,7 +16,7 @@ const RATIO_HINT = {
   mixed: 'Wide, portrait, square, wide in turn: one batch shows how the style holds up in each shape.',
   wide: '16:9, desktop and Teams backgrounds.', portrait: '4:5, LinkedIn posts and phones.', square: '1:1, LinkedIn posts.',
 };
-const fresh = () => ({ mode: 'batch', styles: [], n: 4, ratio: 'mixed', wildcards: true, useKept: true, subjects: {}, hints: {}, name: '',
+const fresh = () => ({ mode: 'batch', styles: [], n: 4, ratio: 'mixed', wildcards: true, experimental: false, useKept: true, subjects: {}, hints: {}, name: '',
   one: { style: '', subject: '', ratio: 'wide', n: 1 } });
 
 let kept = {};   // style -> how many images are kept as examples
@@ -119,6 +120,12 @@ function batchForm() {
         h('span', {}, all[k].name))),
         !shown.length && h('p', { class: 'muted small' }, 'No style matches.'))),
 
+    h('label', { class: 'nr-block nr-check nr-exp' + (state.experimental ? ' on' : '') },
+      h('input', { type: 'checkbox', role: 'switch', checked: state.experimental, 'data-focus': 'exp',
+        onChange: (e) => { state.experimental = e.target.checked; save(); drawForm(); drawSummary(); } }),
+      h('span', {}, h('strong', {}, 'Experimental'), ' · try things the style has not done yet. ',
+        h('small', { class: 'muted' }, 'Codex writes bolder subjects, each image gets a new palette, your ratings do not steer the picks, and every image after the first pushes one thing to an extreme.'))),
+
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Images'),
       h('div', { class: 'nr-grid' },
@@ -126,9 +133,10 @@ function batchForm() {
         h('div', {}, h('span', { class: 'nr-label' }, 'Shape'), ratioSeg(state.ratio, RATIOS, (v) => { state.ratio = v; }, 'ratio'))),
       h('p', { class: 'muted small' }, RATIO_HINT[state.ratio]),
       h('label', { class: 'nr-check' },
-        h('input', { type: 'checkbox', checked: state.wildcards, disabled: state.n < 2, 'data-focus': 'wild',
+        h('input', { type: 'checkbox', checked: state.experimental || state.wildcards, disabled: state.n < 2 || state.experimental, 'data-focus': 'wild',
           onChange: (e) => { state.wildcards = e.target.checked; save(); } }),
-        h('span', {}, 'Wildcard: the last image of each style pushes one thing to an extreme (light, framing, palette, scale, detail or mood)'))),
+        h('span', {}, state.experimental ? 'Wildcards: on for every image after the first (Experimental)'
+          : 'Wildcard: the last image of each style pushes one thing to an extreme (light, framing, palette, scale, detail or mood)'))),
 
     keptTick(state.styles),
     h('fieldset', { class: 'nr-block' },
@@ -199,7 +207,7 @@ async function writeSubjects(k) {
   drawForm(`[data-focus="write-${k}"]`);
   const tick = setInterval(() => { writing[k] = `${Math.round((Date.now() - t0) / 1000)} s`; const b = form.querySelector(`[data-focus="write-${k}"]`); if (b) b.textContent = `Writing… ${writing[k]}`; }, 1000);
   try {
-    const r = await api('text/subjects', { method: 'POST', body: { style: k, n: left, hint: state.hints[k] || '' } });
+    const r = await api('text/subjects', { method: 'POST', body: { style: k, n: left, hint: state.hints[k] || '', experimental: state.experimental } });
     state.subjects[k] = [...lines(k), ...r.subjects].join('\n');
     save();
     toast(`${plural(r.subjects.length, 'subject')} for ${all[k].name}${r.dry_run ? ' (dry run stand-ins)' : `, in ${r.seconds} s`}. Edit any line you don't like.`);
@@ -289,7 +297,7 @@ function drawSummary() {
     h('h2', {}, 'This run'),
     state.mode === 'batch'
       ? h('p', { class: 'small' }, state.styles.length
-        ? `${plural(state.styles.length, 'style')} × ${state.n} = ${plural(n, 'image')}, ${RATIOS[state.ratio].toLowerCase()} shapes${state.wildcards && state.n > 1 ? ', one wildcard each' : ''}.`
+        ? `${state.experimental ? 'Experimental: ' : ''}${plural(state.styles.length, 'style')} × ${state.n} = ${plural(n, 'image')}, ${RATIOS[state.ratio].toLowerCase()} shapes${state.experimental ? ', new palettes, bolder subjects' : state.wildcards && state.n > 1 ? ', one wildcard each' : ''}.`
         : 'Pick at least one style.')
       : h('p', { class: 'small' }, `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
     costBlock(alw, n, { onRoute: drawSummary, extra: codexStyles ? `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.` : '' }),
@@ -314,7 +322,7 @@ function drawStart() {
   startBtn.title = why;
   startBtn.textContent = why ? why
     : alw?.dry_run ? `Dry run: ${plural(n, 'image')}, nothing spent`
-    : busy ? `Add to queue · ${plural(n, 'image')}` : `Start · make ${plural(n, 'image')}`;
+    : busy ? `Add to queue · ${plural(n, 'image')}` : `Start${state.mode === 'batch' && state.experimental ? ' experimental' : ''} · make ${plural(n, 'image')}`;
 }
 
 function body() {
@@ -322,7 +330,7 @@ function body() {
     const o = state.one;
     return { kind: 'single', route: route(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
   }
-  return { kind: 'batch', route: route(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, name: state.name, use_kept: state.useKept,
+  return { kind: 'batch', route: route(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, experimental: state.experimental, name: state.name, use_kept: state.useKept,
     subjects: Object.fromEntries(state.styles.map((k) => [k, lines(k)])), hints: state.hints };
 }
 

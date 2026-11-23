@@ -666,7 +666,7 @@ def launch(spec):
                 CUR['phase'] = f'Codex is writing subjects for {style_file(st).get("name", st)}'
                 say(CUR['phase'])
                 have += text_job('subjects', '--style', st, '--n', str(spec['n'] - len(have)),
-                                 '--hint', spec['hints'].get(st, ''))['subjects']
+                                 '--hint', spec['hints'].get(st, ''), *(['--wild'] if spec.get('experimental') else []))['subjects']
             if CUR.get('cancel'):
                 raise RuntimeError('stopped before the first image')
             subjects[st] = have
@@ -684,12 +684,16 @@ def launch(spec):
                '--ratio', spec['ratio']]
         if spec.get('kept_refs'):
             cmd += ['--kept-refs', str(folder / '.kept-refs.json')]
+        if spec.get('experimental'):
+            cmd.append('--experimental')
     elif spec['kind'] == 'finish':   # same subjects, seed (the folder name) and kept examples as the first run
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(folder), '--subjects', str(folder / 'subjects.json'),
                '--styles', ','.join(spec['all_styles']), '--n', str(spec['n']), '--wildcards', str(spec['wildcards']),
                '--ratio', spec['ratio'], '--only', ','.join(spec['expected'])]
         if (folder / '.kept-refs.json').is_file():
             cmd += ['--kept-refs', str(folder / '.kept-refs.json')]
+        if spec.get('experimental'):
+            cmd.append('--experimental')
     elif spec['kind'] == 'resume' and not spec.get('jobs'):   # variations cut short: same seed, folder and numbers
         cmd = [PY, '-I', str(ROOT / 'scripts' / 'variations.py'), str(BASE / spec['batch'] / seed_file(spec['batch'])),
                '--style', spec['style'], '--changes', ','.join(spec['changes']), '--out', str(folder),
@@ -726,7 +730,7 @@ def launch(spec):
             write_json(folder / 'run.json', rec)
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
-                                         'wildcards', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs', 'route')
+                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs', 'route')
                if spec.get(k) not in (None, '', [], {})}
         rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
         write_json(folder / 'run.json', rec)
@@ -854,7 +858,8 @@ def spec_batch(body, preview=False):
     ratio = body.get('ratio') or 'mixed'
     if ratio not in RATIO_CHOICES:
         raise ApiError(400, 'ratio: mixed, wide, portrait or square')
-    wildcards = 1 if body.get('wildcards') and n > 1 else 0
+    experimental = bool(body.get('experimental'))
+    wildcards = 1 if body.get('wildcards') and n > 1 and not experimental else 0
     subjects = {s: [clean(x) for x in (body.get('subjects') or {}).get(s, []) if clean(x)][:n] for s in styles}
     hints = {s: clean((body.get('hints') or {}).get(s), 200) for s in styles}
     placeholders = set()
@@ -866,9 +871,11 @@ def spec_batch(body, preview=False):
                 placeholders.add(f'{s}-{i + 1}')
     names = [info[s].get('name', s) for s in styles]
     title = clean(body.get('name'), 60) or (', '.join(names[:3]) + (f' +{len(names) - 3}' if len(names) > 3 else ''))
-    _, batch = free_slug(clean(body.get('name'), 60) or '-'.join(styles[:2]), flux_end(body))
+    if experimental and not clean(body.get('name'), 60):
+        title = 'Experimental: ' + title
+    _, batch = free_slug(clean(body.get('name'), 60) or ('exp-' if experimental else '') + '-'.join(styles[:2]), flux_end(body))
     return {'kind': 'batch', 'title': title, 'batch': batch, 'styles': styles, 'n': n, 'ratio': ratio,
-            'use_kept': bool(body.get('use_kept')), 'wildcards': wildcards, 'subjects': subjects, 'hints': hints, 'placeholders': placeholders,
+            'use_kept': bool(body.get('use_kept')), 'wildcards': wildcards, 'experimental': experimental, 'subjects': subjects, 'hints': hints, 'placeholders': placeholders,
             'expected': [f'{s}-{i + 1}' for s in styles for i in range(n)]}
 
 
@@ -953,7 +960,7 @@ def spec_finish(body):
     styles = [s for s in rec['styles'] if any(n.startswith(s + '-') and n[len(s) + 1:].isdigit() for n in names)]
     return {'kind': 'finish', 'title': f'Finish {rec.get("title") or batch}', 'batch': batch, 'styles': styles,
             'n': int(rec['n']), 'all_styles': rec['styles'], 'ratio': rec.get('ratio') or 'mixed',
-            'wildcards': int(rec.get('wildcards') or 0), 'expected': names}
+            'wildcards': int(rec.get('wildcards') or 0), 'experimental': bool(rec.get('experimental')), 'expected': names}
 
 
 def spec_resume(body):
@@ -972,7 +979,7 @@ def spec_resume(body):
         styles = [s for s in rec['styles'] if any(n.startswith(s + '-') and n[len(s) + 1:].isdigit() for n in names)]
         return {'kind': 'finish', 'title': title, 'batch': batch, 'styles': styles, 'n': int(rec['n']),
                 'all_styles': rec['styles'], 'ratio': rec.get('ratio') or 'mixed',
-                'wildcards': int(rec.get('wildcards') or 0), 'expected': names}
+                'wildcards': int(rec.get('wildcards') or 0), 'experimental': bool(rec.get('experimental')), 'expected': names}
     if rec['kind'] == 'variations':
         if not seed_file(batch):
             raise ApiError(409, 'this batch has no seed to vary')
@@ -2035,7 +2042,8 @@ class Handler(BaseHTTPRequestHandler):
                 extra = ['--kept-refs', str(Path(tmp) / 'kept.json')]
             r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'batch.py'), '--out', str(Path(tmp) / 'out'),
                                 '--subjects', str(f), '--styles', ','.join(spec['styles']), '--n', str(spec['n']),
-                                '--wildcards', str(spec['wildcards']), '--ratio', spec['ratio'], '--dry-run', *extra],
+                                '--wildcards', str(spec['wildcards']), '--ratio', spec['ratio'], '--dry-run', *extra,
+                                *(['--experimental'] if spec['experimental'] else [])],
                                cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=120)
         out = []
         for line in r.stdout.splitlines():
@@ -2075,7 +2083,8 @@ class Handler(BaseHTTPRequestHandler):
         body = self.read_body()
         style_file(str(body.get('style', '')))
         n = max(1, min(12, int(body.get('n') or 4)))
-        return text_job('subjects', '--style', body['style'], '--n', str(n), '--hint', clean(body.get('hint'), 200))
+        return text_job('subjects', '--style', body['style'], '--n', str(n), '--hint', clean(body.get('hint'), 200),
+                        *(['--wild'] if body.get('experimental') else []))
 
     def post_text_rewrite(self):
         """Codex rewrites an image prompt: {prompt, change, keep: [...]}. About 15 s.

@@ -12,6 +12,9 @@ the batch folder, git-ignored). Styles default to the keys of that file. Per sty
 (cycled), a ratio from wide / portrait / square / wide, and its own mix of light, framing, mood and palette
 (codex_run.py --mix --slot i: options spread so the images of a style don't repeat one until all are used). The last --wildcards images of each style also push one random dimension to an extreme
 (codex_run.py --extreme). Everything picked is logged in the "change" column, so ratings show what worked.
+--experimental (23 Nov 2026, the web app's "Experimental" switch): every image gets a palette the style never uses
+(codex_run.py --new-palette), options picked evenly instead of leaning on the ratings (--no-lean), and every image
+after the first of each style gets a wildcard (never the palette one, which the new palette already covers).
 --dry-run prints the prompts and spends nothing. A failed or blocked image is skipped (codex_run makes its one
 recovery); 3 failures in a row stop the run.
 """
@@ -40,6 +43,7 @@ ap.add_argument('--ratio', default='mixed', choices=['mixed', 'wide', 'portrait'
 ap.add_argument('--seed', default='')
 ap.add_argument('--kept-refs', default='', help='JSON {style: [image paths]}: kept examples sent along as references (2 per image, turning)')
 ap.add_argument('--only', default='', help='comma-separated image names: make only these (the rest are skipped, picks unchanged)')
+ap.add_argument('--experimental', action='store_true', help='new palettes, no leaning, a wildcard on all but the first image')
 ap.add_argument('--dry-run', action='store_true')
 a = ap.parse_args()
 
@@ -70,7 +74,11 @@ for style in styles:
             cmd += ['--ref', have[(i * PER_IMAGE + k) % len(have)]]
         if have:
             cmd.append('--refs-kept')
-        if i >= a.start + a.n - a.wildcards:   # picked before the --only skip, so a finish gets the first run's wildcard
+        if a.experimental:
+            cmd += ['--new-palette', '--no-lean']
+            if i > a.start or a.n == 1:   # picked before the --only skip, so a finish gets the first run's wildcard
+                cmd += ['--extreme', rnd.choice(sorted(x for x in EXTREMES if x != 'palette'))]
+        elif i >= a.start + a.n - a.wildcards:   # picked before the --only skip, so a finish gets the first run's wildcard
             cmd += ['--extreme', rnd.choice(sorted(EXTREMES))]
         if only is not None and name not in only:
             continue

@@ -98,6 +98,23 @@ EXTREMES = {
 }
 
 
+# Experimental runs (23 Nov 2026): a palette the style never uses, in place of its own. The seed picks one per image.
+NEW_PALETTES = [
+    'deep indigo, saffron yellow, coral and bone white',
+    'acid lime, plum, charcoal and pale pink',
+    'burnt orange, teal, cream and ink black',
+    'cobalt blue, vermilion red and warm off-white only',
+    'mint green, lilac, butter yellow and soft grey',
+    'oxblood, mustard, olive and parchment',
+    'electric magenta, cyan and near-black',
+    'sage, terracotta, sand and dusty blue',
+    'emerald, gold leaf, black lacquer and ivory',
+    'peach, cornflower blue, chocolate brown and white',
+    'fluorescent orange, slate grey and icy blue',
+    'rust, petrol blue, pale ochre and chalk',
+]
+
+
 AXIS = {'light': 'light', 'framing': 'composition', 'palette': 'palette', 'mood': 'mood'}  # extreme -> template slot
 
 
@@ -118,6 +135,11 @@ def spread(rnd, w, length):
         out.append(i)
         w[i] /= 3
     return out
+
+
+def new_palette(a, rnd):
+    a.new_palette_i = (rnd or random.Random()).randrange(len(NEW_PALETTES))
+    return f'Palette: {NEW_PALETTES[a.new_palette_i]} (a new palette for this style, used boldly).'
 
 
 def compose(a):
@@ -150,6 +172,9 @@ def compose(a):
                     for k, v in st['axes'].items()}
         fill = {k: st['axes'][k][i] for k, i in pick.items()}
         slot = AXIS.get(a.extreme)
+        if a.new_palette and 'palette' in fill:
+            fill['palette'] = new_palette(a, rnd)
+            pick.pop('palette', None)
         if slot:  # the wildcard replaces its own axis, so the prompt never asks for two lights at once
             fill[slot], wild = wild, ''
             pick.pop(slot)
@@ -159,6 +184,10 @@ def compose(a):
         looks = st.get('looks') or [st['prompt']]
         block = looks[a.look % len(looks)] if a.look is not None else st['prompt']
         tags = []
+    if a.new_palette and not (st.get('axes') and (rnd or a.extreme) and 'palette' in st['axes']):
+        block += ' ' + new_palette(a, rnd)
+    if a.new_palette:
+        tags.insert(0, f'newpal{a.new_palette_i}')
     if wild:
         block += ' ' + wild
     if a.extreme:
@@ -373,6 +402,7 @@ if __name__ == '__main__':
     g.add_argument('--mix', help='seed: pick light, framing, mood and palette each on their own')
     g.add_argument('--extreme', choices=list(EXTREMES), help='wildcard: push one dimension to an extreme')
     g.add_argument('--print', action='store_true', help='only print the prompt and change; no Codex run')
+    g.add_argument('--new-palette', action='store_true', help='experimental: a palette the style never uses, in place of its own')
     g.add_argument('--no-lean', action='store_true', help='pick options evenly, ignoring the ratings (scripts/leaning.py)')
     g.add_argument('--ref', action='append', default=[], help='reference image; repeat for several')
     g.add_argument('--refs-kept', action='store_true', help='the --ref images are kept examples of the style (not a seed)')
