@@ -114,6 +114,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – The app restarts itself after an update: when code in `scripts/` changes and nothing is
+  running (no run, no distil round, no open request), the server starts again on the same port within ~20 s and
+  keeps the last runs' messages and logs. The started process now only watches over the server, and closing it
+  stops the server too. Nothing to do on your side.
 - **23 Nov 2026** – More like this: an app server started before the feature existed answered "not found", and
   every large view showed it as a message. Now the row just says it shows up the next time the app starts, with
   no message.

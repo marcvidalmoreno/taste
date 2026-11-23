@@ -11,6 +11,8 @@ How the pieces fit
     (git-ignored, so no image, rating or draft can reach the public repo).
   - Standard library only, plus Pillow for thumbnails. No framework, no build step.
   - Listens on 127.0.0.1 only: nothing on the network can reach it.
+  - Restarts itself (23 Nov 2026): the started process only supervises; the server runs as its child and starts
+    again, same port, when scripts/*.py changed and nothing is running (see supervise, restart_when_idle).
 
 Files this server reads or writes (all in generated/codex/)
   <batch>/*.png        images (read), seed.* is the seed of a variations batch
@@ -33,6 +35,8 @@ Files this server reads or writes (all in generated/codex/)
                        so it stays here, git-ignored). references/.drafts/ holds them until "Create style"
   removed-styles/      a new style whose creation was undone (its file and references move here, never deleted)
   .progress.json       live progress of the running run (read; written by the run scripts)
+  .app-restart-<port>.json  the last runs and the port, handed from a server to the one that restarts it (deleted
+                       on start)
 
 Runs (21 Nov 2026): one queue, one image run at a time. New runs (batch.py), single images, remixes and retries
 (run_list.py) and variations (variations.py) are queued from the page; a run started from chat holds the queue
@@ -223,7 +227,11 @@ RECENT = []               # the last finished app runs, newest last: the page re
                           # the next queued run starts at once
 _QLOCK = threading.Lock()
 _WAKE = threading.Event()
-_guess = None             # nearest.model, loaded on first use (a few seconds: sklearn + 1,000 thumbnails)
+RESTART = 3                   # exit code: "start me again", for the supervisor (scripts/ changed, 23 Nov 2026)
+RESTARTING = threading.Event()  # set once a restart is decided: no new run or distil round starts after it
+ACTIVE = [0]                  # requests being answered right now (a restart waits for them)
+_ALOCK = threading.Lock()
+_guess = None            # nearest.model, loaded on first use (a few seconds: sklearn + 1,000 thumbnails)
 _GUESS_LOCK = threading.Lock()  # its own lock: loading it must not hold up marking
 _lineage = {'key': None, 'map': {}}
 
@@ -391,7 +399,7 @@ def worker():
         _WAKE.clear()
         with _QLOCK:
             # a dry run spends nothing and writes no progress file: it never waits for a real run
-            if CUR.get('running') or not QUEUE or (not DRY_RUN and (chat_run() or {}).get('running')):
+            if RESTARTING.is_set() or CUR.get('running') or not QUEUE or (not DRY_RUN and (chat_run() or {}).get('running')):
                 continue
             spec = QUEUE.pop(0)
             save_queue()
@@ -984,6 +992,8 @@ def start_distil(styles):
     """Ask Codex about each style (3 at a time). Each style's card fills in as its answer arrives."""
     import time
     from concurrent.futures import ThreadPoolExecutor
+    if RESTARTING.is_set():
+        raise ApiError(503, 'the app is restarting after an update: try again in a few seconds')
     since = distil_since()
     all_rows = list(csv.DictReader(open(rate.RATINGS, encoding='utf-8'))) if rate.RATINGS.exists() else []
     run = {'started': time.strftime('%Y-%m-%d %H:%M'), 'running': True, 'finished': None, 'rows_at_start': len(all_rows),
@@ -1042,7 +1052,7 @@ def close_if_decided(run):
 
 def maybe_auto_distil():
     """Codex checks the styles by itself when DUE ratings have piled up since the last round (never in dry run)."""
-    if DRY_RUN or current_run() or not _AUTO.acquire(blocking=False):
+    if DRY_RUN or RESTARTING.is_set() or current_run() or not _AUTO.acquire(blocking=False):
         return
     try:
         _auto_distil()
@@ -1169,6 +1179,15 @@ class Handler(BaseHTTPRequestHandler):
         self.send(200, path.read_bytes(), TYPES.get(path.suffix.lower(), 'application/octet-stream'), cache)
 
     def handle_any(self, method):
+        with _ALOCK:
+            ACTIVE[0] += 1
+        try:
+            self.answer(method)
+        finally:
+            with _ALOCK:
+                ACTIVE[0] -= 1
+
+    def answer(self, method):
         try:
             self.check_host()
             path = unquote(urlparse(self.path).path).strip('/')
@@ -1656,38 +1675,111 @@ class Handler(BaseHTTPRequestHandler):
         return out
 
 
-def use_venv():
-    """Started with another Python (no numpy, scikit-learn)? Run again with the project .venv one and wait."""
-    venv = ROOT / '.venv'
-    py = venv / 'Scripts' / 'python.exe'
-    if py.exists() and Path(sys.prefix).resolve() != venv.resolve():
-        import subprocess
-        print(f'restarting with {py} (the project .venv)')
+def supervise():
+    """The process that was started keeps the server running as a child, with the project .venv Python, and starts
+    it again when it exits with RESTART: its code changed while nothing was running (23 Nov 2026). So the page
+    never meets a server older than itself, and whoever started the app (a terminal, the preview) keeps one process
+    on the same port. This loop never reloads itself: keep it small."""
+    import subprocess
+    venv = ROOT / '.venv' / 'Scripts' / 'python.exe'
+    py = str(venv) if venv.exists() else sys.executable
+    env = {**os.environ, 'TASTE_APP_PARENT': str(os.getpid())}
+    args = sys.argv[1:]
+    while True:
         try:
-            sys.exit(subprocess.call([str(py), '-I', str(Path(__file__).resolve()), *sys.argv[1:]]))
+            code = subprocess.call([py, '-I', str(Path(__file__).resolve()), *args], env=env)
         except KeyboardInterrupt:
-            sys.exit(0)
+            return 0
+        if code != RESTART:
+            return code
+        print('scripts/ changed: the app starts again', flush=True)
+        if '--no-browser' not in args:
+            args = [*args, '--no-browser']   # the page is open already
+
+
+def exit_with_parent(ppid):
+    """The supervisor was closed or killed: stop too, so no orphan keeps the port."""
+    import time
+    if os.name == 'nt':
+        import ctypes
+        k = ctypes.windll.kernel32
+        k.OpenProcess.restype = ctypes.c_void_p
+        k.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        h = k.OpenProcess(0x00100000, False, ppid)   # SYNCHRONIZE: enough to wait for it
+        if not h:
+            os._exit(0)                                # already gone
+        k.WaitForSingleObject(h, 0xFFFFFFFF)
+    else:
+        while os.getppid() == ppid:
+            time.sleep(2)
+    os._exit(0)
+
+
+def code_stamp():
+    """Newest change to the server's own code: this file and the modules it imports."""
+    return max((p.stat().st_mtime for p in (ROOT / 'scripts').glob('*.py')), default=0)
+
+
+def restart_when_idle(httpd, state_file):
+    """Code changed (Claude or Codex edited scripts/): once nothing is running, hand the last runs to the next
+    server and stop with RESTART. A run, a queued run starting, a distil round or a request being answered
+    holds the restart; the queue and the distil round are files, so they carry over by themselves."""
+    import time
+    born = code_stamp()
+    while True:
+        time.sleep(5)
+        now = code_stamp()
+        if now <= born or time.time() - now < 10:   # unchanged, or still being edited
+            continue
+        with _QLOCK:
+            if CUR.get('running') or (current_run() or {}).get('running') or _AUTO.locked():
+                continue
+            RESTARTING.set()
+            state_file.write_text(json.dumps({'port': httpd.server_address[1], 'cur': CUR, 'recent': RECENT},
+                                             ensure_ascii=False, default=str), encoding='utf-8')
+        while ACTIVE[0]:                 # let open requests finish (a Codex text job can take minutes)
+            time.sleep(0.2)
+        httpd.shutdown()                 # main() then waits for any last request and exits with RESTART
+        return
 
 
 def main():
-    use_venv()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--port', type=int, default=8777)
     ap.add_argument('--no-browser', action='store_true', help='do not open the browser')
     ap.add_argument('--dry-run', action='store_true',
                     help='every run and text job is a dry run: no Codex call, no allowance spent')
     a = ap.parse_args()
+    parent = os.environ.get('TASTE_APP_PARENT')
+    if not parent:
+        sys.exit(supervise())
+    threading.Thread(target=exit_with_parent, args=(int(parent),), daemon=True).start()
     global DRY_RUN
     DRY_RUN = a.dry_run
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
-    for port in range(a.port, a.port + 10):  # next free port if this one is taken
+    # After a restart: the same port as before, and the last runs, so the page reports them as if nothing happened.
+    state_file = BASE / f'.app-restart-{a.port}.json'
+    state = read_json(state_file, {}) if state_file.exists() else {}
+    state_file.unlink(missing_ok=True)
+    CUR.update(state.get('cur') or {})
+    RECENT[:] = state.get('recent') or []
+    import time
+    httpd = None
+    for _ in range(25 if state.get('port') else 0):   # the old server has just let go of it
+        try:
+            httpd = ThreadingHTTPServer(('127.0.0.1', state['port']), Handler)
+            port = state['port']
+            break
+        except OSError:
+            time.sleep(0.2)
+    for port in ([] if httpd else range(a.port, a.port + 10)):  # next free port if this one is taken
         try:
             httpd = ThreadingHTTPServer(('127.0.0.1', port), Handler)
             break
         except OSError:
             continue
-    else:
+    if not httpd:
         sys.exit(f'no free port between {a.port} and {a.port + 9}')
     migrate_drafts()
     global QUEUE_FILE, DISTIL_RUN
@@ -1697,14 +1789,21 @@ def main():
     QUEUE[:] = [q for q in read_json(QUEUE_FILE, []) if isinstance(q, dict) and q.get('id')]
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=maybe_auto_distil, daemon=True).start()
+    threading.Thread(target=restart_when_idle, args=(httpd, state_file), daemon=True).start()
     url = f'http://127.0.0.1:{port}/'
-    print(f'taste app on {url}  (Ctrl+C to stop)' + ('  [dry run: runs spend nothing]' if DRY_RUN else ''))
+    print(f'taste app on {url}  (Ctrl+C to stop)' + ('  [dry run: runs spend nothing]' if DRY_RUN else ''),
+          flush=True)
     if not a.no_browser:
         webbrowser.open(url)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print('\nstopped')
+        return
+    while ACTIVE[0]:                     # a request that slipped in just before the stop
+        time.sleep(0.2)
+    httpd.server_close()
+    sys.exit(RESTART)
 
 
 if __name__ == '__main__':
