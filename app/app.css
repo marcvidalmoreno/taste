@@ -370,7 +370,9 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 .rseg-btn + .rseg-btn { border-left: 1px solid var(--line); }
 .rseg-btn small { opacity: .7; }
 .rseg-btn:hover { background: var(--surface-2); color: var(--text); }
-.rseg-btn[aria-pressed=true] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+/* Selected = filled light, like a checked box: hover only tints, so the choice never looks like a hover (Marc, 23 Nov 2026). */
+.rseg-btn[aria-pressed=true], .rseg-btn[aria-pressed=true]:hover { background: var(--pico-primary-background); color: var(--pico-primary-inverse); font-weight: 600; }
+.rseg-btn[aria-pressed=true] small { opacity: .75; }
 /* Image size sits apart from the filters, top right: it changes the view, not which images show. */
 .gallery-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .gallery-head .page-head { margin-bottom: 0; }
