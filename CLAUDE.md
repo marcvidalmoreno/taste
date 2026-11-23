@@ -11,6 +11,8 @@ messages. Images stay local (`generated/`, `taste/data/`), backed up by Google D
   suggestions). Claude and Codex do the rest behind the scenes. Motto: tech out of sight.
 - Never ask him in chat to decide image or style changes. A decision that is his goes into the app as a calm,
   one-click element; no tech steps (marking, saving, running scripts) on his side.
+- Start the app with /launch-localhost (own console window), never with preview_start: the server must outlive
+  the session (Marc, 23 Nov 2026).
 
 ## Pushing (Marc, 13 Nov 2026)
 - Pushes to `origin/main` are automatic in this repo and in `taste/`: no need to ask.
