@@ -114,7 +114,7 @@ function pendingTiles() {
         making && job.current?.subject ? h('small', { class: 'subject' }, job.current.subject) : null),
       h('div', { class: 'caption' }, h('span', { class: 'num' }, num),
         h('span', { class: 'muted' }, job.dry_run ? 'dry run' : 'about a minute each'),
-        h('span', { class: 'kind' }, kind)));
+        h('span', { class: 'kind', title: kind }, kind)));
   });
 }
 
@@ -252,7 +252,7 @@ function tile(im) {
       h('div', { class: 'caption' },
         h('span', { class: 'num' }, im.number),
         h('span', { class: 'style' }, styleName(im.style)),
-        h('span', { class: 'kind' }, kindOf(im))),
+        h('span', { class: 'kind', title: kindOf(im) }, kindOf(im))),
       why && h('div', { class: 'why' }, why)),
     // Mark without opening the image. Saved ratings are read-only, ignored images can't be marked.
     !im.saved && im.status !== 'ignored' && markButtons(im, { inGrid: true }));

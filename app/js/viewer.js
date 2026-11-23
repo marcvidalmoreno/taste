@@ -127,7 +127,7 @@ function drawPanel(im) {
   panel.replaceChildren(
     h('header', { class: 'panel-head' },
       h('span', { class: 'num' }, im.number), h('h2', {}, styleName(im.style)),
-      h('span', { class: 'kind' }, kindOf(im))),
+      h('span', { class: 'kind', title: kindOf(im) }, kindOf(im))),
     markSection(im),
     actions(im),
     similarRow(im, store.data.batch, !!im.style),

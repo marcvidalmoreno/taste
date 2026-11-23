@@ -252,7 +252,7 @@ function draw() {
     h('aside', { class: 'panel', 'aria-label': 'Details and rating' },
       h('header', { class: 'panel-head' },
         im.number && h('span', { class: 'num' }, im.number), h('h2', {}, st?.name || im.style || 'no style'),
-        h('span', { class: 'kind' }, kindOf(im))),
+        h('span', { class: 'kind', title: kindOf(im) }, kindOf(im))),
       markBox = h('section', { class: 'mark-box' }),
       h('section', { class: 'actions' },
         keepBox = h('span', { class: 'keep-box' }),
