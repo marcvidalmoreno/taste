@@ -1,11 +1,11 @@
 // New run: make images with my styles from the page instead of from chat.
 //   #/new                     a batch: one or more styles, N images each, fresh subjects
 //   #/new?mode=one            one image (or a few) from one style and a subject I write
-//   #/new?style=a,b           start with these styles picked (from the Taste page or a batch)
+//   #/new?style=a,b           start with exactly these styles picked (from the Taste page or a batch)
 //   Experimental (23 Nov 2026): a batch switch for bolder subjects, new palettes and a wildcard on all but the first image
 // The form survives leaving the page (sessionStorage), so a look at another batch never loses a half-made run.
 // Nothing spends until "Start": the preview prints the exact prompts for free, the cost is always in view.
-import { api, styles } from './api.js';
+import { api, styles, refreshStyles } from './api.js';
 import { allowance, costBlock, route, routeBlocker } from './cost.js';
 import { job, enqueueRun, onJob } from './job.js';
 import { h, plural, toast, showError } from './ui.js';
@@ -29,10 +29,16 @@ export async function renderNewRun(el, query) {
   try { state = { ...fresh(), ...JSON.parse(sessionStorage.getItem(KEY) || '{}') }; } catch { state = fresh(); }
   state.one = { ...fresh().one, ...state.one };
   if (query.get('mode') === 'one' || query.get('mode') === 'batch') state.mode = query.get('mode');
-  const pre = (query.get('style') || '').split(',').filter((k) => all[k]);
+  // Coming from a style ("New run" on Taste, a batch, a new style): start with exactly those styles, in view.
+  // A key the cached list doesn't know yet means the list is stale: read it again once.
+  let pre = (query.get('style') || '').split(',').filter(Boolean);
+  if (pre.some((k) => !all[k])) all = await refreshStyles();
+  pre = pre.filter((k) => all[k]);
   if (pre.length) {
+    filter = '';
     if (state.mode === 'one') state.one.style = pre[0];
-    else state.styles = [...new Set([...state.styles, ...pre])];
+    else state.styles = pre;
+    save();
   }
   if (!state.one.style) state.one.style = state.styles[0] || Object.keys(all)[0];
   document.title = 'New run · taste';

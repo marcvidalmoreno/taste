@@ -19,7 +19,7 @@ export async function api(path, { method = 'GET', body } = {}) {
 // styles() is the ones that are on (the picker, Taste, edits); allStyles() adds the ones switched off, for labels
 // (a switched-off style still names its images in the Gallery and the Overview).
 let stylesPromise;
-const load = () => (stylesPromise ??= api('styles').catch(() => ({ styles: {}, archived: {} })));
+const load = () => (stylesPromise ??= api('styles').catch(() => { stylesPromise = null; return { styles: {}, archived: {} }; }));   // a failed read is not kept
 export const styles = () => load().then((d) => d.styles);
 export const archivedStyles = () => load().then((d) => d.archived || {});
 export const allStyles = () => load().then((d) => ({
