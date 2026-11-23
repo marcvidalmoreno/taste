@@ -9,8 +9,6 @@ Usage (from the project root):
         # --mix: light, framing, mood and palette each picked on their own (seeded, so repeatable);
         # --extreme: push one dimension to an extreme, the rest of the style unchanged. Both go in "change".
   .venv/Scripts/python -I scripts/codex_run.py read      # usage now, from the newest Codex session log
-  gen --route cloudflare (or TASTE_ROUTE=cloudflare): the same prompt made by FLUX on Cloudflare (scripts/cf_run.py);
-        the "route" column of runs.csv says which; for cloudflare, "tokens" holds the estimated neurons.
 
 One fresh `codex exec` per image. Codex only generates and copies the PNG into --out; it never views the
 result and never touches the taste files. Afterwards this script reads tokens and the five-hour / weekly
@@ -28,8 +26,7 @@ from progress import Progress, is_child  # noqa: E402
 LOG = ROOT / 'generated' / 'codex' / 'runs.csv'
 CODEX = Path.home() / '.codex'
 HEADER = ['date', 'time', 'batch', 'name', 'mode', 'style', 'change', 'seed', 'ok', 'width', 'height',
-          'tokens', 'five_hour_first', 'five_hour_last', 'weekly_first', 'weekly_last', 'seconds', 'session', 'prompt', 'route']
-ROUTES = ['codex', 'cloudflare']   # cloudflare: scripts/cf_run.py, FLUX on Workers AI's free allowance (23 Nov 2026)
+          'tokens', 'five_hour_first', 'five_hour_last', 'weekly_first', 'weekly_last', 'seconds', 'session', 'prompt']
 
 JOB = """Image job. Use the image_gen tool exactly once. Do not write code to draw, do not view, open or describe the result, and do not create or edit any other file.
 {ref}Image prompt: {prompt}
@@ -185,8 +182,6 @@ def gen(a):
         note = REF_KEPT.format(paths=', '.join(str(r) for r in refs))
     else:
         note = REF.format(path=ref) if ref else ''
-    if a.route == 'cloudflare':
-        return gen_cloudflare(a, out, refs, ref)
     job = JOB.format(ref=note, prompt=a.prompt, name=a.name)
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'workspace-write']
     for r in refs:
@@ -201,8 +196,7 @@ def gen(a):
                              errors='replace', timeout=900)
     except subprocess.TimeoutExpired as e:   # say so in the log and runs.csv, so the web app can tell (23 Nov 2026)
         tail = lambda x: (x.decode('utf-8', 'replace') if isinstance(x, bytes) else x or '')  # noqa: E731
-        res = subprocess.CompletedProcess(cmd, 124, tail(e.stdout), tail(e.stderr) + '
-TIMED OUT: codex exec ran over 900 s and was stopped')
+        res = subprocess.CompletedProcess(cmd, 124, tail(e.stdout), tail(e.stderr) + '\nTIMED OUT: codex exec ran over 900 s and was stopped')
     secs = round(time.time() - start)
     (out / f'{a.name}.codex.log').write_text((res.stdout or '')[-3000:] + '\n--- stderr ---\n' + (res.stderr or '')[-3000:],
                                              encoding='utf-8')
@@ -222,63 +216,20 @@ TIMED OUT: codex exec ran over 900 s and was stopped')
     now = datetime.datetime.now()
     row = [now.date().isoformat(), now.strftime('%H:%M'), out.name, a.name, a.mode, a.style, a.change,
            ('kept ' + ' + '.join(r.name for r in refs)) if (a.refs_kept and refs) else ref.name if ref else '', 'yes' if png.exists() else 'no', w, h, last[0] if last[0] is not None else '',
-           first[1], last[1], first[2], last[2], secs, sid, a.prompt, 'codex']
-    log_row(row)
-    print(json.dumps(dict(zip(HEADER[:18], row[:18]))))
-    if prog:
-        prog.ok(a.name) if png.exists() else prog.fail(a.name, f'Codex exit code {res.returncode}')
-        prog.end()
-    if not png.exists():
-        print(f'FAILED: no image. Codex exit code {res.returncode}; see {a.name}.codex.log', file=sys.stderr)
-        sys.exit(2)
-
-
-def log_row(row):
-    """Append one row to runs.csv. Adds the "route" column to an older header once (old rows read as codex)."""
+           first[1], last[1], first[2], last[2], secs, sid, a.prompt]
     LOG.parent.mkdir(parents=True, exist_ok=True)
-    if LOG.exists():
-        text = LOG.read_text(encoding='utf-8')
-        head, _, rest = text.partition('
-')
-        if head.strip() and 'route' not in head.strip().split(','):
-            LOG.write_text(head.rstrip('') + ',route
-' + rest, encoding='utf-8', newline='')
     new = not LOG.exists()
     with open(LOG, 'a', encoding='utf-8', newline='') as fh:
         wr = csv.writer(fh)
         if new:
             wr.writerow(HEADER)
         wr.writerow(row)
-
-
-def gen_cloudflare(a, out, refs, ref):
-    """The same prompt on FLUX (scripts/cf_run.py). Logged like a Codex run; the allowance columns stay empty."""
-    import cf_run
-    prog = None
-    if not is_child():
-        prog = Progress(out, [a.name], a.mode)
-        prog.begin(a.name, a.subject or a.change)
-    start = time.time()
-    png = out / f'{a.name}.png'
-    ok, spent, text, why = cf_run.make(a.prompt, a.ratio, refs, png)
-    secs = round(time.time() - start)
-    (out / f'{a.name}.codex.log').write_text(text + '
-', encoding='utf-8')
-    w = h = ''
-    if ok:
-        from PIL import Image
-        w, h = Image.open(png).size
-    now = datetime.datetime.now()
-    row = [now.date().isoformat(), now.strftime('%H:%M'), out.name, a.name, a.mode, a.style, a.change,
-           ('kept ' + ' + '.join(r.name for r in refs)) if (a.refs_kept and refs) else ref.name if ref else '',
-           'yes' if ok else 'no', w, h, spent if ok else '', '', '', '', '', secs, f'cloudflare:{cf_run.MODEL}', a.prompt, 'cloudflare']
-    log_row(row)
     print(json.dumps(dict(zip(HEADER[:18], row[:18]))))
     if prog:
-        prog.ok(a.name) if ok else prog.fail(a.name, why)
+        prog.ok(a.name) if png.exists() else prog.fail(a.name, f'Codex exit code {res.returncode}')
         prog.end()
-    if not ok:
-        print(f'FAILED: no image. Cloudflare: {why}; see {a.name}.codex.log', file=sys.stderr)
+    if not png.exists():
+        print(f'FAILED: no image. Codex exit code {res.returncode}; see {a.name}.codex.log', file=sys.stderr)
         sys.exit(2)
 
 
@@ -315,8 +266,6 @@ if __name__ == '__main__':
     g.add_argument('--style', default='')
     g.add_argument('--mode', default='test')
     g.add_argument('--change', default='')
-    g.add_argument('--route', default=os.environ.get('TASTE_ROUTE') or 'codex', choices=ROUTES,
-                   help='codex (default) or cloudflare (FLUX on the free daily allowance, scripts/cf_run.py)')
     sub.add_parser('read')
     a = ap.parse_args()
     gen(a) if a.cmd == 'gen' else read_now()
