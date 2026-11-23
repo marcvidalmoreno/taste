@@ -15,6 +15,7 @@ a name or a piece of style text in a subject, it stops before writing anything (
 Output (OUT = ../taste-gallery/docs by default):
   OUT/data/images.json      one row per pick: id, style, date, subject, mode, w, h, group, rating
   OUT/data/styles.json      style key -> display name (names only)
+  OUT/data/data.js          the three files above as one script (the site opens by double-click, where fetch() is blocked)
   OUT/data/evolution.json   per style: first/last date, edit dates, weekly runs and keep rate; plus the changelog
   OUT/img/<id>.webp         about 1600 px on the long side;  OUT/img/t/<id>.webp  about 480 px
 Ids are a short hash of batch/name: folder names never go public.
@@ -345,7 +346,10 @@ def main():
     rows = [{k: v for k, v in i.items() if k != '_src'} for i in images]
     for fn, data in (('images.json', rows), ('styles.json', names), ('evolution.json', evo)):
         (out / 'data' / fn).write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding='utf-8')
-    print(f'wrote {len(rows)} pictures ({made} new images converted) and 3 JSON files to {out}')
+    # The site opens by double-click (file://), where fetch() of a JSON file is blocked: the same data as one script.
+    (out / 'data' / 'data.js').write_text('window.TASTE = ' + json.dumps({'images': rows, 'styles': names, 'evolution': evo}, ensure_ascii=False) + ';',
+                                          encoding='utf-8')
+    print(f'wrote {len(rows)} pictures ({made} new images converted) and the data files to {out}')
     return 0
 
 
