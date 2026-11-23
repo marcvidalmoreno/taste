@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – FLUX stands out (e4aa9c0 + this): new FLUX runs get folders ending in `-flux` (kept after the
+  24-character cut), and FLUX images carry a small **FLUX** badge on their tile in batches and the Gallery (tiles
+  and Gallery items now carry `route`). New run's folder line says `-flux` when FLUX is picked. Guide updated.
+  Undo: `git revert` both commits.
 - **23 Nov 2026** – Queue on hold: before each queued run the app checks that every script compiles; if one doesn't,
   the queue waits (header: "runs on hold · waits for a script fix") and goes on by itself once it compiles. A run
   that made nothing and failed on a Python error also holds the queue, with **Continue** in the header. No more
