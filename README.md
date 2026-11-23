@@ -117,6 +117,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – `scripts/publish.py`: grid thumbnails are now 800 px (were 480 px and looked blurry on wide or
+  high-DPI screens); older thumbs are rebuilt on the next `--sync`. Undo: set `THUMB` back to 480.
 - **23 Nov 2026** – Gallery: the address follows the large view, one link per image
   (`#/gallery/<batch>/<image>`, filters kept), so an image can be linked, bookmarked and reloaded; Back closes the
   view. Guide updated. Undo: `git revert` this commit.

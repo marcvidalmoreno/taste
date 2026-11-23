@@ -17,7 +17,7 @@ Output (OUT = ../taste-gallery/docs by default):
   OUT/data/styles.json      style key -> display name (names only)
   OUT/data/data.js          the three files above as one script (the site opens by double-click, where fetch() is blocked)
   OUT/data/evolution.json   per style: first/last date, edit dates, weekly runs and keep rate; plus the changelog
-  OUT/img/<id>.webp         about 1600 px on the long side;  OUT/img/t/<id>.webp  about 480 px
+  OUT/img/<id>.webp         about 1600 px on the long side;  OUT/img/t/<id>.webp  about 800 px
 Ids are a short hash of batch/name: folder names never go public.
 """
 import argparse, csv, hashlib, json, re, subprocess, sys
@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / 'generated' / 'codex'
 STYLES = ROOT / 'taste' / 'styles'
 DEFAULT_OUT = ROOT.parent / 'taste-gallery' / 'docs'
-LARGE, THUMB = 1600, 480
+LARGE, THUMB = 1600, 800   # thumbs fill a grid tile, often 600+ px wide on a high-DPI screen
 NAME_BLOCKLIST = ['marc', 'mvidal', 'vidal', 'manara']   # lower-case words that must never appear in the output
 STYLE_FIELDS = ('description', 'light', 'composition', 'camera_or_medium', 'mood', 'texture_detail', 'avoid', 'prefer')
 
@@ -285,7 +285,8 @@ def export(images, out):
     for i in images:
         large, thumb = out / 'img' / f"{i['id']}.webp", out / 'img' / 't' / f"{i['id']}.webp"
         src = i['_src']
-        if large.exists() and thumb.exists() and large.stat().st_mtime >= src.stat().st_mtime:
+        if (large.exists() and thumb.exists() and large.stat().st_mtime >= src.stat().st_mtime
+                and max(Image.open(thumb).size) >= min(THUMB, max(Image.open(src).size))):
             continue
         large.parent.mkdir(parents=True, exist_ok=True)
         thumb.parent.mkdir(parents=True, exist_ok=True)
