@@ -710,9 +710,9 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
 .history { grid-column: 1 / -1; padding: .5rem .25rem 1.25rem 3.75rem; }
 .history h3 { font-size: .95rem; margin: 0 0 .4rem; }
 .history-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1.5rem; }
-.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
-.timeline li { display: grid; grid-template-columns: 1.4rem 1fr; gap: .5rem; align-items: start; padding: 0; margin: 0; }
-.timeline li.is-undone { opacity: .55; }
+.history .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.history .timeline li { display: grid; grid-template-columns: 1.4rem 1fr; gap: .5rem; align-items: start; padding: 0; margin: 0; }
+.history .timeline li.is-undone { opacity: .55; }
 .ev-num { display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #3a3a3a; font-size: .72rem; }
 .hist-chart { margin: 0 0 .75rem; }
 .hist-chart svg { width: 100%; height: auto; display: block; }
