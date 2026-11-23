@@ -5,12 +5,13 @@
 // 3. Create style: taste/styles/<key>.json is written, the style is on the Taste page, a first run is one click away.
 // The images stay on this laptop (generated/codex/references/, git-ignored): they are other people's work.
 import { api, refreshStyles } from './api.js';
-import { undoEdit } from './styleedit.js';
+import { undoEdit, diffValue } from './styleedit.js';
 import { h, toast, showError, plural } from './ui.js';
 
 const MAX = 4;
-const TEXTS = [['description', 'Description', 3], ['camera_or_medium', 'Medium', 1], ['texture_detail', 'Detail', 2]];
-const LISTS = [['light', 'Light'], ['composition', 'Composition'], ['mood', 'Mood'], ['prefer', 'Lean towards'],
+const NL = String.fromCharCode(10);
+export const TEXTS = [['description', 'Description', 3], ['camera_or_medium', 'Medium', 1], ['texture_detail', 'Detail', 2]];
+export const LISTS = [['light', 'Light'], ['composition', 'Composition'], ['mood', 'Mood'], ['prefer', 'Lean towards'],
   ['avoid', 'Avoid'], ['subjects', 'Subjects']];
 
 // Shrink in the browser (longest side 1280 px, JPEG): a phone photo of 8 MB travels as ~300 KB.
@@ -21,6 +22,45 @@ async function shrink(file) {
   c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
   bmp.close?.();
   return c.toDataURL('image/jpeg', 0.88);
+}
+
+// Shared with the fork dialog (forkstyle.js): the field editors of step 2, what a style still lacks, and the "created" block.
+// parent: when given (a fork), each field that differs from it shows the changed words marked under the field.
+// A field the style does not have is left out when a parent is given (the fork keeps the parent's shape).
+export function fieldEditors(s, onChange, parent) {
+  const rows = (k) => Math.min(6, Math.max(2, (s[k] || []).length + 1));
+  const slot = (k) => {
+    const box = h('div', { class: 'fork-diff' });
+    const mark = () => {
+      const same = JSON.stringify(s[k] ?? null) === JSON.stringify(parent[k] ?? null);
+      box.replaceChildren(...(same ? [] : [h('p', { class: 'muted small' }, `Changed from ${parent.name}`), diffValue(parent[k], s[k])]));
+    };
+    mark();
+    return [box, mark];
+  };
+  const field = (k, label, asList, r) => {
+    const [box, mark] = parent ? slot(k) : [null, () => {}];
+    const set = asList ? (v) => v.split(NL).map((x) => x.trim()).filter(Boolean) : (v) => v;
+    const val = asList ? (s[k] || []).join(NL) : s[k] || '';
+    return h('section', { class: 'field-diff' },
+      h('label', { class: 'field-head', for: 'ns-' + k }, h('strong', {}, label), asList && h('span', { class: 'muted small' }, plural((s[k] || []).length, 'line'))),
+      h('textarea', { id: 'ns-' + k, rows: asList ? rows(k) : r, onInput: (e) => { s[k] = set(e.target.value); mark(); onChange(); } }, val), box);
+  };
+  const keep = ([k]) => !parent || k in s;
+  return [...TEXTS.filter(keep).map(([k, label, r]) => field(k, label, Array.isArray(s[k]), r)),
+    ...LISTS.filter(keep).map(([k, label]) => field(k, label, true))];
+}
+
+export function missingFields(s) {
+  const need = [['name', 'a name'], ['description', 'a description'], ['light', 'light'], ['composition', 'composition'],
+    ['mood', 'mood'], ['camera_or_medium', 'a medium'], ['texture_detail', 'detail'], ['avoid', 'an avoid line']];
+  return need.filter(([k]) => k in s && !(Array.isArray(s[k]) ? s[k].length : String(s[k] || '').trim())).map(([, w]) => w);
+}
+
+export function createdBlock(s, line) {
+  return h('div', { class: 'ns-done' },
+    h('span', { class: 'swatches big', 'aria-hidden': 'true' }, s.palette.slice(0, 5).map((c) => h('i', { style: { background: c } }))),
+    h('div', {}, h('p', {}, h('strong', {}, s.name), ' is on the Taste page.'), h('p', { class: 'muted small' }, line)));
 }
 
 export function openNewStyle({ onCreated } = {}) {
@@ -137,23 +177,11 @@ export function openNewStyle({ onCreated } = {}) {
           h('span', { class: 'muted small' }, p.measured ? 'measured from your images' : 'as Codex read it')),
         h('div', { class: 'swatches ns-palette', role: 'list' }, s.palette.map((c) => h('span', { role: 'listitem', title: c },
           h('i', { style: { background: c } }), h('code', {}, c))))),
-      ...TEXTS.map(([k, label, r]) => h('section', { class: 'field-diff' },
-        h('label', { class: 'field-head', for: 'ns-' + k }, h('strong', {}, label)),
-        h('textarea', { id: 'ns-' + k, rows: r, onInput: (e) => { s[k] = e.target.value; drawCreate(); } }, s[k] || ''))),
-      ...LISTS.map(([k, label]) => h('section', { class: 'field-diff' },
-        h('label', { class: 'field-head', for: 'ns-' + k }, h('strong', {}, label),
-          h('span', { class: 'muted small' }, plural((s[k] || []).length, 'line'))),
-        h('textarea', { id: 'ns-' + k, rows: rows(k),
-          onInput: (e) => { s[k] = e.target.value.split('\n').map((x) => x.trim()).filter(Boolean); drawCreate(); } }, lines(k)))),
+      ...fieldEditors(s, drawCreate),
     ];
   }
 
-  function missing() {
-    const s = st.style;
-    const need = [['name', 'a name'], ['description', 'a description'], ['light', 'light'], ['composition', 'composition'],
-      ['mood', 'mood'], ['camera_or_medium', 'a medium'], ['texture_detail', 'detail'], ['avoid', 'an avoid line']];
-    return need.filter(([k]) => !(Array.isArray(s[k]) ? s[k].length : String(s[k] || '').trim())).map(([, w]) => w);
-  }
+  const missing = () => missingFields(st.style);
 
   let hint;
   function footTwo() {
@@ -192,13 +220,7 @@ export function openNewStyle({ onCreated } = {}) {
   // ------------------------------------------------------------ step 3: created, make the first images
 
   function stepThree() {
-    const s = st.style;
-    return [
-      h('div', { class: 'ns-done' },
-        h('span', { class: 'swatches big', 'aria-hidden': 'true' }, s.palette.slice(0, 5).map((c) => h('i', { style: { background: c } }))),
-        h('div', {}, h('p', {}, h('strong', {}, s.name), ' is on the Taste page.'),
-          h('p', { class: 'muted small' }, 'A first run shows whether the words caught the look. Your thumbs then steer it, like every other style.'))),
-    ];
+    return [createdBlock(st.style, 'A first run shows whether the words caught the look. Your thumbs then steer it, like every other style.')];
   }
 
   function footThree() {

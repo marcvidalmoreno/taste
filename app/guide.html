@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 24 Nov 2026 (large view: Full screen on F, 1 : 1 on the 1 key). This guide changes with the app.</p>
+<p class="muted small">Last updated 24 Nov 2026 (Fork a style). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -24,6 +24,7 @@
   <a href="#/guide/styles">Styles</a>
   <a href="#/guide/taste">Taste</a>
   <a href="#/guide/newstyle">New style from images</a>
+  <a href="#/guide/fork">Fork a style</a>
   <a href="#/guide/change">Change a style</a>
   <a href="#/guide/suggestions">Suggestions</a>
   <a href="#/guide/notes">Notes for Claude</a>
@@ -398,8 +399,8 @@
     the index at the top jumps to one. <strong>New style from images…</strong>, top right, starts a new one.</p>
   <h3>Each style card</h3>
   <ul>
-    <li><strong>New run</strong>, <strong>One image</strong>, <strong>Change this style…</strong> and
-      <strong>Note for Claude…</strong>.</li>
+    <li><strong>New run</strong>, <strong>One image</strong>, <strong>Change this style…</strong>, <strong>Fork…</strong> and
+      <strong>Note for Claude…</strong>. A forked style says <strong>Forked from</strong> its parent.</li>
     <li><strong>Changed from the app</strong> (folded): every edit made from the page, newest first, with your words,
       whether Codex or you wrote it, what changed field by field, and <strong>Undo</strong>.</li>
     <li><strong>How new runs lean</strong> (folded): which options your thumbs made more or less likely ("1.8× as
@@ -437,6 +438,26 @@
     other people's work and never go to GitHub. <strong>Undo</strong> on the last step, or on the Taste card under
     "Changed from the app", takes the style off the page again (its file is set aside, not deleted). The new style
     file goes to your private GitHub repo only when you tell Claude "commit my style edits".</p>
+</section>
+
+<section id="guide-fork">
+  <h2>Fork a style</h2>
+  <p>A new style that starts as an existing one, with the difference you describe (Robots → Night robots). The
+    parent stays exactly as it is. From a <strong>Taste</strong> card → <strong>Fork…</strong>, or from
+    <strong>Change the style</strong> → <strong>As a new style…</strong>, which carries the words you typed over.</p>
+  <ol>
+    <li>Give it a <strong>name</strong> and say <strong>what should be different</strong> (quick picks help).</li>
+    <li><strong>Propose the fork</strong>: Codex writes the variant (about 30 s, nothing is made yet). Or
+      <strong>Copy as it is</strong>: the same style under a new name, no Codex, to edit yourself.</li>
+    <li>Check every field. The words that differ from the parent are marked under each field; the palette says
+      whether the colours changed, with a button to go back to the parent's.</li>
+    <li><strong>Create fork</strong> (or <kbd>Ctrl</kbd> + <kbd>Enter</kbd>). It is on the Taste page at once, with
+      no images or ratings. <strong>First run</strong> shows whether the difference came through.</li>
+  </ol>
+  <p><strong>Undo</strong> on the last step, or on the Taste card under "Changed from the app", sets the fork's file
+    aside (never deleted). The fork's card says "Forked from", and in Styles → History the fork's first event reads
+    "Forked from" its parent and the parent's reads "Forked into" the fork. A switched-off style can't be forked. The
+    new file goes to your private repo only when you tell Claude "commit my style edits".</p>
 </section>
 
 <section id="guide-change">

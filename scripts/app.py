@@ -1092,7 +1092,7 @@ def undo_style_edit(eid):
         rec = next((e for e in edits if e['id'] == eid), None)
         if not rec or rec['undone']:
             raise ApiError(404, 'no such edit, or it is undone already')
-        if rec.get('how') == 'new':
+        if rec.get('how') in ('new', 'fork'):
             undo_new_style(rec, edits)
             rec['undone'] = True
             write_json(STYLE_EDITS, edits)
@@ -1248,6 +1248,66 @@ def undo_new_style(rec, edits):
                        capture_output=True, text=True, encoding='utf-8', errors='replace')
     if r.returncode:
         raise ApiError(500, 'build_taste.py failed: ' + (r.stderr or r.stdout).strip()[-300:])
+
+
+def check_fork_style(parent, st):
+    """A fork as the page sends it after Marc's edits: the parent's file shape (same keys, same types, palette ==
+    palettes[0] when the parent has palettes), never check_new_style, which would drop palettes / use."""
+    import re
+    if not isinstance(st, dict):
+        raise ApiError(400, 'no style')
+    hexes = lambda v: [str(c).lower() for c in (v if isinstance(v, list) else []) if re.fullmatch(r'#[0-9a-fA-F]{6}', str(c))][:7]  # noqa: E731
+    out = {}
+    for k, v in parent.items():
+        n = st.get(k)
+        if k == 'name':
+            out[k] = clean(n, 80)
+            if not out[k]:
+                raise ApiError(400, 'give the fork a name')
+        elif k == 'palette':
+            out[k] = hexes(n)
+            if len(out[k]) < 3:
+                raise ApiError(400, 'the palette needs at least 3 colours')
+        elif k == 'palettes':
+            out[k] = [p for p in (hexes(x) for x in (n if isinstance(n, list) else [])) if len(p) >= 3] or v
+        elif k == 'use':
+            out[k] = [u for u in (n if isinstance(n, list) else []) if u in ('desktop', 'teams', 'phone', 'post')] or v
+        elif isinstance(v, list):
+            out[k] = [clean(x, 300) for x in (n if isinstance(n, list) else [n]) if clean(x, 300)][:8]
+            if not out[k] and v:
+                raise ApiError(400, f'"{FIELD_NAMES.get(k, k)}" cannot be empty')
+        elif isinstance(v, str):
+            out[k] = clean(n, 1200)
+            if not out[k] and v:
+                raise ApiError(400, f'"{FIELD_NAMES.get(k, k)}" cannot be empty')
+        else:
+            out[k] = v
+    if out.get('palettes') and out['palettes'][0] != out['palette']:
+        out['palettes'] = [out['palette']] + out['palettes'][1:]
+    return out
+
+
+def create_fork(parent_key, st, change, summary):
+    """A new style from an existing one: the parent file's shape, the checked fields, no images or ratings.
+    Lineage lives in the style-edits log (how: fork, source.from), not in the style file."""
+    import time
+    parent = style_file(parent_key)
+    st = check_fork_style(parent, st)
+    key = slugify(st['name'], '')
+    if not key:
+        raise ApiError(400, 'the name needs letters or numbers')
+    with LOCK:
+        if (ROOT / 'taste' / 'styles' / f'{key}.json').exists() or (ARCHIVED / f'{key}.json').exists():
+            raise ApiError(409, f'a style called "{st["name"]}" exists already: choose another name')
+        write_style(key, st)
+        edits = read_json(STYLE_EDITS, [])
+        rec = {'id': f'{int(time.time() * 1000)}', 'style': key, 'at': time.strftime('%Y-%m-%d %H:%M'),
+               'change': clean(change, 400) or 'Copied as it is', 'summary': clean(summary, 300), 'how': 'fork',
+               'before': {}, 'after': st, 'source': {'from': parent_key, 'from_name': parent.get('name', parent_key)},
+               'undone': False}
+        edits.append(rec)
+        write_json(STYLE_EDITS, edits)
+    return rec
 
 
 def migrate_drafts():
@@ -1575,18 +1635,23 @@ def style_history(key):
         return hit[1]
     batches = style_runs().get(key, [])
     edits = [e for e in read_json(STYLE_EDITS, []) if e.get('style') == key]
-    kinds = {'new': 'created', 'codex': 'edit', 'words': 'edit', 'distil': 'distil', 'archive': 'off', 'unarchive': 'on'}
+    kinds = {'new': 'created', 'fork': 'fork', 'codex': 'edit', 'words': 'edit', 'distil': 'distil', 'archive': 'off', 'unarchive': 'on'}
     events = []
     for e in edits:
         events.append({'at': e['at'], 'kind': kinds.get(e.get('how'), 'edit'), 'title': e.get('change', ''),
-                       'detail': e.get('summary', ''), 'undone': bool(e.get('undone')), 'id': e.get('id')})
+                       'detail': e.get('summary', ''), 'undone': bool(e.get('undone')), 'id': e.get('id'),
+                       **({'of': (e.get('source') or {}).get('from_name') or (e.get('source') or {}).get('from', '')} if e.get('how') == 'fork' else {})})
+    for e in read_json(STYLE_EDITS, []):   # forks made from this style: "Forked into <Fork>"
+        if e.get('how') == 'fork' and (e.get('source') or {}).get('from') == key:
+            events.append({'at': e['at'], 'kind': 'fork-out', 'title': e.get('change', ''), 'detail': e.get('summary', ''),
+                           'undone': bool(e.get('undone')), 'id': e.get('id'), 'of': (e.get('after') or {}).get('name', e['style'])})
     commits = git_events(key)
-    if not any(e['kind'] == 'created' and not e['undone'] for e in events) and commits:
+    if not any(e['kind'] in ('created', 'fork') and not e['undone'] for e in events) and commits:
         min(commits, key=lambda c: c['iso'])['kind'] = 'created'
     events += [{k: v for k, v in c.items() if k not in ('iso', 'private')} | {'undone': False} for c in commits]
     events.sort(key=lambda e: (e['at'], e.get('id') or ''))
     imgs = sorted((i for b in batches for i in b['imgs']), key=lambda i: i[0])   # by time only: marks can be None
-    live = [e for e in events if not e['undone']]
+    live = [e for e in events if not e['undone'] and e['kind'] != 'fork-out']   # forking out changes nothing here
     cuts = [e['at'] for e in live]
 
     def segment(lo, hi):   # images made from lo (included) to hi (excluded): the thumbs-up rate and n
@@ -1596,7 +1661,7 @@ def style_history(key):
         e['before'] = segment(cuts[i - 1] if i else None, e['at'])
         e['after'] = segment(e['at'], cuts[i + 1] if i + 1 < len(cuts) else None)
     for e in events:
-        if e['undone']:
+        if e['undone'] or e['kind'] == 'fork-out':
             e['before'] = e['after'] = None
         e['index'] = sum(1 for b in batches if b['first'] < e['at'])   # it sits after this many batches
     rows = [{k: v for k, v in b.items() if k != 'imgs'} | rate_of(b['up'], b['down']) for b in batches]
@@ -1658,6 +1723,8 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/style/undo'): 'post_style_undo',
         ('POST', 'api/style/new/propose'): 'post_style_new_propose',
         ('POST', 'api/style/new/create'): 'post_style_new_create',
+        ('POST', 'api/style/fork/propose'): 'post_style_fork_propose',
+        ('POST', 'api/style/fork/create'): 'post_style_fork_create',
         ('GET', 'api/style/edits'): 'get_style_edits',
         ('GET', 'api/distil/state'): 'get_distil_state',
         ('POST', 'api/distil/run'): 'post_distil_run',
@@ -2212,6 +2279,27 @@ class Handler(BaseHTTPRequestHandler):
         body = self.read_body()
         return create_style(str(body.get('draft', '')), body.get('style'), body.get('notes', ''),
                             body.get('summary', ''))
+
+    def post_style_fork_propose(self):
+        """{style, name, change, copy}: Codex writes a variant of one style (read-only, ~30 s), or copy: true returns
+        the parent as it is, no Codex. Nothing is written."""
+        body = self.read_body()
+        parent = style_file(str(body.get('style', '')))
+        name, change = clean(body.get('name'), 80), clean(body.get('change'), 400)
+        if body.get('copy'):
+            return {'style': {**parent, 'name': name or f"{parent.get('name', '')} (fork)"}, 'summary': '', 'copy': True}
+        if not change:
+            raise ApiError(400, 'say what should be different, or copy it as it is')
+        args = ['fork', '--style', str(body.get('style')), '--change', change]
+        if name:
+            args += ['--name', name]
+        return {**text_job(*args), 'parent': parent}
+
+    def post_style_fork_create(self):
+        """{from, style: {...}, change, summary}: Marc's Create. Writes taste/styles/<key>.json, rebuilds taste.json,
+        logs it (how: fork) for Undo."""
+        body = self.read_body()
+        return create_fork(str(body.get('from', '')), body.get('style'), body.get('change', ''), body.get('summary', ''))
 
     def get_style_edits(self, style=''):
         """Edits made from the page, newest first (one style, or all)."""

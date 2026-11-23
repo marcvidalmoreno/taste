@@ -12,6 +12,8 @@ Usage (from the project root):
         # style since the last distil; answers like style (a proposal), or {"changes": {}} when nothing should change
   .venv/Scripts/python -I scripts/codex_text.py new --images ref-1.jpg [ref-2.jpg ...] [--name "..."] [--notes "..."]
         # a whole new style from 1-4 reference images (Codex looks at them); answers {"style": {...}, "summary": "..."}
+  .venv/Scripts/python -I scripts/codex_text.py fork --style <style> --change "<what should differ>" [--name "..."]
+        # a variant of a style (24 Nov 2026): answers {"style": {...whole style, parent's shape...}, "summary": "..."}
   add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
 
 Prints one JSON object on stdout: {"subjects": [...]}, {"prompt": "...", "summary": "..."} or, for style,
@@ -372,6 +374,69 @@ def style_edit(a):
     return {'changes': out, 'summary': clean(d.get('summary', ''), 200), 'seconds': secs}
 
 
+FORK = """You write a variant of one visual style that an image model follows. Do not run commands, do not read or
+write files. Answer with JSON only.
+
+The style now (JSON, the parent):
+{style}
+
+The variant is called: {name}
+What Marc wants to be different in the variant: {change}
+
+Write the whole variant. Keep everything the change does not touch word for word. Make the change felt in every
+field it touches: the description, light, composition, mood, detail, prefer and avoid (light, composition and mood
+are lists of alternatives, one picked per image, so a change meant for every image may need each item). Change
+the colours only if the change asks for it (a new "palette" of 5-7 hex colours, and "palettes" with it if the
+parent has them, the first one equal to "palette"). Keep each field's type (a list stays a list of short phrases).
+Plain, concrete words. Never add text, logos, real named people or named artists. Give the variant a "name" (short).
+Answer exactly: {{"style": {{<every field of the parent, with the variant's values>}}, "summary": "<what differs from the parent, under 25 words>"}}"""
+
+FORK_TEXTS = ('description', 'camera_or_medium')
+
+
+def fork_fields(parent, d, name=''):
+    """The parent's file, whole, with Codex's values where they have the same type; the parent's shape stays."""
+    hexes = lambda v: [x.lower() for x in (v if isinstance(v, list) else []) if re.fullmatch(r'#[0-9a-fA-F]{6}', str(x))][:7]  # noqa: E731
+    out = {}
+    for k, v in parent.items():
+        n = d.get(k)
+        if k == 'name':
+            out[k] = clean(name or n or v, 80)
+        elif k == 'palette':
+            out[k] = hexes(n) if len(hexes(n)) >= 3 else v
+        elif k == 'palettes':
+            ps = [hexes(p) for p in n] if isinstance(n, list) and all(isinstance(p, list) for p in n) else []
+            out[k] = [p for p in ps if len(p) >= 3] or v
+        elif k == 'use':
+            out[k] = [u for u in (n if isinstance(n, list) else []) if u in USES] or v
+        elif isinstance(v, list):
+            lst = [clean(x, 300) for x in (n if isinstance(n, list) else []) if clean(x, 300)][:8]
+            out[k] = lst or v
+        elif isinstance(v, str):
+            out[k] = clean(n, 1200) if isinstance(n, str) and clean(n, 1200) else v
+        else:
+            out[k] = v
+    if out.get('palettes') and out.get('palette') and out['palettes'][0] != out['palette']:
+        out['palettes'] = [out['palette']] + out['palettes'][1:]   # palette is always palettes[0]
+    return out
+
+
+def fork_style(a):
+    parent = style_info(a.style)
+    name = clean(a.name, 80) or f"{parent.get('name', a.style)} (fork)"
+    if a.dry_run:
+        st = fork_fields(parent, {'description': f"{parent.get('description', '')} (dry run: {a.change})"}, name)
+        return {'style': st, 'summary': f'dry run: the description carries "{a.change}"; Codex was not asked',
+                'seconds': 0, 'dry_run': True}
+    answer, secs = ask(f'fork:{a.style}', FORK.format(style=json.dumps(parent, indent=1, ensure_ascii=False), name=name,
+                                                     change=a.change), effort='medium')
+    d = parse_json(answer)
+    st = fork_fields(parent, d.get('style') or d, name)
+    if st == {**parent, 'name': name}:
+        sys.exit('Codex proposed no difference from the parent')
+    return {'style': st, 'summary': clean(d.get('summary', ''), 300), 'seconds': secs}
+
+
 if __name__ == '__main__':
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
@@ -403,7 +468,12 @@ if __name__ == '__main__':
     w.add_argument('--name', default='')
     w.add_argument('--notes', default='')
     w.add_argument('--dry-run', action='store_true')
+    f = sub.add_parser('fork')
+    f.add_argument('--style', required=True)
+    f.add_argument('--change', required=True)
+    f.add_argument('--name', default='')
+    f.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
     a.n = max(1, min(24, getattr(a, 'n', 4)))
-    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil, 'new': new_style}[a.cmd]
+    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil, 'new': new_style, 'fork': fork_style}[a.cmd]
     print(json.dumps(run(a), ensure_ascii=False))

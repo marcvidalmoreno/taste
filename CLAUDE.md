@@ -30,7 +30,7 @@ messages. Images stay local (`generated/`, `taste/data/`), backed up by Google D
 - Marc can change a style from the web app ("Change the style", Marc, 21 Nov 2026): Codex proposes (read-only),
   Marc applies in the page; that apply is his OK. The app rewrites the style file, runs `build_taste.py` and logs
   before / after in `generated/codex/style-edits.json`, but never commits. When Marc says "commit my style edits":
-  review `git -C taste diff`, add an entry to `taste/README.md`'s changelog from that log, commit and push in
+  review `git -C taste status` and `diff` (a fork from the app is a new file, `how: fork` in the log), add an entry to `taste/README.md`'s changelog from that log, commit and push in
   `taste/`; the public README gets at most one generic line ("style edits committed"), no style text.
 - Distil runs in the web app too (Codex proposes per style, Marc applies; 21 Nov 2026). "Distil my ratings" in chat
   still works the old way, and when Codex proposals miss what the images show, that is the moment to offer it

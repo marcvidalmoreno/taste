@@ -5,6 +5,7 @@
 // taste/styles/<style>.json, rebuilds taste.json, and every image made after that uses it. Each edit can be undone.
 import { api, styles, archivedStyles, refreshStyles } from './api.js';
 import { wordDiff } from './remix.js';
+import { openFork } from './forkstyle.js';
 import { h, thumbUrl, toast, showError } from './ui.js';
 
 export const FIELDS = { description: 'Description', light: 'Light', composition: 'Composition', camera_or_medium: 'Medium',
@@ -68,7 +69,9 @@ export async function openStyleEdit(ctx) {
     const words = h('button', { class: 'secondary outline', onClick: () => { st.how = 'words'; st.step = 2; draw(); },
       title: 'No Codex: your words go into the style as they are' }, 'Add my words as they are');
     queueMicrotask(drawFoot);
-    return [h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Cancel'), h('span', { class: 'spacer' }), words, mainBtn];
+    const fork = h('button', { class: 'ghost small', title: `Make a new style from ${s.name} with this change, and leave ${s.name} as it is`,
+      onClick: () => { dlg.close(); openFork({ style: ctx.style, change: st.change.trim(), onCreated: ctx.onForked }); } }, 'As a new style…');
+    return [h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Cancel'), fork, h('span', { class: 'spacer' }), words, mainBtn];
   }
 
   function drawFoot() {
@@ -168,7 +171,7 @@ export async function undoEdit(rec, after) {
     await api('style/undo', { method: 'POST', body: { id: rec.id } });
     await refreshStyles();
     after?.();
-    toast(rec.how === 'new' ? 'New style undone: it is off the Taste page' : 'Style edit undone');
+    toast(rec.how === 'new' || rec.how === 'fork' ? 'New style undone: it is off the Taste page' : 'Style edit undone');
   } catch (err) { showError(err); }
 }
 

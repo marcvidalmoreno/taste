@@ -123,7 +123,7 @@ function switchFor(r, redo) {
 
 // ---- history panel
 
-const KIND = { created: 'Created', commit: 'Committed', edit: 'Edited in the app', distil: 'Distil applied', off: 'Switched off', on: 'Switched on' };
+const KIND = { created: 'Created', fork: 'Forked from', 'fork-out': 'Forked into', commit: 'Committed', edit: 'Edited in the app', distil: 'Distil applied', off: 'Switched off', on: 'Switched on' };
 const when = (at) => `${shortDate(at.slice(0, 10))} ${at.slice(11)}`;
 
 async function loadHistory(key, box) {
@@ -144,7 +144,7 @@ function timeline(d) {
   const seg = (s) => (s && s.images ? [rateText(s), h('small', { class: 'muted' }, ` · ${plural(s.images, 'image')}`)] : h('span', { class: 'muted' }, 'no images'));
   return h('ol', { class: 'timeline' }, d.events.map((e, i) => h('li', { class: e.undone ? 'is-undone' : '' },
     h('span', { class: 'ev-num', title: 'Marked on the chart with this number' }, i + 1),
-    h('div', {}, h('div', {}, h('strong', {}, KIND[e.kind] || e.kind), ' ', h('span', { class: 'muted small' }, `${when(e.at)}${e.undone ? ' · undone' : ''}`)),
+    h('div', {}, h('div', {}, h('strong', {}, KIND[e.kind] || e.kind, e.of ? ` ${e.of}` : ''), ' ', h('span', { class: 'muted small' }, `${when(e.at)}${e.undone ? ' · undone' : ''}`)),
       e.title && h('div', { class: 'small' }, e.title),
       e.detail && h('div', { class: 'small muted' }, e.detail),
       e.before && h('div', { class: 'small ba' }, h('span', { class: 'muted' }, 'Before '), seg(e.before), h('span', { class: 'muted' }, '  →  After '), seg(e.after))))));
@@ -166,7 +166,7 @@ function chart(d) {
   const evs = d.events.map((e, i) => {
     if (e.undone) return null;
     const ex = x(e.index - 0.5);
-    return svg('g', {}, svg('title', {}, `${i + 1}. ${KIND[e.kind] || e.kind}, ${when(e.at)}`),
+    return svg('g', {}, svg('title', {}, `${i + 1}. ${KIND[e.kind] || e.kind}${e.of ? ' ' + e.of : ''}, ${when(e.at)}`),
       svg('line', { x1: ex, x2: ex, y1: 15, y2: H - B, stroke: 'var(--pico-muted-color)', 'stroke-width': 1, 'stroke-dasharray': '3 3' }),
       svg('text', { x: ex, y: 11, 'text-anchor': 'middle', fill: 'var(--text)', 'font-size': 10, 'font-weight': 600 }, String(i + 1)));
   });

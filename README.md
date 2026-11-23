@@ -121,6 +121,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **24 Nov 2026** – **Fork a style** in the web app: Taste card → **Fork…**, or Change the style → **As a new style…**.
+  A name and what should differ; Codex writes the variant (`codex_text.py fork`, read-only) or **Copy as it is**; every
+  field is checked, changed words marked, then Create. The fork keeps the parent's file shape (palettes, use), starts
+  with no images or ratings, and is logged in `style-edits.json` (`how: fork`) for Undo and for the Taste card's
+  "Forked from" and the Styles history. Shared field editors moved to `newstyle.js`. Undo: `git revert` this commit.
 - **24 Nov 2026** – scripts/publish.py also exports up to 3 thumbs-up pictures per style version (spread over its days, styles with a pick only, never a picture already picked) as Evolution examples; the Gallery stays picks-only.
   Undo: `git revert` this commit.
 - **24 Nov 2026** – Large view (batch and Gallery): the image always opens fitted to the window, whole (tall images

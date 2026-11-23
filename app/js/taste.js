@@ -9,6 +9,7 @@ import { openNote } from './notes.js';
 import { openStyleEdit, undoEdit, diffValue, FIELDS } from './styleedit.js';
 import { api, refreshStyles } from './api.js';
 import { openNewStyle } from './newstyle.js';
+import { openFork } from './forkstyle.js';
 import { setKept } from './marks.js';
 
 const FACTS = [['light', 'Light'], ['composition', 'Composition'], ['camera_or_medium', 'Medium'],
@@ -70,6 +71,8 @@ function styleCard(key, s, imgs) {
         h('a', { href: '#/new?mode=batch&style=' + encodeURIComponent(key), role: 'button', class: 'secondary outline small-btn' }, 'New run'),
         h('a', { href: '#/new?mode=one&style=' + encodeURIComponent(key), class: 'small' }, 'One image'),
         h('button', { class: 'secondary outline small-btn', onClick: () => openStyleEdit({ style: key, onApplied: () => renderTaste(document.getElementById('view'), key) }) }, 'Change this style…'),
+        h('button', { class: 'secondary outline small-btn', title: 'Make a new style from this one', onClick: () => openFork({ style: key,
+          onCreated: (k) => renderTaste(document.getElementById('view'), k || undefined) }) }, 'Fork…'),
         h('button', { class: 'ghost small', onClick: () => openNote({ style: key }) }, 'Note for Claude…')),
       editsSlot(key),
       leanSlot(key),
@@ -118,15 +121,18 @@ function editsSlot(key) {
   const box = h('div', { class: 'style-edits' });
   api('style/edits/' + encodeURIComponent(key)).then(({ edits }) => {
     if (!edits.length) return;
-    box.replaceChildren(h('details', {},
+    const fork = edits.find((e) => e.how === 'fork' && !e.undone);
+    box.replaceChildren(fork && h('p', { class: 'muted small fork-from' }, 'Forked from ',
+      h('a', { href: '#/taste/' + encodeURIComponent(fork.source.from) }, fork.source.from_name || fork.source.from)),
+      h('details', {},
       h('summary', { class: 'small' }, (() => { const on = edits.filter((e) => !e.undone).length, off = edits.length - on;
         return `Changed from the app: ${plural(on, 'edit')}${off ? ` (${off} undone)` : ''}`; })()),
       h('ul', { class: 'plain' }, edits.map((e) => h('li', { class: e.undone ? 'is-undone' : '' },
         h('div', { class: 'edit-line' },
           h('span', {}, h('strong', {}, `“${e.change}”`), ' ', h('span', { class: 'muted small' },
-            `${e.at.slice(8, 10)}/${e.at.slice(5, 7)} ${e.at.slice(11)} · ${{ codex: 'Codex edit', new: 'created from references' }[e.how] || 'your words'}${e.undone ? ' · undone' : ''}`)),
+            `${e.at.slice(8, 10)}/${e.at.slice(5, 7)} ${e.at.slice(11)} · ${{ codex: 'Codex edit', new: 'created from references', fork: 'forked' }[e.how] || 'your words'}${e.undone ? ' · undone' : ''}`)),
           !e.undone && h('button', { class: 'ghost small', onClick: () => undoEdit(e, () => renderTaste(document.getElementById('view'), key)) }, 'Undo')),
-        e.how === 'new' ? (e.summary && h('p', { class: 'muted small' }, e.summary))
+        e.how === 'new' || e.how === 'fork' ? (e.summary && h('p', { class: 'muted small' }, e.summary))
           : h('details', { class: 'small' }, h('summary', {}, e.summary || Object.keys(e.after).map((k) => FIELDS[k] || k).join(', ')),
             Object.keys(e.after).map((k) => [h('p', { class: 'muted' }, FIELDS[k] || k), diffValue(e.before[k], e.after[k])])))))));
   }).catch(() => {});
