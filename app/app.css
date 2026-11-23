@@ -215,6 +215,13 @@ dialog.viewer[open] { display: grid; grid-template-columns: minmax(0, 1fr) 380px
 .tile-marks { margin: .5rem 0 0; gap: .3rem; }
 .tile-marks .mark-btn { padding: .3rem .2rem; font-size: .82rem; }
 .tile-marks .mark-btn kbd { font-size: .66rem; }
+/* Up, Down, Publish in one row of three; Publish keeps its column when the marks are hidden (rated tiles). */
+.tile-actions { display: grid; grid-template-columns: 2fr 1fr; gap: .3rem; margin-top: .5rem; }
+.tile-actions .tile-marks { grid-template-columns: repeat(2, 1fr); margin: 0; }
+.tile-publish { grid-column: 2; padding: .3rem .2rem; font-size: .82rem; }
+.tile-publish kbd { font-size: .66rem; }
+.tile-publish[aria-pressed=true] { color: var(--text); font-weight: 400; }
+.tile-publish[aria-pressed=true] span { color: #7fd1b9; }
 .mark-box .status { margin: 0; }
 .saved-note { display: flex; align-items: center; gap: .5rem; margin-bottom: .3rem; }
 .saved-note .mark { position: static; }

@@ -121,6 +121,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – Batch grid: **Publish** under each tile (in the free third column beside Up / Down, also on
+  rated tiles) and the <kbd>P</kbd> key on the focused tile; publishing from the large view now updates the tile too.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – New run from a style ("New run" on Taste, a batch or a new style) now starts with exactly that
   style picked and in view: it no longer adds it to the styles left from the last run, clears a leftover filter, and
   reads the style list again if the tab's copy doesn't know the style yet (a failed read is no longer kept).

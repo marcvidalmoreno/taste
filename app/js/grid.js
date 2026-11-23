@@ -1,7 +1,7 @@
 // One batch: thumbnails with filters. The large view (viewer.js) opens on top of it.
 import { api, allStyles } from './api.js';
-import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './store.js';
-import { toggleMark, ignoreWithUndo, markButtons } from './marks.js';
+import { store, item, styleName, kindOf, FILTERS, visible, onChange, changed } from './store.js';
+import { toggleMark, ignoreWithUndo, markButtons, setPublished } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { job, enqueueRun, KIND } from './job.js';
 import { api as call } from './api.js';
@@ -302,8 +302,16 @@ function tile(im) {
         h('span', { class: 'kind', title: kindOf(im) }, kindOf(im))),
       why && h('div', { class: 'why' }, why)),
     // Mark without opening the image. Saved ratings are read-only, ignored images can't be marked.
-    !im.saved && im.status !== 'ignored' && markButtons(im, { inGrid: true }));
+    // Publish (23 Nov 2026) sits in the free third column, also for rated images.
+    im.status !== 'ignored' && h('div', { class: 'tile-actions' },
+      !im.saved && markButtons(im, { inGrid: true }),
+      h('button', { type: 'button', class: 'mark-btn tile-publish', 'aria-pressed': String(!!im.published), tabindex: '-1',
+        title: 'Show this image on the public gallery site: only the image, its style name, date and subject, never the style text',
+        onClick: () => togglePublish(im) },
+      h('span', { 'aria-hidden': 'true' }, im.published ? '◉' : '○'), im.published ? ' Published ' : ' Publish ', h('kbd', {}, 'P'))));
 }
+
+const togglePublish = (im) => setPublished(im, store.data.batch, !im.published).then(() => changed(im.name, 'publish')).catch(() => {});
 
 // Redraw one tile (or remove it if it no longer fits the filter) instead of the whole grid:
 // no image reloads, no lost scroll, focus stays put.
@@ -368,5 +376,8 @@ function onGridKey(e) {
   } else if (key === 'i') {
     e.preventDefault();
     ignoreWithUndo(name);
+  } else if (key === 'p' && item(name) && item(name).status !== 'ignored') {
+    e.preventDefault();
+    togglePublish(item(name));
   }
 }

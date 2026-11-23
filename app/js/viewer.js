@@ -1,6 +1,6 @@
 // Large view: one image at full size, its details, and the marks. A modal <dialog>, so focus stays
 // inside it, the page behind is inert, and Esc closes it.
-import { store, item, styleName, kindOf, onChange, visible } from './store.js';
+import { store, item, styleName, kindOf, onChange, changed, visible } from './store.js';
 import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons, setKept, keepButton, setPublished, publishButton } from './marks.js';
 import { openVariations } from './variations.js';
 import { openRemix } from './remix.js';
@@ -181,7 +181,8 @@ function actions(im) {
 }
 
 const keepOf = (im) => setKept(im, store.data.batch, !im.kept).then(() => drawPanel(im)).catch(() => {});
-const publishOf = (im) => setPublished(im, store.data.batch, !im.published).then(() => drawPanel(im)).catch(() => {});
+// changed() redraws this panel and the grid tile underneath.
+const publishOf = (im) => setPublished(im, store.data.batch, !im.published).then(() => changed(im.name, 'publish')).catch(() => {});
 const variationsOf = (im) => openVariations({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style });
 const remixOf = (im) => openRemix({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style, prompt: im.prompt });
 const styleOf = (im) => im.style && openStyleEdit({ style: im.style, batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}` });
