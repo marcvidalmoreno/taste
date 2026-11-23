@@ -370,6 +370,6 @@ if __name__ == '__main__':
     w.add_argument('--notes', default='')
     w.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
-    a.n = max(1, min(12, getattr(a, 'n', 4)))
+    a.n = max(1, min(24, getattr(a, 'n', 4)))
     run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil, 'new': new_style}[a.cmd]
     print(json.dumps(run(a), ensure_ascii=False))

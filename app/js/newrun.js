@@ -122,7 +122,7 @@ function batchForm() {
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Images'),
       h('div', { class: 'nr-grid' },
-        h('div', {}, h('span', { class: 'nr-label' }, 'Per style'), stepper(state.n, 1, 8, (v) => { state.n = v; }, 'n')),
+        h('div', {}, h('span', { class: 'nr-label' }, 'Per style'), stepper(state.n, PER_STYLE, (v) => { state.n = v; }, 'n')),
         h('div', {}, h('span', { class: 'nr-label' }, 'Shape'), ratioSeg(state.ratio, RATIOS, (v) => { state.ratio = v; }, 'ratio'))),
       h('p', { class: 'muted small' }, RATIO_HINT[state.ratio]),
       h('label', { class: 'nr-check' },
@@ -249,7 +249,7 @@ function oneForm() {
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Images'),
       h('div', { class: 'nr-grid' },
-        h('div', {}, h('span', { class: 'nr-label' }, 'How many'), stepper(o.n, 1, 4, (v) => { o.n = v; }, 'one-n')),
+        h('div', {}, h('span', { class: 'nr-label' }, 'How many'), stepper(o.n, [1, 2, 3, 4], (v) => { o.n = v; }, 'one-n')),
         h('div', {}, h('span', { class: 'nr-label' }, 'Shape'),
           ratioSeg(o.ratio, { wide: 'Wide', portrait: 'Portrait', square: 'Square' }, (v) => { o.ratio = v; }, 'one-ratio'))),
       h('p', { class: 'muted small' }, RATIO_HINT[o.ratio] + (o.n > 1 ? ' Same prompt each time: Codex varies the result on its own.' : ''))),
@@ -258,12 +258,15 @@ function oneForm() {
 
 // ---------------------------------------------------------------- small controls
 
-function stepper(value, min, max, set, id) {
-  const change = (v) => { set(Math.max(min, Math.min(max, v))); save(); drawForm(`[data-focus="${id}-${v > value ? 'up' : 'down'}"]`); drawSummary(); };
+// Steps through a list of allowed values (one at a time up to 8, then bigger jumps).
+const PER_STYLE = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16, 20, 24];
+function stepper(value, steps, set, id) {
+  const i = steps.indexOf(value) >= 0 ? steps.indexOf(value) : steps.findIndex((x) => x > value);
+  const change = (up) => { set(steps[Math.max(0, Math.min(steps.length - 1, up ? i + 1 : i - 1))]); save(); drawForm(`[data-focus="${id}-${up ? 'up' : 'down'}"]`); drawSummary(); };
   return h('div', { class: 'stepper', role: 'group', 'aria-label': 'How many' },
-    h('button', { type: 'button', class: 'secondary outline', disabled: value <= min, 'aria-label': 'One fewer', 'data-focus': `${id}-down`, onClick: () => change(value - 1) }, '−'),
+    h('button', { type: 'button', class: 'secondary outline', disabled: i <= 0, 'aria-label': 'Fewer', 'data-focus': `${id}-down`, onClick: () => change(false) }, '−'),
     h('output', { 'aria-live': 'polite' }, value),
-    h('button', { type: 'button', class: 'secondary outline', disabled: value >= max, 'aria-label': 'One more', 'data-focus': `${id}-up`, onClick: () => change(value + 1) }, '+'));
+    h('button', { type: 'button', class: 'secondary outline', disabled: i < 0 || i >= steps.length - 1, 'aria-label': 'More', 'data-focus': `${id}-up`, onClick: () => change(true) }, '+'));
 }
 
 function ratioSeg(value, options, set, id) {

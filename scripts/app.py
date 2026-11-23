@@ -607,14 +607,14 @@ KEEPABLE = ('subject', 'palette', 'composition', 'light', 'medium')
 
 
 def spec_batch(body, preview=False):
-    """{styles: [..], n: 1-8, subjects: {style: [..]}, hints: {style: '..'}, ratio, wildcards: 0|1, name}"""
+    """{styles: [..], n: 1-24, subjects: {style: [..]}, hints: {style: '..'}, ratio, wildcards: 0|1, name}"""
     styles = list(dict.fromkeys(s for s in body.get('styles') or [] if isinstance(s, str)))
     if not styles:
         raise ApiError(400, 'pick at least one style')
     info = {s: style_file(s) for s in styles}
     n = int(body.get('n') or 4)
-    if not 1 <= n <= 8:
-        raise ApiError(400, 'images per style: 1 to 8')
+    if not 1 <= n <= 24:
+        raise ApiError(400, 'images per style: 1 to 24')
     ratio = body.get('ratio') or 'mixed'
     if ratio not in RATIO_CHOICES:
         raise ApiError(400, 'ratio: mixed, wide, portrait or square')
