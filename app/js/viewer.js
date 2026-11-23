@@ -66,13 +66,16 @@ export function openViewer(name, { push = false } = {}) {
   if (opening) dlg.focus();   // the dialog itself, not a button that the next draw may replace
 }
 
-export function closeViewer() {
-  if (!dlg?.open) return;
+// refocus: false when leaving for another page, so the grid behind does not scroll to the tile.
+// Returns true when the view was open.
+export function closeViewer({ refocus = true } = {}) {
+  if (!dlg?.open) return false;
   const name = order[index];
   flushWhy();
   showSeed(false);
   dlg.close();
-  document.querySelector(`.tile[data-name="${CSS.escape(name)}"]`)?.focus({ preventScroll: false });
+  if (refocus) document.querySelector(`.tile[data-name="${CSS.escape(name)}"]`)?.focus({ preventScroll: false });
+  return true;
 }
 
 function requestClose() {
@@ -104,7 +107,9 @@ function draw() {
   prevBtn.disabled = index === 0;
   nextBtn.disabled = index === order.length - 1;
   bar.replaceChildren(...[   // replaceChildren would print "null": drop the empty parts first
-    h('button', { class: 'ghost', onClick: requestClose }, '← ', batchTitle(d.batch)),
+    h('a', { class: 'home', href: '#/' }, 'Batches'),   // the header is hidden behind the view: the way home
+    h('span', { class: 'muted', 'aria-hidden': 'true' }, '›'),
+    h('button', { class: 'ghost batch-name', onClick: requestClose, title: 'Back to the batch (Esc)' }, batchTitle(d.batch)),
     h('span', { class: 'muted' }, `${index + 1} of ${order.length}`),
     h('span', { class: 'spacer' }),
     d.seed && h('span', { class: 'muted small' }, 'Hold ', h('kbd', {}, 'S'), ' to see the seed'),

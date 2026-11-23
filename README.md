@@ -117,6 +117,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Large view: a **Batches** link in its top bar (Batches › batch name), so the home page is one
+  click away even when the view was opened from a link; the header is hidden behind the view. Leaving the view for
+  another page now opens that page at the top. Guide updated. Undo: `git revert` this commit.
 - **23 Nov 2026** – Batch page: new **All** filter (every image except the ignored ones), now where a batch opens,
   so images you rate stay in view. **Ignored** only shows when the batch has ignored images. Guide updated.
   Undo: `git revert` this commit.

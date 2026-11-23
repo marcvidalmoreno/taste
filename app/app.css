@@ -172,7 +172,9 @@ dialog.viewer[open] { display: grid; grid-template-columns: minmax(0, 1fr) 380px
 .stage { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; height: 100vh; }
 .stage-bar { display: flex; align-items: center; gap: .75rem; padding: .4rem .75rem; }
 .stage-bar .spacer { flex: 1; }
-.stage-bar button.ghost:first-child { text-transform: capitalize; }
+.stage-bar .batch-name { text-transform: capitalize; }
+.stage-bar .home { color: var(--pico-muted-color); font-size: .9rem; }
+.stage-bar .home:hover, .stage-bar .home:focus-visible { color: var(--text); }
 .canvas { min-height: 0; display: grid; place-items: center; position: relative; }
 .canvas.fit { padding: 0 3.5rem 1.25rem; cursor: zoom-in; overflow: hidden; }
 .canvas.fit img { max-width: 100%; max-height: 100%; object-fit: contain; }

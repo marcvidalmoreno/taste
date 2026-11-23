@@ -37,7 +37,7 @@ async function route() {
   for (const a of document.querySelectorAll('[data-nav]')) {
     a.toggleAttribute('aria-current', a.dataset.nav === page);
   }
-  if (page !== 'batch') closeViewer();
+  if (page !== 'batch' && closeViewer({ refocus: false })) window.scrollTo(0, 0);   // left the large view for another page
   if (page === 'batch' && parts[1]) return renderBatch(view, parts[1], query.get('show'), parts[2]);
   if (parts[0] === 'distil' || parts[0] === 'suggestions') return renderDistil(view);   // under Overview in the header
   if (page === 'overview') return renderOverview(view);
