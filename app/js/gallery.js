@@ -11,7 +11,7 @@
 // rows without redrawing them; the choice is a view preference, kept in localStorage (not in the address).
 import { api, styles, archivedStyles, allStyles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
-import { setKept, keepButton } from './marks.js';
+import { setKept, keepButton, setPublished, publishButton } from './marks.js';
 import { openRemix } from './remix.js';
 import { openVariations } from './variations.js';
 import { openNote } from './notes.js';
@@ -51,11 +51,12 @@ export async function renderGallery(view, query) {
     return showError(err);
   }
   document.title = 'Gallery · taste';
-  const f = { q: query.get('q') || '', style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '' };
+  const f = { q: query.get('q') || '', style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '', pub: query.get('pub') || '' };
   const base = all.filter((im) =>
     (!f.style || im.style === f.style) &&
     (!f.rating || (f.rating === 'none' ? !im.rating : im.rating === f.rating)) &&
-    (!f.batch || im.batch === f.batch));
+    (!f.batch || im.batch === f.batch) &&
+    (!f.pub || im.published));
 
   if (!all.length) {
     return view.replaceChildren(h('div', { class: 'empty' }, h('h1', {}, 'No images yet'),
@@ -108,6 +109,8 @@ function filters(f, onFind) {
       ratings.map(([v, label]) => h('button', {
         class: `rseg-btn ${v}`, 'aria-pressed': String(f.rating === v), onClick: () => set('rating', v),
       }, label, h('small', {}, ' ', count((im) => !v || (v === 'none' ? !im.rating : im.rating === v)))))),
+    h('button', { class: 'rseg-btn pub-filter', 'aria-pressed': String(!!f.pub), onClick: () => set('pub', f.pub ? '' : '1'),
+      title: 'Only the images picked for the public gallery site' }, '◉ Published', h('small', {}, ' ', count((im) => im.published))),
     h('select', { 'aria-label': 'Style', onChange: (e) => set('style', e.target.value) },
       h('option', { value: '' }, 'All styles'),
       styleKeys.map((k) => h('option', { value: k, selected: f.style === k },
@@ -141,11 +144,12 @@ function tile(im, i) {
   const r = ratio(im);
   return h('button', {
     class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 calc(${r.toFixed(4)} * var(--row-h, 220px))`, aspectRatio: String(r) },
-    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.route === 'cloudflare' ? ', made with FLUX' : ''}${im.why ? ': ' + im.why : ''}`,
+    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.published ? ', in the public gallery' : ''}${im.route === 'cloudflare' ? ', made with FLUX' : ''}${im.why ? ': ' + im.why : ''}`,
     onClick: () => openLarge(i),
   },
   h('img', { src: thumbUrl(im.batch, im.file, im.mtime), alt: '', loading: 'lazy', decoding: 'async' }),
   im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph),
+  im.published && h('span', { class: 'pub-dot', title: 'In the public gallery', 'aria-hidden': 'true' }, '◉'),
   im.kept && h('span', { class: 'kept-star', title: 'Kept as an example', 'aria-hidden': 'true' }, '★'),
   im.route === 'cloudflare' && h('span', { class: 'route-badge on-image', 'aria-hidden': 'true' }, 'FLUX'));
 }
@@ -253,7 +257,10 @@ function step(d) {
 }
 
 let markBox, keepBox, canvas, fitBtn;
-function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im))); }
+function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im)), publishButton(im, () => publish(im))); }
+function publish(im) {
+  setPublished(im, im.batch, !im.published).then(() => { refreshTile(im); if (dlg?.open && stepList[index] === im) drawKeep(im); }).catch(() => {});
+}
 
 function draw() {
   const im = stepList[index];
@@ -289,7 +296,7 @@ function draw() {
       h('footer', { class: 'keys muted small' },
         h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ',
         h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
-        h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ',
+        h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'P'), ' publish  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ',
         h('kbd', {}, 'F'), ' 1:1  ', h('kbd', {}, 'Esc'), ' close')));
   drawMarks(im);
   drawKeep(im);
@@ -349,6 +356,7 @@ function onKey(e) {
   else if (key === 'Home') step(-index);
   else if (key === 'End') step(stepList.length);
   else if (key === 'x') keep(im);
+  else if (key === 'p') publish(im);
   else if (key === 'f') toggleFit();
   else if (key === 'r') remixOf(im);
   else if (key === 'v') variationsOf(im);

@@ -746,3 +746,9 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
   .history { padding-left: .5rem; }
 }
 .topbar nav a { white-space: nowrap; }
+
+/* Publish (23 Nov 2026): a quiet dot on picked tiles, the filter button, the pressed state of the toggle */
+.pub-dot { position: absolute; right: .35rem; bottom: .3rem; color: #7fd1b9; font-size: 1rem; line-height: 1; text-shadow: 0 0 3px rgba(0,0,0,.7); pointer-events: none; }
+.publish-btn { margin: 0; width: auto; padding: .4rem .8rem; font-size: .9rem; }
+.publish-btn[aria-pressed="true"] span { color: #7fd1b9; }
+.pub-filter { width: auto; margin: 0; border: 1px solid var(--line); border-radius: var(--pico-border-radius, .4rem); background: transparent; }

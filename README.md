@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Publish toggle for the planned public gallery site: in both large views a **Publish** button
+  (key `P`) picks an image, the Gallery has a **◉ Published** filter and a small dot on picked tiles. Picks are saved
+  in `generated/codex/publish.json` (git-ignored); nothing leaves the computer yet. Undo: `git revert` this commit
+  (the picks file can stay or be deleted).
 - **23 Nov 2026** – FLUX no longer stitches the examples together: in 2 of 18 A/B images FLUX pasted two of the
   attached images side by side, near copies. When FLUX gets examples of a look (the default ones, or kept examples),
   its prompt now starts with one line saying they show the style only, one new scene, don't copy or combine them

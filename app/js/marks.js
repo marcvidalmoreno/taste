@@ -108,6 +108,28 @@ export function keepButton(im, onClick) {
   h('span', { 'aria-hidden': 'true' }, im.kept ? '★' : '☆'), im.kept ? ' Kept as example ' : ' Keep as example ', h('kbd', {}, 'X'));
 }
 
+// Pick (or take back) an image for the public gallery site (23 Nov 2026). Quiet and reversible, like Keep.
+export async function setPublished(im, batch, published) {
+  const before = im.published;
+  im.published = published;
+  try {
+    const res = await api('publish', { method: 'POST', body: { batch, name: im.name, published } });
+    toast(published ? `Picked for the public gallery (${res.count} picked). Press the button again to take it back.` : 'Taken back from the public gallery.',
+      { timeout: 3500 });
+    return res;
+  } catch (err) {
+    im.published = before;
+    showError(err);
+    throw err;
+  }
+}
+
+export function publishButton(im, onClick) {
+  return h('button', { type: 'button', class: 'secondary outline publish-btn', 'aria-pressed': String(!!im.published), onClick,
+    title: 'Show this image on the public gallery site: only the image, its style name, date and subject, never the style text' },
+  h('span', { 'aria-hidden': 'true' }, im.published ? '◉' : '○'), im.published ? ' In public gallery ' : ' Publish ', h('kbd', {}, 'P'));
+}
+
 // Up / Down buttons, the same in the large view and under each grid tile.
 // In the grid they stay out of the Tab order (tabindex -1): the keyboard already marks the focused tile with U / D.
 export function markButtons(im, { inGrid = false } = {}) {

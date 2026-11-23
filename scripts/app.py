@@ -119,6 +119,19 @@ def kept_paths(style):
     return out
 
 
+# ---------------------------------------------------------------- published picks (23 Nov 2026)
+
+PUBLISH = BASE / 'publish.json'   # [{batch, name, style, at}]: images Marc picks for the public taste-gallery site
+
+
+def publish_list():
+    return [k for k in read_json(PUBLISH, []) if isinstance(k, dict) and k.get('batch') and k.get('name')]
+
+
+def publish_set():
+    return {(k['batch'], k['name']) for k in publish_list()}
+
+
 def pick_refs(paths, i):
     """The kept examples that go with image number i of a style: REFS_PER_IMAGE of them, turning through the list."""
     n = min(REFS_PER_IMAGE, len(paths))
@@ -153,10 +166,10 @@ def batch_images(batch, shared=None):
     shared: (runs by batch, saved ratings, ignored) read once by list_batches, so the home page does not
     parse runs.csv and ratings.csv once per batch (that took ~1.4 s with 120 batches; 21 Nov 2026)."""
     if shared:
-        runs_by_batch, saved, ignored_all, kept = shared
+        runs_by_batch, saved, ignored_all, kept, pub = shared
         runs = runs_by_batch.get(batch, {})
     else:
-        runs, saved, ignored_all, kept = rate.batch_runs(batch), saved_ratings(), read_json(IGNORED, {}), kept_set()
+        runs, saved, ignored_all, kept, pub = rate.batch_runs(batch), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set()
     ignored = set(ignored_all.get(batch, []))
     out = []
     for i, name in enumerate(rate.batch_images(batch), 1):
@@ -173,7 +186,7 @@ def batch_images(batch, shared=None):
             'width': run.get('width', ''), 'height': run.get('height', ''),
             'date': run.get('date', ''), 'time': run.get('time', ''), 'seconds': run.get('seconds', ''),
             'draft': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
-            'saved': None, 'kept': (batch, name) in kept,
+            'saved': None, 'kept': (batch, name) in kept, 'published': (batch, name) in pub,
         })
     return out
 
@@ -193,7 +206,7 @@ def summary(batch, images):
 def list_batches():
     """All batches, newest image first."""
     names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-    shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set())
+    shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set())
     out = [summary(b, batch_images(b, shared)) for b in names]
     return sorted(out, key=lambda s: s['newest'], reverse=True)
 
@@ -1548,6 +1561,7 @@ class Handler(BaseHTTPRequestHandler):
         ('PUT', 'api/mark'): 'put_mark',
         ('POST', 'api/keep'): 'post_keep',
         ('GET', 'api/kept'): 'get_kept',
+        ('POST', 'api/publish'): 'post_publish',
         ('GET', 'api/leaning'): 'get_leaning',
         ('POST', 'api/ignore'): 'post_ignore',
         ('POST', 'api/save'): 'post_save',
@@ -1783,6 +1797,23 @@ class Handler(BaseHTTPRequestHandler):
                 rest.append({'batch': batch, 'name': name, 'style': style, 'at': time.strftime('%Y-%m-%d %H:%M')})
             write_json(KEPT, rest)
         return {'ok': True, 'kept': want, 'style': style, 'count': sum(1 for k in rest if k.get('style') == style)}
+
+    def post_publish(self):
+        """Pick (or take back) one image for the public gallery site: {batch, name, published: true|false}.
+        Only the file generated/codex/publish.json changes; scripts/publish.py reads it."""
+        body = self.read_body()
+        batch, name = str(body.get('batch', '')), str(body.get('name', ''))
+        if not is_batch(batch) or name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in batch "{batch}"')
+        style = rate.batch_runs(batch).get(name, {}).get('style', '')
+        want = bool(body.get('published'))
+        with LOCK:
+            rest = [k for k in publish_list() if (k['batch'], k['name']) != (batch, name)]
+            if want:
+                import time
+                rest.append({'batch': batch, 'name': name, 'style': style, 'at': time.strftime('%Y-%m-%d %H:%M')})
+            write_json(PUBLISH, rest)
+        return {'ok': True, 'published': want, 'count': len(rest)}
 
     def get_kept(self):
         """How many examples are kept per style (the New run page offers to send them along)."""
@@ -2252,7 +2283,7 @@ class Handler(BaseHTTPRequestHandler):
     def gallery_images(self):
         out = []
         names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-        shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set())
+        shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set())
         for b in names:
             for im in batch_images(b, shared):
                 if im['status'] == 'ignored':
@@ -2263,7 +2294,8 @@ class Handler(BaseHTTPRequestHandler):
                             'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
                             'date': im['date'] or b[:10], 'number': im['number'], 'seed': im['seed'],
                             'time': im['time'], 'seconds': im['seconds'], 'route': im['route'],
-                            'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept']})
+                            'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept'],
+                            'published': im['published']})
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return out
 
