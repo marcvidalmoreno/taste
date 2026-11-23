@@ -362,33 +362,8 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 .jtile:hover img { opacity: .85; }
 .jtile .mark { top: .4rem; left: .4rem; width: 1.4rem; height: 1.4rem; font-size: .7rem; }
 
-/* Large view: full screen like the batch viewer (Pico makes dialogs full screen); image left, facts right. */
-dialog.glarge:focus { outline: none; }
-dialog.glarge[open] { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; padding: 0;
-                      background: #0e0e0e; backdrop-filter: none; }
-.glarge-img { display: grid; place-items: center; min-width: 0; height: 100vh; padding: 1.25rem; }
-.glarge-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.glarge-side { padding: 1rem 1.25rem; overflow: auto; height: 100vh; background: var(--surface); }
-.glarge-nav { display: flex; gap: .4rem; align-items: center; margin-bottom: 1rem; }
-.glarge-nav button { width: auto; margin: 0; padding: .3rem .7rem; }
-.glarge-nav .close { margin-left: auto; }
-.glarge dl { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; font-size: .9rem; }
-.glarge dt { color: var(--pico-muted-color); font-weight: 400; }
-.glarge dd { margin: 0; }
-.glarge .prompt { font-size: .85rem; color: var(--pico-muted-color); white-space: pre-wrap; }
-.glarge .marks { grid-template-columns: repeat(2, 1fr); }
-.glarge .mark-box { margin-bottom: 1rem; }
-.glarge .keys { margin-top: 1rem; }
-@media (max-width: 900px) {
-  /* Narrow or zoomed-in: image fills the space above the bar, whole; the bar and facts scroll on their own. */
-  dialog.glarge[open] { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto;
-                        height: 100vh; height: 100dvh; overflow: hidden;
-                        align-items: stretch; }  /* Pico centres dialog children, which unsized the image row */
-  .glarge-img { display: block; position: relative; height: auto; min-height: 0; }
-  .glarge-img img { position: absolute; inset: .75rem; width: calc(100% - 1.5rem); height: calc(100% - 1.5rem);
-                    max-width: none; max-height: none; }
-  .glarge-side { height: auto; max-height: 40vh; }
-}
+/* Gallery large view: the batch viewer's layout (dialog.viewer); only the keep button sits inline with the actions. */
+.glarge .keep-box { display: contents; }
 
 .style-index { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin-bottom: 1.5rem; font-size: .9rem; }
 .style-index a { display: inline-flex; gap: .4rem; align-items: center; color: var(--pico-muted-color); text-decoration: none; }

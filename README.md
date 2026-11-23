@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Gallery: the large view is now the batch large view's twin. Same layout (image on a stage with
+  Fit / 1 : 1, panel on the right) and the same buttons and keys: Remix, Variations, Change the style, Note for
+  Claude, Keep, More like this, the details (made as, seed, size, time) and Copy prompt. It still steps through the
+  Gallery's filtered list. Ignore and Hold S stay in the batch view. Guide updated. Undo: `git revert` this commit.
 - **23 Nov 2026** – Gallery: a **Find** field before the filters. Every word typed must appear in the image's
   prompt, why, style name, batch or variation (any order, dashes count as spaces); it works with the rating, style
   and batch filters, narrows the grid as you type and stays in the address (`?q=`). Guide updated. Undo:

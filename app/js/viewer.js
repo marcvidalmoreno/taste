@@ -245,7 +245,7 @@ function showSeed(on) {
 
 function onKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
-  if (document.querySelector('dialog[open]:not(.viewer)')) return;   // another dialog on top has the keys
+  if ([...document.querySelectorAll('dialog[open]')].some((d) => d !== dlg)) return;   // another dialog on top (or the Gallery large view) has the keys
   if (isTyping(e)) {
     // Esc in the field leaves the field, not the view. (Some browsers still fire "cancel"; skip that one.)
     if (e.key === 'Escape') { skipCancel = true; e.target.blur(); setTimeout(() => { skipCancel = false; }, 0); }

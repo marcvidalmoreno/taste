@@ -10,8 +10,11 @@
 import { api, styles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton } from './marks.js';
+import { openRemix } from './remix.js';
+import { openVariations } from './variations.js';
+import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast } from './ui.js';
 
 const ROW_H = 220;   // target row height in px; rows end up a little taller to fill the width
 let all = [];        // every image from the server
@@ -183,20 +186,28 @@ function keep(im) {
 }
 
 // ------------------------------------------------------------------ large view
+// Same layout, actions and keys as the batch large view (viewer.js, 23 Nov 2026): image on a stage with Fit / 1 : 1,
+// the panel with thumbs, Keep, Remix, Variations, Change the style, Note for Claude, More like this and the details.
+// It steps through the gallery's own list (or the Taste / "More like this" list it was opened from).
+// Not here: Ignore (the gallery leaves ignored images out) and Hold S (images come from many batches).
+
+// What each variation type keeps and changes (scripts/variations.py).
+const CHANGES = {
+  palette: 'Palette and light pulled to the style; subject and framing kept.',
+  subject: 'New subject; palette, light and framing kept.',
+  composition: 'New framing; palette and subject kept.',
+  mood: 'Other time of day; subject and framing kept.',
+};
+const kindOf = (im) => im.change || (im.mode === 'text' ? 'from text' : im.mode) || '';
+let fit = true;          // fit to the window, or 1:1 pixels
+let skipCancel = false;  // Esc in the why field leaves the field, not the view
 
 function ensureDialog() {
   if (dlg) return;
-  dlg = h('dialog', { class: 'glarge', 'aria-label': 'Large view', tabindex: '-1' });
-  dlg.addEventListener('keydown', (e) => {
-    if (isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
-    const rating = ratingForKey(e.key.toLowerCase());
-    if (rating) { e.preventDefault(); toggleMark(stepList[index], rating); }
-    if (e.key.toLowerCase() === 'x') { e.preventDefault(); keep(stepList[index]); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
-  });
+  dlg = h('dialog', { class: 'viewer glarge', 'aria-label': 'Large view', tabindex: '-1' });
+  dlg.addEventListener('keydown', onKey);
+  dlg.addEventListener('cancel', (e) => { if (skipCancel) { e.preventDefault(); skipCancel = false; } });
   dlg.addEventListener('close', flushWhy);
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });  // click on the backdrop
   document.body.append(dlg);
 }
 
@@ -210,43 +221,117 @@ export function openLarge(i, list) {
 }
 
 function step(d) {
-  const n = index + d;
-  if (n < 0 || n >= stepList.length) return;
+  const n = Math.max(0, Math.min(stepList.length - 1, index + d));
+  if (n === index) return;
   flushWhy();
   index = n;
   draw();
 }
 
-let markBox, keepBox;
+let markBox, keepBox, canvas, fitBtn;
 function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im))); }
 
 function draw() {
   const im = stepList[index];
   const st = styleMap[im.style];
+  const onGallery = location.hash.startsWith('#/gallery');
+  canvas = h('div', { class: `canvas ${fit ? 'fit' : 'actual'}`, onClick: toggleFit },
+    h('img', { src: imgUrl(im.batch, im.file, im.mtime), alt: `${st?.name || 'No style'}, ${ratingLabel(im.rating)}` }));
   dlg.replaceChildren(
-    h('div', { class: 'glarge-img' },
-      h('img', { src: imgUrl(im.batch, im.file, im.mtime), alt: `${st?.name || 'No style'}, ${ratingLabel(im.rating)}` })),
-    h('aside', { class: 'glarge-side' },
-      h('div', { class: 'glarge-nav' },
-        h('button', { class: 'secondary outline', onClick: () => step(-1), disabled: index === 0, 'aria-label': 'Previous image' }, '←'),
-        h('span', { class: 'muted small' }, `${index + 1} / ${stepList.length}`),
-        h('button', { class: 'secondary outline', onClick: () => step(1), disabled: index === stepList.length - 1, 'aria-label': 'Next image' }, '→'),
-        h('button', { class: 'secondary outline close', onClick: () => dlg.close(), 'aria-label': 'Close' }, '✕')),
+    h('div', { class: 'stage' },
+      h('div', { class: 'stage-bar' },
+        h('button', { class: 'ghost', onClick: () => dlg.close() }, '← ', onGallery ? 'Gallery' : 'Back'),
+        h('span', { class: 'muted' }, `${index + 1} of ${stepList.length}`),
+        h('span', { class: 'spacer' }),
+        fitBtn = h('button', { class: 'ghost', onClick: toggleFit, 'aria-pressed': String(!fit),
+                               title: 'F: fit to the window or show real pixels' }, fit ? 'Fit' : '1 : 1')),
+      canvas,
+      h('button', { class: 'nav prev', 'aria-label': 'Previous image', onClick: () => step(-1), disabled: index === 0 }, '‹'),
+      h('button', { class: 'nav next', 'aria-label': 'Next image', onClick: () => step(1), disabled: index === stepList.length - 1 }, '›')),
+    h('aside', { class: 'panel', 'aria-label': 'Details and rating' },
+      h('header', { class: 'panel-head' },
+        im.number && h('span', { class: 'num' }, im.number), h('h2', {}, st?.name || im.style || 'no style'),
+        h('span', { class: 'kind' }, kindOf(im))),
       markBox = h('section', { class: 'mark-box' }),
-      keepBox = h('div', { class: 'keep-box' }),
+      h('section', { class: 'actions' },
+        keepBox = h('span', { class: 'keep-box' }),
+        h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'Say what should change; Codex rewrites the prompt' }, 'Remix… ', h('kbd', {}, 'R')),
+        h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Variations… ', h('kbd', {}, 'V')),
+        im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
+        h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C'))),
       similarRow(im, im.batch, !!im.style),
-      h('dl', {},
-        h('dt', {}, 'Style'), h('dd', {}, st ? h('a', { href: '#/taste/' + encodeURIComponent(im.style), onClick: () => dlg.close() }, st.name) : '–'),
-        h('dt', {}, 'Batch'), h('dd', {}, h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch)),
-          ' · ', shortDate(im.date)),
-        im.change && [h('dt', {}, 'Variation'), h('dd', {}, `changes the ${im.change}`)]),
-      st && h('button', { class: 'secondary outline small-btn', onClick: () => openStyleEdit({ style: im.style, batch: im.batch, name: im.name, file: im.file }) },
-        `Change the style…`),
-      im.prompt && h('details', {}, h('summary', {}, 'Prompt'), h('p', { class: 'prompt' }, im.prompt)),
-      h('p', { class: 'keys muted small' }, h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ',
-        h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ', h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'Esc'), ' close')));
+      details(im, st),
+      h('footer', { class: 'keys muted small' },
+        h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ',
+        h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
+        h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ',
+        h('kbd', {}, 'F'), ' 1:1  ', h('kbd', {}, 'Esc'), ' close')));
   drawMarks(im);
   drawKeep(im);
+  // Load the neighbours now, so the next arrow press shows the image at once.
+  for (const n of [stepList[index - 1], stepList[index + 1]]) if (n) new Image().src = imgUrl(n.batch, n.file, n.mtime);
+}
+
+const label = (im) => `${batchTitle(im.batch)}${im.number ? ' #' + im.number : ''}`;
+const remixOf = (im) => openRemix({ batch: im.batch, file: im.file, label: label(im), style: im.style, prompt: im.prompt });
+const variationsOf = (im) => openVariations({ batch: im.batch, file: im.file, label: label(im), style: im.style });
+const styleOf = (im) => im.style && openStyleEdit({ style: im.style, batch: im.batch, name: im.name, file: im.file, label: label(im) });
+const noteOn = (im) => openNote({ batch: im.batch, name: im.name, file: im.file, label: label(im), style: im.style });
+
+function details(im, st) {
+  const rows = [
+    ['Style', st ? h('span', {}, h('a', { href: '#/taste/' + encodeURIComponent(im.style), onClick: () => dlg.close() }, st.name),
+      h('span', { class: 'swatches', 'aria-hidden': 'true' }, (st.palette || []).map((c) => h('i', { style: { background: c } })))) : '–'],
+    ['Batch', h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch))],
+    ['Change', im.change ? h('span', {}, h('strong', {}, im.change), h('br'), h('small', { class: 'muted' }, CHANGES[im.change] || '')) : '–'],
+    ['Made as', im.mode || '–'],
+    ['Seed', im.seed || '–'],
+    ['Size', im.width ? `${im.width} × ${im.height}` : '–'],
+    ['Made', [im.date && shortDate(im.date), im.time, im.seconds && `${im.seconds} s`].filter(Boolean).join(' · ') || '–'],
+  ];
+  return h('section', { class: 'details' },
+    h('dl', {}, rows.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)])),
+    h('div', { class: 'prompt-head' }, h('span', {}, 'Prompt'),
+      im.prompt && h('button', { class: 'ghost small', onClick: () => copy(im.prompt) }, 'Copy')),
+    h('p', { class: 'prompt' }, im.prompt || 'No prompt in runs.csv for this image.'));
+}
+
+async function copy(text) {
+  await navigator.clipboard.writeText(text);
+  toast('Prompt copied', { timeout: 2000 });
+}
+
+function toggleFit() {
+  fit = !fit;
+  canvas.className = `canvas ${fit ? 'fit' : 'actual'}`;
+  fitBtn.replaceChildren(fit ? 'Fit' : '1 : 1');
+  fitBtn.setAttribute('aria-pressed', String(!fit));
+  if (!fit) canvas.scrollTo((canvas.scrollWidth - canvas.clientWidth) / 2, (canvas.scrollHeight - canvas.clientHeight) / 2);
+}
+
+function onKey(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (isTyping(e)) {
+    if (e.key === 'Escape') { skipCancel = true; e.target.blur(); setTimeout(() => { skipCancel = false; }, 0); }
+    return;
+  }
+  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  const im = stepList[index];
+  const rating = ratingForKey(key);
+  if (rating) toggleMark(im, rating);
+  else if (key === 'ArrowRight') step(1);
+  else if (key === 'ArrowLeft') step(-1);
+  else if (key === 'Home') step(-index);
+  else if (key === 'End') step(stepList.length);
+  else if (key === 'x') keep(im);
+  else if (key === 'f') toggleFit();
+  else if (key === 'r') remixOf(im);
+  else if (key === 'v') variationsOf(im);
+  else if (key === 'e') styleOf(im);
+  else if (key === 'c') noteOn(im);
+  else if (key === 'Enter' && !e.target.closest('button, a')) markBox.querySelector('.why')?.focus();
+  else return;
+  e.preventDefault();
 }
 
 // Thumbs, why and a one-line status. Redrawn alone after a mark, so the why field keeps its cursor otherwise.

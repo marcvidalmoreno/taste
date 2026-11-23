@@ -1669,7 +1669,8 @@ class Handler(BaseHTTPRequestHandler):
                 out.append({'batch': b, 'name': im['name'], 'file': im['file'], 'mtime': im['mtime'],
                             'style': im['style'], 'mode': im['mode'], 'change': im['change'],
                             'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
-                            'date': im['date'] or b[:10],
+                            'date': im['date'] or b[:10], 'number': im['number'], 'seed': im['seed'],
+                            'time': im['time'], 'seconds': im['seconds'],
                             'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept']})
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return out
