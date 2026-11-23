@@ -132,6 +132,27 @@ def publish_set():
     return {(k['batch'], k['name']) for k in publish_list()}
 
 
+GALLERY_SYNC_DELAY = 300   # seconds after the last Publish toggle before the site is synced (scripts/gallery_sync.py)
+_gallery_timer = [None]
+
+
+def schedule_gallery_sync(delay=GALLERY_SYNC_DELAY):
+    """Debounced: every Publish toggle restarts the clock; when it runs out and no run is going, sync the site."""
+    def fire():
+        import subprocess
+        busy = CUR.get('running') or QUEUE or (chat_run() or {}).get('running')
+        if busy:
+            return schedule_gallery_sync(60)   # try again in a minute, once nothing runs
+        subprocess.Popen([PY, '-I', str(ROOT / 'scripts' / 'gallery_sync.py'), 'after Publish in the app'], cwd=ROOT,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if _gallery_timer[0]:
+        _gallery_timer[0].cancel()
+    t = threading.Timer(delay, fire)
+    t.daemon = True
+    _gallery_timer[0] = t
+    t.start()
+
+
 def pick_refs(paths, i):
     """The kept examples that go with image number i of a style: REFS_PER_IMAGE of them, turning through the list."""
     n = min(REFS_PER_IMAGE, len(paths))
@@ -1835,6 +1856,7 @@ class Handler(BaseHTTPRequestHandler):
                 import time
                 rest.append({'batch': batch, 'name': name, 'style': style, 'at': time.strftime('%Y-%m-%d %H:%M')})
             write_json(PUBLISH, rest)
+        schedule_gallery_sync()
         return {'ok': True, 'published': want, 'count': len(rest)}
 
     def get_kept(self):
@@ -2056,13 +2078,20 @@ class Handler(BaseHTTPRequestHandler):
         return text_job('subjects', '--style', body['style'], '--n', str(n), '--hint', clean(body.get('hint'), 200))
 
     def post_text_rewrite(self):
-        """Codex rewrites an image prompt: {prompt, change, keep: [...]}. About 15 s."""
+        """Codex rewrites an image prompt: {prompt, change, keep: [...]}. About 15 s.
+        No prompt on record: {batch, file, style?, change, keep} and Codex writes one from the image (23 Nov 2026)."""
         body = self.read_body()
         prompt, change = clean(body.get('prompt'), 4000), clean(body.get('change'), 400)
-        if not prompt or not change:
-            raise ApiError(400, 'give the prompt and what should change')
+        if not change:
+            raise ApiError(400, 'say what should change')
         keep = ', '.join(k for k in body.get('keep') or [] if k in KEEPABLE)
-        return text_job('rewrite', '--prompt', prompt, '--change', change, '--keep', keep)
+        if prompt:
+            return text_job('rewrite', '--prompt', prompt, '--change', change, '--keep', keep)
+        img = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+        style = str(body.get('style') or '')
+        style = style if re.fullmatch(r'[\w-]+', style) and (ROOT / 'taste' / 'styles' / f'{style}.json').is_file() else ''
+        return text_job('rewrite', '--image', str(img), '--change', change, '--keep', keep,
+                        *(['--style', style] if style else []))
 
     def post_reveal(self):
         """Open a batch folder in Windows Explorer (this machine only)."""

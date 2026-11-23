@@ -62,7 +62,7 @@ export async function openRemix(src) {
             onChange: (e) => { st.keep = e.target.checked ? [...st.keep, k] : st.keep.filter((x) => x !== k); } }),
           h('span', {}, label))))),
       refToggle(),
-      !src.prompt && h('p', { class: 'notice' }, 'This image has no prompt on record (it was made outside the logged runs). Write one yourself in the next step.'),
+      !src.prompt && h('p', { class: 'notice' }, 'This image has no prompt on record, so Codex will look at the image and write one with your change.'),
     ];
   }
 
@@ -84,11 +84,11 @@ export async function openRemix(src) {
 
   function drawFootOne() {
     if (!rewriteBtn) return;
-    const ready = st.change.trim() && src.prompt;
+    const ready = st.change.trim();
     rewriteBtn.disabled = !ready || !!st.busy;
     rewriteBtn.setAttribute('aria-busy', st.busy ? 'true' : 'false');
-    rewriteBtn.textContent = st.busy ? `Codex is rewriting… ${st.busy} s` : 'Write the new prompt';
-    rewriteBtn.title = !src.prompt ? 'No prompt on record: edit it yourself' : !st.change.trim() ? 'Say what should change first' : 'About 15 s, a small text job on the Codex allowance';
+    rewriteBtn.textContent = st.busy ? `Codex is ${src.prompt ? 'rewriting' : 'looking at the image'}… ${st.busy} s` : 'Write the new prompt';
+    rewriteBtn.title = !st.change.trim() ? 'Say what should change first' : `About ${src.prompt ? 15 : 30} s, a small text job on the Codex allowance`;
   }
 
   async function rewrite() {
@@ -97,7 +97,7 @@ export async function openRemix(src) {
     drawFootOne();
     const tick = setInterval(() => { st.busy = Math.max(1, Math.round((Date.now() - t0) / 1000)); drawFootOne(); }, 1000);
     try {
-      const r = await api('text/rewrite', { method: 'POST', body: { prompt: src.prompt, change: st.change, keep: st.keep } });
+      const r = await api('text/rewrite', { method: 'POST', body: { prompt: src.prompt, batch: src.batch, file: src.file, style: src.style, change: st.change, keep: st.keep } });
       st.prompt = r.prompt;
       st.summary = r.summary + (r.dry_run ? '' : ` · ${r.seconds} s`);
       st.step = 2;

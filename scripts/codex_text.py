@@ -4,6 +4,8 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_text.py subjects --style <style> [--n 4] [--hint "winter, at night"]
   .venv/Scripts/python -I scripts/codex_text.py rewrite --prompt "<old prompt>" --change "<what should change>"
         [--keep subject,palette,composition,light]
+  .venv/Scripts/python -I scripts/codex_text.py rewrite --image <file> --change "<what should change>" [--style <style>]
+        # no prompt on record: Codex looks at the image and writes a prompt for it with the change made (23 Nov 2026)
   .venv/Scripts/python -I scripts/codex_text.py style --style <style> --change "<what should change>"
   .venv/Scripts/python -I scripts/codex_text.py distil --style <style> --ratings <ratings.json>
         # ratings.json: [{"rating": "keep"|"no", "why": "...", "change": "...", "prompt": "..."}], the ratings of this
@@ -56,6 +58,18 @@ Rewrite the prompt so it makes that change and nothing else. Keep its structure 
 "Subject: ...", then the style notes) and keep every part that the change does not touch word for word.
 If the change contradicts a style note, change that note too. No text, logos or real named people.
 Answer exactly: {{"prompt": "<the new prompt>", "summary": "<what you changed, under 15 words>"}}"""
+
+DESCRIBE = """You write one image prompt. Do not run commands, do not read or write files. Answer with JSON only.
+
+The attached image has no prompt on record. Write a prompt that would make an image like it, with this change made:
+{change}
+Keep as it is: {keep}
+{style}
+Structure: first one sentence with the ratio and use (e.g. "Wide 16:9 desktop wallpaper." or "Tall 9:16 phone
+wallpaper.", matching the image's shape), then "Subject: ..." (what the image shows, with the change made), then
+"Style notes: ..." (medium, light, composition, palette, mood, as the image shows them). Plain, concrete words.
+Never name artists, studios, brands or real people. No text or logos.
+Answer exactly: {{"prompt": "<the prompt>", "summary": "<what you changed against the image, under 15 words>"}}"""
 
 
 STYLE = """You edit the written description of one visual style that an image model follows. Do not run commands,
@@ -172,10 +186,22 @@ def subjects(a):
 
 def rewrite(a):
     keep = a.keep or 'everything the change does not touch'
+    if not a.prompt and not a.image:
+        sys.exit('give --prompt or --image')
     if a.dry_run:
-        return {'prompt': f'{a.prompt} Change: {a.change}.', 'summary': f'dry run: added "{a.change}"', 'seconds': 0,
+        old = a.prompt or 'Wide 16:9 desktop wallpaper. Subject: what the image shows (dry run).'
+        return {'prompt': f'{old} Change: {a.change}.', 'summary': f'dry run: added "{a.change}"', 'seconds': 0,
                 'dry_run': True}
-    answer, secs = ask('rewrite', REWRITE.format(prompt=a.prompt, change=a.change, keep=keep))
+    if a.prompt:
+        answer, secs = ask('rewrite', REWRITE.format(prompt=a.prompt, change=a.change, keep=keep))
+    else:   # no prompt on record: Codex looks at the image and writes one with the change made
+        style = ''
+        if a.style:
+            s = style_info(a.style)
+            style = (f'It was made in this style, use it for the style notes: {s.get("description", "")} '
+                     f'Medium: {s.get("camera_or_medium", "")}\n')
+        answer, secs = ask('describe', DESCRIBE.format(change=a.change, keep=keep, style=style),
+                           images=[str(Path(a.image).resolve())])
     d = parse_json(answer)
     prompt = clean(d.get('prompt', ''), 3000)
     if not prompt:
@@ -352,7 +378,9 @@ if __name__ == '__main__':
     s.add_argument('--hint', default='')
     s.add_argument('--dry-run', action='store_true')
     r = sub.add_parser('rewrite')
-    r.add_argument('--prompt', required=True)
+    r.add_argument('--prompt', default='')
+    r.add_argument('--image', default='')
+    r.add_argument('--style', default='')
     r.add_argument('--change', required=True)
     r.add_argument('--keep', default='')
     r.add_argument('--dry-run', action='store_true')
