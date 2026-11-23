@@ -117,6 +117,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – One app per port: on Windows, Python's server let a second copy of the app listen on a port that
+  was already taken, without an error, so two apps split the clicks and "next free port" never happened. The app now
+  takes its port exclusively: a second copy moves to the next free port (8778…) and says so in its first line;
+  restarts after a script change still get their own port back. Applies from the next start of the app window.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – The app survives a half-finished script edit: when the server crashes (say a session's edit
   lands in two steps more than 10 s apart, and the reload hits the gap), the supervisor no longer quits. It prints
   "starts again by itself once scripts/ change", waits for the next change to settle, and starts the app again on

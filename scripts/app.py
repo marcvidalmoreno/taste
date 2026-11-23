@@ -2323,6 +2323,19 @@ def code_stamp():
     return max((p.stat().st_mtime for p in (ROOT / 'scripts').glob('*.py')), default=0)
 
 
+class AppServer(ThreadingHTTPServer):
+    """The port is ours alone. Python's server asks for SO_REUSEADDR, which on Windows lets a second server listen on
+    a port that is already taken, without any error: two apps then split the requests and "next free port" never
+    happens (seen 23 Nov 2026). On Windows: exclusive use instead; elsewhere SO_REUSEADDR is harmless."""
+    if os.name == 'nt':
+        allow_reuse_address = False
+
+        def server_bind(self):
+            import socket
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            super().server_bind()
+
+
 def restart_when_idle(httpd, state_file):
     """Code changed (Claude or Codex edited scripts/): once nothing is running, hand the last runs to the next
     server and stop with RESTART. A run, a queued run starting, a distil round or a request being answered
@@ -2371,14 +2384,14 @@ def main():
     httpd = None
     for _ in range(25 if state.get('port') else 0):   # the old server has just let go of it
         try:
-            httpd = ThreadingHTTPServer(('127.0.0.1', state['port']), Handler)
+            httpd = AppServer(('127.0.0.1', state['port']), Handler)
             port = state['port']
             break
         except OSError:
             time.sleep(0.2)
     for port in ([] if httpd else range(a.port, a.port + 10)):  # next free port if this one is taken
         try:
-            httpd = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+            httpd = AppServer(('127.0.0.1', port), Handler)
             break
         except OSError:
             continue
