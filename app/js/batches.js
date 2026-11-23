@@ -30,8 +30,7 @@ export async function renderBatches(el) {
   const left = batches.reduce((n, b) => n + b.to_rate, 0);
   view.replaceChildren(
     h('header', { class: 'grid-head' },
-      h('hgroup', {}, h('h1', {}, 'Batches'), h('p', {}, left ? `${plural(left, 'image')} to rate` : 'Everything is rated')),
-      h('a', { href: '#/new', role: 'button', class: 'secondary outline' }, 'New run…')),
+      h('hgroup', {}, h('h1', {}, 'Batches'), h('p', {}, left ? `${plural(left, 'image')} to rate` : 'Everything is rated'))),
     nowEl,
     stoppedEl,
     blockedEl,

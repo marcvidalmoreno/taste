@@ -117,6 +117,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Batches: removed the page's own **New run…** button; the header's **New run** is the one way in.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – Rule: sessions sharing this checkout commit only their own files (`git commit -- <files>`).
   Undo: `git revert` this commit.
 - **23 Nov 2026** – Try blocked images with FLUX: Batches has a line counting the images ChatGPT's safety filter
