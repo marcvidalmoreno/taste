@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Queue on hold: before each queued run the app checks that every script compiles; if one doesn't,
+  the queue waits (header: "runs on hold · waits for a script fix") and goes on by itself once it compiles. A run
+  that made nothing and failed on a Python error also holds the queue, with **Continue** in the header. No more
+  ten runs failing in a row on one broken script. Undo: `git revert` this commit.
 - **23 Nov 2026** – Batches: removed the page's own **New run…** button; the header's **New run** is the one way in.
   Undo: `git revert` this commit.
 - **23 Nov 2026** – Rule: sessions sharing this checkout commit only their own files (`git commit -- <files>`).

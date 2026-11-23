@@ -46,7 +46,7 @@ until it ends. Codex also writes subjects and rewrites prompts (codex_text.py, r
 Marks are saved at once (21 Nov 2026): each Up / Down / take-back appends a row to ratings.csv, the latest row per
 image wins (rate.latest). app-drafts.json is only read once, to save marks left from before.
 """
-import argparse, csv, io, json, os, sys, threading, webbrowser, zipfile
+import argparse, csv, io, json, os, re, sys, threading, webbrowser, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, unquote, parse_qs
@@ -227,6 +227,7 @@ CUR = {}                  # the run the app started last (running or finished); 
 PROC = {}                 # its process: {'p': Popen}
 RECENT = []               # the last finished app runs, newest last: the page reports each one once, even when
                           # the next queued run starts at once
+HOLD = {}                 # the queue is on hold: {'reason', 'since', 'auto'} (23 Nov 2026), see broken_scripts()
 _QLOCK = threading.Lock()
 _WAKE = threading.Event()
 RESTART = 3                   # exit code: "start me again", for the supervisor (scripts/ changed, 23 Nov 2026)
@@ -504,6 +505,49 @@ def enqueue(spec):
     return {**job_state(), 'queued_id': spec['id'], 'position': pos}
 
 
+# The queue holds instead of failing every run in turn (23 Nov 2026): a script that doesn't compile (a session
+# mid-edit) made ten queued runs fail in a second each, one error toast per run. Two holds:
+# - auto: some scripts/*.py doesn't compile. Checked before each run; lifts by itself once it compiles again.
+# - after a run that made nothing and failed on a Python error (one that compiling can't catch): lifts when
+#   Marc presses Continue (POST /api/queue/resume) or the app restarts (it does when scripts/ change).
+_COMPILED = {}            # path -> (mtime, error or '')
+SCRIPT_ERROR = re.compile(r'\b(SyntaxError|IndentationError|NameError|ImportError|ModuleNotFoundError|AttributeError|TypeError)\b')
+
+
+def broken_scripts():
+    """'name.py line N: message' for the first script in scripts/ that doesn't compile, else ''."""
+    for p in sorted((ROOT / 'scripts').glob('*.py')):
+        try:
+            m = p.stat().st_mtime
+        except OSError:
+            continue
+        if _COMPILED.get(p, (None,))[0] != m:
+            try:
+                compile(p.read_bytes(), str(p), 'exec')
+                err = ''
+            except SyntaxError as e:
+                err = f'{p.name} line {e.lineno}: {e.msg}'
+            except Exception as e:  # noqa: BLE001  (unreadable mid-write: try again next tick)
+                err = f'{p.name}: {e}'
+            _COMPILED[p] = (m, err)
+        if _COMPILED[p][1]:
+            return _COMPILED[p][1]
+    return ''
+
+
+def check_failed_run():
+    """After a run ends (CUR): nothing made and its log shows a Python error -> hold the queue."""
+    import time
+    if CUR.get('stopped') or CUR.get('dry_run') or not CUR.get('batch'):
+        return
+    folder = BASE / CUR['batch']
+    if any((folder / f'{n}.png').exists() for n in CUR.get('expected') or []):
+        return
+    hit = next((line for line in reversed(CUR.get('log') or []) if SCRIPT_ERROR.search(line)), '')
+    if hit:
+        HOLD.update(reason=hit.split('FAILED', 1)[-1].strip(' :')[-160:], since=time.time(), auto=False)
+
+
 def worker():
     """Starts the next queued run when nothing is running (neither from the app nor from chat)."""
     import time
@@ -511,8 +555,21 @@ def worker():
         _WAKE.wait(3)
         _WAKE.clear()
         with _QLOCK:
+            if not QUEUE:
+                HOLD.clear()          # a hold is about the runs waiting: none left, none to hold
             # a dry run spends nothing and writes no progress file: it never waits for a real run
             if RESTARTING.is_set() or CUR.get('running') or not QUEUE or (not DRY_RUN and (chat_run() or {}).get('running')):
+                continue
+            broken = broken_scripts()
+            if broken:
+                if not HOLD:
+                    HOLD.update(reason=broken, since=time.time(), auto=True)
+                elif HOLD.get('auto'):
+                    HOLD['reason'] = broken
+                continue
+            if HOLD.get('auto'):
+                HOLD.clear()          # fixed: go on by itself
+            if HOLD:
                 continue
             spec = QUEUE.pop(0)
             save_queue()
@@ -526,6 +583,8 @@ def worker():
             CUR.update(running=False, finished=time.time(), returncode=-1, error=str(e), phase='')
         with _QLOCK:
             remember_finished()
+            if QUEUE:
+                check_failed_run()
         _WAKE.set()
 
 
@@ -690,6 +749,11 @@ def job_state():
     with _QLOCK:
         cur = {k: v for k, v in CUR.items()}
         queue = [public(s) for s in QUEUE]
+        hold = dict(HOLD) if HOLD and QUEUE else None
+    return {**_job_state(cur, queue), 'hold': hold}
+
+
+def _job_state(cur, queue):
     prog = chat_run()
     # a live run from chat, or one that started after the app's run ended, takes over once the app's run is done
     if cur and (cur['running'] or not (prog and (prog['running'] or prog['started'] > (cur['finished'] or 0)))):
@@ -1494,6 +1558,7 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/preview'): 'post_preview',
         ('POST', 'api/stop'): 'post_stop',
         ('POST', 'api/queue/cancel'): 'post_queue_cancel',
+        ('POST', 'api/queue/resume'): 'post_queue_resume',
         ('POST', 'api/text/subjects'): 'post_text_subjects',
         ('POST', 'api/text/rewrite'): 'post_text_rewrite',
         ('POST', 'api/reveal'): 'post_reveal',
@@ -1914,6 +1979,14 @@ class Handler(BaseHTTPRequestHandler):
             if len(QUEUE) == before:
                 raise ApiError(404, 'not in the queue any more (it may have started)')
             save_queue()
+        return job_state()
+
+    def post_queue_resume(self):
+        """Continue: lift a hold on the queue (a script-error hold that still doesn't compile comes back)."""
+        self.read_body()
+        with _QLOCK:
+            HOLD.clear()
+        _WAKE.set()
         return job_state()
 
     def post_text_subjects(self):

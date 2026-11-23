@@ -289,7 +289,10 @@ export function stopButton() {
 
 export function queueList(queue) {
   return h('section', { class: 'queue' },
-    h('h4', {}, `Next (${queue.length})`),
+    h('h4', {}, `Next (${queue.length})` + (job.hold ? ' · on hold' : '')),
+    job.hold && h('p', { class: 'muted small' }, `${job.hold.reason}. `,
+      job.hold.auto ? 'Nothing starts until the script compiles again; then the queue goes on by itself.'
+        : h('button', { class: 'ghost small', onClick: resumeQueue }, 'Continue')),
     h('ol', {}, queue.map((q) => h('li', {},
       h('span', {}, h('strong', {}, q.title), ' ', h('span', { class: 'muted small' }, `${KIND[q.kind]?.label || q.kind} · ${noun(q.kind, q.expected.length)}`)),
       h('button', { class: 'ghost small', onClick: () => cancelQueued(q.id, q.title), 'aria-label': `Remove ${q.title} from the queue` }, 'Remove')))));
@@ -319,12 +322,29 @@ function drawChip() {
     link.querySelector('.label').replaceChildren(
       job.dry_run ? 'Dry run…' : busy ? 'Writing subjects…' : `Making ${doing} of ${job.expected.length}`,
       h('span', { class: 'muted' }, `${busy ? '' : now}${failed} · ${clock(Date.now() / 1000 - job.started)}${queued}`));
+  } else if (job.hold) {
+    // On hold (23 Nov 2026): a script error would fail every queued run in turn. Auto holds lift by themselves.
+    link.href = '#/';
+    link.title = `On hold: ${job.hold.reason}`;
+    link.querySelector('.label').replaceChildren(`${plural(job.queue.length, 'run')} on hold`,
+      h('span', { class: 'muted' }, job.hold.auto ? ' · waits for a script fix' : ' · stopped on a script error'));
   } else {
     link.href = '#/';
     link.title = 'Waiting to start';
     link.querySelector('.label').replaceChildren(`${plural(job.queue.length, 'run')} waiting`,
       h('span', { class: 'muted' }, ' · starting…'));
   }
+  // Continue: only for a hold that won't lift by itself.
+  let go = chip.querySelector('.chip-continue');
+  const wantGo = !job.running && job.hold && !job.hold.auto;
+  if (wantGo && !go) {
+    go = h('button', { class: 'chip-log chip-continue', title: 'Start the queue again', onClick: resumeQueue }, 'Continue');
+    chip.querySelector('.job-chip').append(go);
+  } else if (!wantGo && go) go.remove();
+}
+
+async function resumeQueue() {
+  try { job = await api('queue/resume', { method: 'POST', body: {} }); poll(); } catch (err) { showError(err); }
 }
 
 // A run may already be going when the page opens (reload, second tab, a run started from chat): pick it up.
