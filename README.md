@@ -121,6 +121,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – New run, Name field: the helper line under the input sits on its own line with a little air
+  above it (it touched the input before).
 - **23 Nov 2026** – Segmented choices (How many, Made with, Shape…): the selected option is now filled light with
   dark text, like a checked box; before it was a barely darker grey, the same as hover.
 - **23 Nov 2026** – Styles page: a switch locked by a run or pending suggestions now shows On with a 🔒 instead of

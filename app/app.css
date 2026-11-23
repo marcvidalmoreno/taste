@@ -465,7 +465,8 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 .nr-exp { padding: .7rem .85rem; border: 1px solid var(--line); border-radius: var(--radius); margin-top: -.5rem; }
 .nr-exp.on { border-color: #b98a3e; background: rgba(185, 138, 62, .08); }
 .nr-exp small { display: block; margin-top: .15rem; }
-.nr-name input { margin-bottom: .2rem; max-width: 24rem; }
+.nr-name input { margin-bottom: .45rem; max-width: 24rem; }
+.nr-name small { display: block; line-height: 1.4; }
 .style-picker { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
 .style-chip { width: auto; margin: 0; display: inline-flex; align-items: center; gap: .5rem; padding: .35rem .7rem .35rem .45rem;
               font-size: .88rem; background: transparent; color: var(--pico-muted-color); border: 1px solid var(--line); border-radius: 99px; }
