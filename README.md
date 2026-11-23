@@ -115,8 +115,16 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
 - **Remeasured 20 Nov 2026:** 690 images in 7 days with the weekly allowance at only 35 %, so ≤ 0.05 % of the
   week per image (≥ ~2,000 a week if nothing else used Codex). 10 % of the week for images ≈ **200 a week**; the
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
+- **Remeasured 23 Nov 2026:** the week of 16–23 Nov reached 100 % of the weekly allowance (~1,000 images plus
+  other Codex work); after the reset, 37 images used 4 %, so **~0.1 % of the week per image** (~1,000 a week at
+  most). The cost block no longer uses a fixed image budget: it counts images since Codex's own weekly reset, measures
+  % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **23 Nov 2026** – Cost block: the week is now Codex's own weekly window (since its reset, read from Codex's log),
+  not a rolling 7 days; FLUX images no longer count; the fixed ~200 budget is replaced by this run's share of the
+  week, measured from `runs.csv`, with a warning when a run may reach the weekly limit. Guide updated.
+  Undo: `git revert` this commit.
 - **23 Nov 2026** – `scripts/publish.py`: grid thumbnails are now 800 px (were 480 px and looked blurry on wide or
   high-DPI screens); older thumbs are rebuilt on the next `--sync`. Undo: set `THUMB` back to 480.
 - **23 Nov 2026** – Gallery: the address follows the large view, one link per image

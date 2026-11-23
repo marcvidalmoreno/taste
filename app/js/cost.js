@@ -1,6 +1,6 @@
 // What a run costs, shown the same way everywhere something spends Codex allowance (new run, remix,
 // variations): the meters from Codex's own log, this run in images / minutes / share of the window, and the
-// week against the budget. Numbers are measured (README "Allowance"), never typed by hand.
+// Codex week (since its weekly reset) with this run's share of it. Numbers are measured (README "Allowance"), never typed by hand.
 import { api } from './api.js';
 import { h, plural } from './ui.js';
 
@@ -36,8 +36,12 @@ export function costBlock(a, n, { extra = '', compact = false, onRoute = null } 
   if (a.error) return h('section', { class: 'cost' }, pick, `Allowance unknown: ${a.error}`);
   const dry = a.dry_run && h('p', { class: 'notice' }, 'Dry run: the app was started with --dry-run. Nothing will be generated or spent.');
   if (onRoute && route() === 'cloudflare') return h('section', { class: 'cost' }, pick, dry, cloudflareBlock(a, n, onRoute, extra));
-  const after = a.week_images + (a.queued_images || 0) + n;
-  const over = after > a.week_budget;
+  // The week is Codex's own window (since its weekly reset), counted in % of the week, not a fixed image budget.
+  const per = a.week_per_image || 0.1;
+  const used = a.now ? a.now.weekly : null;
+  const add = ((a.queued_images || 0) + n) * per;
+  const after = used == null ? null : used + add;
+  const over = after != null && after > 100;
   return h('section', { class: 'cost' },
     pick,
     dry,
@@ -49,9 +53,22 @@ export function costBlock(a, n, { extra = '', compact = false, onRoute = null } 
       meter('Five-hour window', a.now.five_hour), meter('This week', a.now.weekly),
       h('p', { class: 'muted small' }, `Used, from Codex's own log as of ${a.now.as_of.slice(11)} on ${a.now.as_of.slice(0, 10)}.`))
       : h('p', { class: 'small' }, `Allowance unknown: ${a.unknown_reason || 'no reading'}`)),
-    h('p', { class: 'small' + (over ? ' over' : ' muted') },
-      `Images in the last 7 days: ${a.week_images}` + (a.queued_images ? ` (+${a.queued_images} queued)` : '')
-      + `, budget ~${a.week_budget}` + (over ? ` – this run takes it to ${after}, over the budget.` : '.')));
+    h('p', { class: 'small' + (over ? ' over' : ' muted') }, weekLine(a, add, after, over)));
+}
+
+const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const when = (iso) => { const d = new Date(iso); return `${WD[d.getDay()]} ${d.getDate()} ${MO[d.getMonth()]}, ${iso.slice(11, 16)}`; };
+const pct = (x) => (x === 0 ? '0' : x < 1 ? x.toFixed(1) : Math.round(x)) + ' %';
+
+// "This Codex week: 37 images since Mon 23 Nov, 16:52. This run adds about 0.5 % of the week (resets Mon 30 Nov, 16:52)."
+function weekLine(a, add, after, over) {
+  const since = a.week_start ? ` since ${when(a.week_start)}` : ' in the last 7 days';
+  const queued = a.queued_images ? ` (+${a.queued_images} queued)` : '';
+  const resets = a.now?.weekly_resets ? ` (resets ${when(a.now.weekly_resets)})` : '';
+  return `This Codex week: ${plural(a.week_images, 'image')}${queued}${since}. `
+    + (over ? `This run may reach the weekly limit: about ${Math.round(after)} % of the week${resets}.`
+            : `This run${a.queued_images ? ' and the queue add' : ' adds'} about ${pct(add)} of the week${resets}.`);
 }
 
 // ---------------------------------------------------------------- which model makes the images (23 Nov 2026)

@@ -330,12 +330,28 @@ def gen_cloudflare(a, out, refs, ref):
         sys.exit(2)
 
 
+def weekly_resets(path):
+    """When Codex's weekly window resets (local time, ISO), from the last reading in a session log; None if absent.
+    The web app counts "this Codex week" from it (23 Nov 2026)."""
+    last = None
+    with open(path, encoding='utf-8') as fh:
+        for line in fh:
+            if '"resets_at"' in line:
+                last = line
+    try:
+        sec = json.loads(last)['payload']['rate_limits']['secondary']
+        return datetime.datetime.fromtimestamp(sec['resets_at']).isoformat(timespec='minutes')
+    except (TypeError, KeyError, ValueError):
+        return None
+
+
 def read_now():
     files = sorted((CODEX / 'sessions').rglob('rollout-*.jsonl'), key=lambda p: p.stat().st_mtime)
     for p in reversed(files):
         r = readings(p)
         if r:
-            print(json.dumps({'five_hour': r[-1][1], 'weekly': r[-1][2], 'session_log': p.name,
+            print(json.dumps({'five_hour': r[-1][1], 'weekly': r[-1][2], 'weekly_resets': weekly_resets(p),
+                              'session_log': p.name,
                               'as_of': datetime.datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec='minutes')}))
             return
     sys.exit('No usage reading found under ~/.codex/sessions; report usage as unknown.')

@@ -230,7 +230,7 @@ def thumbnail(batch, file):
 PY = sys.executable
 CHANGES = ['palette', 'subject', 'composition', 'mood']   # the order scripts/variations.py makes them in
 RATIO_CHOICES = ('mixed', 'wide', 'portrait', 'square')
-WEEK_BUDGET = 200         # README "Allowance": 10 % of the week for images = about 200 images (remeasured 20 Nov 2026)
+WEEK_RATE = 0.1           # weekly % per image when the log can't measure it yet (README "Allowance", 23 Nov 2026)
 DRY_RUN = False           # --dry-run: every run and text job is a dry run (no Codex, no allowance)
 QUEUE_FILE = BASE / 'app-queue.json'    # runs waiting: a restart of the app keeps them
 NOTES = BASE / 'claude-notes.json'      # notes for Claude Code (scripts/notes.py reads and answers them)
@@ -253,20 +253,42 @@ _lineage = {'key': None, 'map': {}}
 
 
 def allowance():
-    """Codex usage now (scripts/codex_run.py read: from Codex's own session log, never typed)
-    plus how many images were made in the last 7 days (runs.csv)."""
+    """Codex usage now (scripts/codex_run.py read: from Codex's own session log, never typed) plus the images made
+    in this Codex week (since its weekly reset, Codex route only: FLUX on Cloudflare is free) and what one image
+    costs of the week, measured from runs.csv (23 Nov 2026; was a rolling 7 days against a fixed budget)."""
     import datetime, subprocess
     r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'codex_run.py'), 'read'],
                        capture_output=True, text=True, encoding='utf-8', timeout=60)
     now = json.loads(r.stdout) if r.returncode == 0 and r.stdout.strip().startswith('{') else None
-    since = (datetime.date.today() - datetime.timedelta(days=6)).isoformat()
-    week = 0
+    resets = now and now.get('weekly_resets')
+    start = (datetime.datetime.fromisoformat(resets) - datetime.timedelta(days=7)) if resets else         datetime.datetime.now() - datetime.timedelta(days=7)
+    prev = start - datetime.timedelta(days=7)
+    week, last_week, last_pct = 0, 0, None
     if rate.RUNS.exists():
-        week = sum(1 for row in csv.DictReader(open(rate.RUNS, encoding='utf-8'))
-                   if row['ok'] == 'yes' and row['date'] >= since)
+        for row in csv.DictReader(open(rate.RUNS, encoding='utf-8')):
+            if row['ok'] != 'yes' or (row.get('route') or 'codex') == 'cloudflare':
+                continue
+            try:
+                t = datetime.datetime.fromisoformat(f"{row['date']}T{row['time'] or '00:00'}")
+            except ValueError:
+                continue
+            if t >= start:
+                week += 1
+            elif t >= prev:
+                last_week += 1
+                if row.get('weekly_last'):
+                    last_pct = float(row['weekly_last'])
+    # % of the week per image: everything Codex used counts against images, so it errs on the safe side.
+    if now and week >= 20:
+        per = now['weekly'] / week
+    elif last_week >= 20 and last_pct:
+        per = last_pct / last_week
+    else:
+        per = WEEK_RATE
     queued = sum(len(s['expected']) for s in QUEUE)
     return {'now': now, 'unknown_reason': None if now else (r.stderr or r.stdout).strip()[-300:],
-            'week_images': week, 'week_budget': WEEK_BUDGET, 'dry_run': DRY_RUN, 'queued_images': queued,
+            'week_images': week, 'week_start': start.isoformat(timespec='minutes') if resets else None,
+            'week_per_image': round(per, 3), 'dry_run': DRY_RUN, 'queued_images': queued,
             'cloudflare': cf_run.today()}   # FLUX's free day: connected, images today and left (an estimate)
 
 
