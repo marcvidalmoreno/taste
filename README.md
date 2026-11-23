@@ -117,6 +117,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Rule: start the app with `/launch-localhost` (own console window), never `preview_start`, so the
+  server outlives the session (CLAUDE.md, commit 3c2b602). Undo: `git revert` that commit and this one.
 - **23 Nov 2026** – Download: both large views (batch and Gallery) have **Download** in the top bar, which saves the
   full-size image as `<batch>-<file>.png`. A batch's folder line has **Download all** (one zip of its images; on a
   filter, **Download these N** zips only what the grid shows). New server route `/zip/<batch>`. Guide updated.
