@@ -25,7 +25,6 @@ images for my posts and wallpapers, with ChatGPT's image generation through Code
   numbers, clusters, tagging by eye, palettes, exemplars) and what Claude did and didn't see.
 - [`docs/progress.html`](docs/progress.html): the progress so far, by week and day, as a read-only page in an
   email layout (copy or open in a mail app), plus where it's going and the idea behind it.
-- [`generated/`](generated/): images **I** generated with these styles, with the prompts used.
 
 ## What's not here, on purpose
 The wallpapers themselves and every reference image belong to their creators. They stay on my laptop
@@ -114,6 +113,15 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Style edits from the app committed (21 Nov): `dubuffet` prefers unequal, nested cells with
+  white interiors and fine red or blue stripes (distil); `erotic` gets one more "lean towards" line (Marc's edit);
+  `fractal-worlds` names Mandelbrot variations (classic, Tricorn, Burning Ship, higher powers) in its description;
+  `retro-future-rooms` avoids dense clutter on every surface (distil). `taste.json` rebuilt. Undo: `git revert` this
+  commit.
+- **23 Nov 2026** – `generated/` is now local only, like `generated/codex/`: the folder is ignored and its few
+  tracked files (fractal samples, the ai-handshake prompts and request) are no longer in git. They stay on the
+  laptop; older versions remain in git history. Undo: remove the `generated/` line from `.gitignore` and
+  `git add generated/`.
 - **23 Nov 2026** – The app restarts itself after an update: when code in `scripts/` changes and nothing is
   running (no run, no distil round, no open request), the server starts again on the same port within ~20 s and
   keeps the last runs' messages and logs. The started process now only watches over the server, and closing it

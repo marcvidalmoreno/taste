@@ -126,5 +126,8 @@
       "#3d5a80",
       "#d9d4cc"
     ]
+  ],
+  "prefer": [
+    "unequal cell sizes, nested compartments, white interiors and fine red or blue stripes at varied angles"
   ]
 }

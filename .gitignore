@@ -24,3 +24,6 @@ generated/codex/
 codex-test/
 # Everything under taste/data is local (wallpapers, thumbs, tags, members)
 taste/data/
+
+# All generated images and prompts are local only (Marc, 23 Nov 2026)
+generated/
