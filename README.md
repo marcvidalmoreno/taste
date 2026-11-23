@@ -117,6 +117,9 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – New [`docs/cloudflare-route.md`](docs/cloudflare-route.md): plan for a free third image route,
+  FLUX on Cloudflare Workers AI's daily allowance (~95 images a day), chosen in the app as "Made with". Plan only,
+  nothing built. Undo: `git revert` this commit.
 - **23 Nov 2026** – Rule: start the app with `/launch-localhost` (own console window), never `preview_start`, so the
   server outlives the session (CLAUDE.md, commit 3c2b602). Undo: `git revert` that commit and this one.
 - **23 Nov 2026** – Download: both large views (batch and Gallery) have **Download** in the top bar, which saves the
