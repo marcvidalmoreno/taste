@@ -117,6 +117,10 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – Try blocked images with FLUX: Batches has a line counting the images ChatGPT's safety filter
+  blocked that FLUX hasn't tried (16 today) with **Try with FLUX**, one run per batch, same prompts and references;
+  each blocked tile has the same button. FLUX failures say so ("Blocked by FLUX's filter too"). New
+  `GET /api/blocked`, `POST /api/blocked/flux`; failed images carry their route. Undo: `git revert` this commit.
 - **23 Nov 2026** – Cloudflare route built ([`docs/cloudflare-route.md`](docs/cloudflare-route.md)): **Made with**
   at the top of the cost block in New run, Remix and Variations, *ChatGPT* (default) or *FLUX* (FLUX.2 klein 4B on
   Cloudflare Workers AI's free allowance, ~95 images a day). New `scripts/cf_run.py`; `codex_run.py gen --route`

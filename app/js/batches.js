@@ -11,7 +11,7 @@ const ui = JSON.parse(sessionStorage.getItem('taste-batches') || '{"kind":"all",
 const saveUi = () => sessionStorage.setItem('taste-batches', JSON.stringify(ui));
 const kindGroup = (k) => (k === 'variations' || k === 'remix' ? 'derived' : k === 'single' ? 'single' : 'batch');
 
-let batches = [], view, listEl, nowEl, stoppedEl, unsub;
+let batches = [], view, listEl, nowEl, stoppedEl, blockedEl, unsub;
 
 export async function renderBatches(el) {
   view = el;
@@ -25,6 +25,7 @@ export async function renderBatches(el) {
   document.title = 'Batches · taste';
   nowEl = h('section', { class: 'now-next', 'aria-label': 'Now and next', 'aria-live': 'polite' });
   stoppedEl = h('div');
+  blockedEl = h('div');
   listEl = h('div');
   const left = batches.reduce((n, b) => n + b.to_rate, 0);
   view.replaceChildren(
@@ -33,18 +34,20 @@ export async function renderBatches(el) {
       h('a', { href: '#/new', role: 'button', class: 'secondary outline' }, 'New run…')),
     nowEl,
     stoppedEl,
+    blockedEl,
     batches.length ? toolbar() : '',
     listEl);
   drawNow(job);
   drawList();
   drawStopped();
+  drawBlocked();
   unsub?.();
   let lastMade = job.made?.length, lastBusy = busyKey(job);
   unsub = onJob((j) => {
     if (!nowEl.isConnected) { unsub(); unsub = null; return; }
     drawNow(j);
     // A run started or ended, or the queue changed: what still waits to be resumed may have changed too.
-    if (busyKey(j) !== lastBusy) { lastBusy = busyKey(j); drawStopped(); }
+    if (busyKey(j) !== lastBusy) { lastBusy = busyKey(j); drawStopped(); drawBlocked(); }
     // A new image or a new batch folder: read the list again so its row and counts are current.
     if (j.made?.length !== lastMade) { lastMade = j.made?.length; api('batches').then((d) => { batches = d.batches; drawList(); }).catch(() => {}); }
   });
@@ -104,6 +107,38 @@ async function resume(btn) {
     const res = await resumeAll();
     toast(`${plural(res.runs, 'run')} queued again, ${plural(res.images, 'image')}`);
     drawStopped();
+  } catch (err) {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    showError(err);
+  }
+}
+
+// Images ChatGPT's safety filter blocked: one calm line and one button that makes the same prompts with FLUX on
+// Cloudflare's free allowance (its own rules apply). Only images FLUX hasn't tried yet (23 Nov 2026).
+async function drawBlocked() {
+  let d;
+  try { d = await api('blocked'); } catch { return; }
+  if (!blockedEl?.isConnected) return;
+  if (!d.images) { blockedEl.replaceChildren(); return; }
+  const n = d.images;
+  blockedEl.replaceChildren(h('section', { class: 'finish-bar' },
+    h('p', {},
+      h('strong', {}, `${plural(n, 'image')} blocked by ChatGPT's safety filter.`), ` In ${d.runs.length} ${d.runs.length === 1 ? 'batch' : 'batches'}.`, h('br'),
+      h('span', { class: 'muted small' }, 'Same prompts made with FLUX instead: free, Cloudflare\'s own rules apply. Each lands in its own batch, where it failed.')),
+    d.connected
+      ? h('button', { class: 'small-btn', onClick: (e) => tryFlux(e.currentTarget) }, `Try with FLUX (${plural(n, 'image')})`)
+      : h('a', { href: '#/new?mode=one', role: 'button', class: 'secondary outline small-btn',
+          onClick: () => localStorage.setItem('taste-route', 'cloudflare') }, 'Connect Cloudflare first')));
+}
+
+async function tryFlux(btn) {
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    const res = await api('blocked/flux', { method: 'POST', body: {} });
+    toast(`${plural(res.images, 'image')} queued for FLUX, in ${plural(res.runs, 'run')}`);
+    drawBlocked();
   } catch (err) {
     btn.disabled = false;
     btn.removeAttribute('aria-busy');

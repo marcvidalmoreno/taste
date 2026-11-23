@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 23 Nov 2026 (Made with: ChatGPT or FLUX, free). This guide changes with the app.</p>
+<p class="muted small">Last updated 23 Nov 2026 (Try blocked images with FLUX). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -97,6 +97,12 @@
     next, one line then says how many runs and images that left, with the cost. <strong>Resume all</strong> queues
     them all again, oldest first, each in its own folder with the same prompts and numbers. Images blocked by the
     filter are not counted: they would only fail again. The line hides once nothing waits.</p>
+  <h3>Images the safety filter blocked</h3>
+  <p>A second line counts the images ChatGPT's safety filter blocked that FLUX hasn't tried yet.
+    <strong>Try with FLUX</strong> makes the same prompts (and references) with FLUX on Cloudflare's free allowance,
+    one run per batch; each image lands in its own batch, where it failed. Cloudflare's own rules apply, so some
+    may be refused again ("Blocked by FLUX's filter too"). Until Cloudflare is connected the button reads
+    <strong>Connect Cloudflare first</strong> and opens New run.</p>
   <h3>Finding a batch</h3>
   <ul>
     <li><strong>Search</strong> by batch name or style.</li>
@@ -154,7 +160,8 @@
     <li>A tile without an image says exactly why, read from Codex's log: <strong>Blocked by the safety
       filter</strong> (with what it flagged, and whether it refused the prompt itself, where a retry gives the same
       answer, or the finished image, where a retry sometimes passes), <strong>Codex hit its usage limit</strong>, or
-      <strong>Codex timed out</strong> (over 15 minutes). Then <strong>Retry once</strong> or <strong>Copy prompt</strong>.</li>
+      <strong>Codex timed out</strong> (over 15 minutes). Then <strong>Retry once</strong> or <strong>Copy prompt</strong>;
+      a blocked image also offers <strong>Try with FLUX</strong> (the same prompt on Cloudflare, free).</li>
     <li>For variations, a <strong>Seed</strong> tile shows the original first.</li>
   </ul>
   <p>Keyboard in the grid: arrow keys move between tiles, <kbd>U</kbd> / <kbd>D</kbd> rate the focused one,

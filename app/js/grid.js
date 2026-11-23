@@ -217,7 +217,12 @@ async function finish(d, n, btn, resume) {
 }
 
 // Images that were tried and gave nothing: say exactly why (read from Codex's log, 23 Nov 2026), offer one retry.
-function failReason(r = {}) {
+function failReason(r = {}, route = 'codex') {
+  if (route === 'cloudflare') {   // tried with FLUX (23 Nov 2026)
+    if (r.code === 'limit') return ["FLUX's free images for today ran out", 'Retry after the reset (01:00 in winter).'];
+    if (r.code === 'filter') return ["Blocked by FLUX's filter too", "Cloudflare's rules refused it as well. Change the prompt (Remix) or keep it for the local route."];
+    return ['FLUX gave no image', 'A retry usually works.'];
+  }
   if (r.code === 'limit') return ['Codex hit its usage limit', 'Not about the image: retry after the limit resets, or Resume all on Batches.'];
   if (r.code === 'filter') return [
     'Blocked by the safety filter' + (r.about ? ` (${r.about})` : ''),
@@ -231,16 +236,32 @@ function failedTiles() {
   if (!growing()) return [];
   const waiting = new Set(job.running && job.batch === store.data.batch ? job.expected : []);
   const queued = new Set((job.queue || []).filter((q) => q.batch === store.data.batch).flatMap((q) => q.expected));
-  return (store.data.failed || []).filter((f) => !waiting.has(f.name)).map((f) => { const [what, why] = failReason(f.reason); return h('li', { class: 'failed-tile' },
+  return (store.data.failed || []).filter((f) => !waiting.has(f.name)).map((f) => { const [what, why] = failReason(f.reason, f.route); return h('li', { class: 'failed-tile' },
     h('div', { class: 'frame' },
       h('strong', {}, what),
       h('small', {}, why, ' Log: ', h('code', {}, `${f.name}.codex.log`)),
       h('div', { class: 'failed-actions' },
         queued.has(f.name) ? h('span', { class: 'small' }, 'Retry queued')
           : h('button', { class: 'secondary outline small-btn', onClick: (e) => retry(f, e.currentTarget) }, 'Retry once'),
+        !queued.has(f.name) && f.reason?.code === 'filter' && f.route !== 'cloudflare'
+          && h('button', { class: 'secondary outline small-btn', title: "The same prompt made with FLUX on Cloudflare: free, its own rules",
+            onClick: (e) => tryFlux(f, e.currentTarget) }, 'Try with FLUX'),
         f.prompt && h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(f.prompt).then(() => toast('Prompt copied', { timeout: 2000 })) }, 'Copy prompt'))),
     h('div', { class: 'caption' }, h('span', { class: 'num' }, '–'), h('span', { class: 'style' }, styleName(f.style)),
       h('span', { class: 'kind' }, f.name))); });
+}
+
+async function tryFlux(f, btn) {
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    await call('blocked/flux', { method: 'POST', body: { batch: store.data.batch, name: f.name } });
+    toast(`Trying ${f.name} with FLUX`);
+  } catch (err) {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    showError(err);
+  }
 }
 
 async function retry(f, btn) {

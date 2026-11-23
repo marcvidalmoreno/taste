@@ -386,8 +386,34 @@ def failed_images(batch, have):
         if r['batch'] == batch:
             rows[r['name']] = r
     return [{'name': n, 'style': r['style'], 'change': r['change'], 'mode': r['mode'], 'prompt': r['prompt'],
-             'date': r['date'], 'time': r['time'], 'seed': r['seed'], 'reason': failure_reason(batch, n)}
+             'date': r['date'], 'time': r['time'], 'seed': r['seed'], 'reason': failure_reason(batch, n),
+             'route': r.get('route') or 'codex'}
             for n, r in sorted(rows.items()) if r['ok'] != 'yes' and n not in have]
+
+
+def all_blocked():
+    """Images Codex's safety filter blocked that FLUX hasn't tried yet, per batch, oldest first (23 Nov 2026):
+    the "Try them with FLUX" bar on Batches. Skips the batch being made right now and retries already queued."""
+    running = CUR.get('batch') if CUR.get('running') else (chat_run() or {}).get('batch') if (chat_run() or {}).get('running') else None
+    queued = {(s['batch'], n) for s in QUEUE for n in s.get('expected', [])}
+    out = []
+    for p in sorted(BASE.iterdir()) if BASE.exists() else []:
+        if not is_batch(p.name) or p.name == running:
+            continue
+        names = [f['name'] for f in failed_images(p.name, set(rate.batch_images(p.name)))
+                 if f['reason'].get('code') == 'filter' and f['route'] == 'codex' and (p.name, f['name']) not in queued]
+        if names:
+            out.append({'batch': p.name, 'names': names})
+    return out
+
+
+def spec_blocked_flux(batch, names):
+    """One run per batch: its filter-blocked images again, same prompts and references, made by FLUX."""
+    specs = [spec_retry({'batch': batch, 'name': n}) for n in names]
+    jobs = [j for s in specs for j in s['jobs']]
+    styles = sorted({st for s in specs for st in s['styles']})
+    return {'kind': 'retry', 'title': f'Blocked → FLUX: {batch} ({len(jobs)})', 'batch': batch, 'jobs': jobs,
+            'styles': styles, 'n': len(jobs), 'expected': [j['name'] for j in jobs], 'route': 'cloudflare'}
 
 
 def unmade_images(batch, have):
@@ -1458,6 +1484,8 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/allowance'): 'get_allowance',
         ('POST', 'api/cloudflare/connect'): 'post_cloudflare_connect',
         ('POST', 'api/cloudflare/disconnect'): 'post_cloudflare_disconnect',
+        ('GET', 'api/blocked'): 'get_blocked',
+        ('POST', 'api/blocked/flux'): 'post_blocked_flux',
         ('POST', 'api/guess'): 'post_guess',
         ('POST', 'api/variations'): 'post_variations',
         ('POST', 'api/run'): 'post_run',
@@ -1784,6 +1812,37 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError(400, why)
         cf_run.save_creds(account, token)
         return {'connected': True}
+
+    def get_blocked(self):
+        """Images Codex's filter blocked that FLUX hasn't tried yet (the bar on Batches)."""
+        with _QLOCK:
+            runs = all_blocked()
+        return {'runs': runs, 'images': sum(len(r['names']) for r in runs), 'connected': bool(cf_run.creds())}
+
+    def post_blocked_flux(self):
+        """Queue the blocked images again with FLUX, one run per batch: {} for all, or {batch, name} for one tile."""
+        body = self.read_body()
+        if not cf_run.creds():
+            raise ApiError(409, 'Connect Cloudflare first (New run, Made with: FLUX).')
+        with _QLOCK:
+            runs = all_blocked()
+        if body.get('batch'):
+            runs = [{'batch': r['batch'], 'names': [n for n in r['names'] if not body.get('name') or n == body['name']]}
+                    for r in runs if r['batch'] == body['batch']]
+        queued, images, res = 0, 0, None
+        for r in runs:
+            if not r['names']:
+                continue
+            try:
+                with _QLOCK:
+                    spec = spec_blocked_flux(r['batch'], r['names'])
+            except ApiError:
+                continue   # its state changed meanwhile
+            res = enqueue(spec)
+            queued, images = queued + 1, images + len(spec['expected'])
+        if not queued:
+            raise ApiError(404, 'Nothing blocked is left to try with FLUX.')
+        return {**res, 'runs': queued, 'images': images}
 
     def post_cloudflare_disconnect(self):
         self.read_body()
