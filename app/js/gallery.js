@@ -229,22 +229,37 @@ const CHANGES = {
 const kindOf = (im) => im.change || (im.mode === 'text' ? 'from text' : im.mode) || '';
 let fit = true;          // fit to the window, or 1:1 pixels
 let skipCancel = false;  // Esc in the why field leaves the field, not the view
+let trail = [];          // where "More like this" came from: Back (button, Esc, Backspace) returns there first
 
 function ensureDialog() {
   if (dlg) return;
   dlg = h('dialog', { class: 'viewer glarge', 'aria-label': 'Large view', tabindex: '-1' });
   dlg.addEventListener('keydown', onKey);
-  dlg.addEventListener('cancel', (e) => { if (skipCancel) { e.preventDefault(); skipCancel = false; } });
-  dlg.addEventListener('close', flushWhy);
+  dlg.addEventListener('cancel', (e) => {
+    if (skipCancel) { e.preventDefault(); skipCancel = false; }
+    else if (trail.length) { e.preventDefault(); back(); }
+  });
+  dlg.addEventListener('close', () => { flushWhy(); trail = []; });
   document.body.append(dlg);
 }
 
 export function openLarge(i, list) {
+  if (dlg?.open) { flushWhy(); trail.push({ list: stepList, index }); }   // a "More like this" click inside the view
+  else trail = [];
   stepList = list || shown;   // the grid's list, or another one (Taste, "More like this"): the grid keeps its own
   ensureDialog();
   index = i;
   draw();
   if (!dlg.open) dlg.showModal();
+  dlg.focus();
+}
+
+// One step back along the "More like this" trail, or close the view when there is none.
+function back() {
+  if (!trail.length) return dlg.close();
+  flushWhy();
+  ({ list: stepList, index } = trail.pop());
+  draw();
   dlg.focus();
 }
 
@@ -271,7 +286,9 @@ function draw() {
   dlg.replaceChildren(
     h('div', { class: 'stage' },
       h('div', { class: 'stage-bar' },
-        h('button', { class: 'ghost', onClick: () => dlg.close() }, '← ', onGallery ? 'Gallery' : 'Back'),
+        trail.length
+          ? h('button', { class: 'ghost', onClick: back, title: 'Esc: back to the image you came from' }, '← Previous image')
+          : h('button', { class: 'ghost', onClick: () => dlg.close() }, '← ', onGallery ? 'Gallery' : 'Back'),
         h('span', { class: 'muted' }, `${index + 1} of ${stepList.length}`),
         h('span', { class: 'spacer' }),
         downloadLink(im.batch, im.file),
@@ -297,7 +314,7 @@ function draw() {
         h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ',
         h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
         h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'P'), ' publish  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ',
-        h('kbd', {}, 'F'), ' 1:1  ', h('kbd', {}, 'Esc'), ' close')));
+        h('kbd', {}, 'F'), ' 1:1  ', h('kbd', {}, 'Esc'), trail.length ? ' previous image' : ' close')));
   drawMarks(im);
   drawKeep(im);
   // Load the neighbours now, so the next arrow press shows the image at once.
@@ -358,6 +375,7 @@ function onKey(e) {
   else if (key === 'x') keep(im);
   else if (key === 'p') publish(im);
   else if (key === 'f') toggleFit();
+  else if (key === 'Backspace') back();
   else if (key === 'r') remixOf(im);
   else if (key === 'v') variationsOf(im);
   else if (key === 'e') styleOf(im);
