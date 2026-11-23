@@ -121,6 +121,8 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **24 Nov 2026** – scripts/publish.py also exports up to 3 thumbs-up pictures per style version (spread over its days, styles with a pick only, never a picture already picked) as Evolution examples; the Gallery stays picks-only.
+  Undo: `git revert` this commit.
 - **24 Nov 2026** – Large view (batch and Gallery): the image always opens fitted to the window, whole (tall images
   had their bottom cut off and didn't scroll at wide widths), and the page behind no longer scrolls (its second
   scrollbar moved nothing). New **Full screen** button on <kbd>F</kbd> (image only, <kbd>Esc</kbd> leaves it);

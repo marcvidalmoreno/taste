@@ -17,7 +17,8 @@ Output (OUT = ../taste-gallery/docs by default):
   OUT/data/images.json      one row per pick: id, style, date, subject, mode, w, h, group, rating
   OUT/data/styles.json      style key -> display name (names only)
   OUT/data/data.js          the three files above as one script (the site opens by double-click, where fetch() is blocked)
-  OUT/data/evolution.json   per style: first date, edit dates and kinds, daily runs and ratings; totals; the changelog
+  OUT/data/evolution.json   per style: first date, edit dates and kinds, daily runs and ratings; totals; the changelog;
+                            'examples': up to 3 thumbs-up pictures per style version (styles with a pick only)
   OUT/img/<id>.webp         about 1600 px on the long side;  OUT/img/t/<id>.webp  about 800 px
 Ids are a short hash of batch/name: folder names never go public.
 """
@@ -30,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / 'generated' / 'codex'
 STYLES = ROOT / 'taste' / 'styles'
 DEFAULT_OUT = ROOT.parent / 'taste-gallery' / 'docs'
+EXAMPLES = 3               # thumbs-up examples per style version on the Evolution page
 LARGE, THUMB = 1600, 800   # thumbs fill a grid tile, often 600+ px wide on a high-DPI screen
 NAME_BLOCKLIST = ['marc', 'mvidal', 'vidal', 'manara']   # lower-case words that must never appear in the output
 STYLE_FIELDS = ('description', 'light', 'composition', 'camera_or_medium', 'mood', 'texture_detail', 'avoid', 'prefer')
@@ -194,6 +196,18 @@ def changelog():
 def build(picks, styles, runs, ratings):
     keys = {k: d.get('name', k) for k, d in styles.items()}
     images, skipped = [], []
+
+    def image_row(key, run, src):
+        st = run.get('style', '')
+        return {
+            'id': image_id(*key), 'style': st, 'date': run.get('date') or key[0][:10],
+            'subject': subject_of(run.get('prompt', ''), styles.get(st)),
+            'mode': {'test': 'from the style', 'text': 'from text'}.get(run.get('mode'), run.get('mode', '')),
+            'w': int(run.get('width') or 1672), 'h': int(run.get('height') or 941),
+            'group': image_id(key[0], ''), 'rating': {'keep': 'up', 'no': 'down'}.get(ratings.get(key), ''),
+            '_src': src,
+        }
+
     for p in picks:
         key = (p['batch'], p['name'])
         run = runs.get(key)
@@ -201,16 +215,7 @@ def build(picks, styles, runs, ratings):
         if not run or not src.is_file():
             skipped.append(f"{p['batch']}/{p['name']} (missing)")
             continue
-        st = run.get('style', '')
-        rating = ratings.get(key)
-        images.append({
-            'id': image_id(*key), 'style': st, 'date': run.get('date') or p['batch'][:10],
-            'subject': subject_of(run.get('prompt', ''), styles.get(st)),
-            'mode': {'test': 'from the style', 'text': 'from text'}.get(run.get('mode'), run.get('mode', '')),
-            'w': int(run.get('width') or 1672), 'h': int(run.get('height') or 941),
-            'group': image_id(p['batch'], ''), 'rating': {'keep': 'up', 'no': 'down'}.get(rating, ''),
-            '_src': src,
-        })
+        images.append(image_row(key, run, src))
     images.sort(key=lambda i: (i['date'], i['id']))
 
     # evolution: every style that has a pick, or any run at all? Only styles with a pick, to keep the site small.
@@ -242,7 +247,30 @@ def build(picks, styles, runs, ratings):
     totals = {'runs': sum(r['runs'] for r in days), 'up': sum(r['up'] for r in days), 'almost': sum(r['almost'] for r in days),
               'down': sum(r['down'] for r in days), 'styles': len({s for r in every.values() for s in r['styles']}),
               'edits': n_edits, 'days': days}
-    return images, {k: keys[k] for k in used if k in keys}, {'styles': evo, 'all': totals, 'changelog': changelog()}, skipped
+
+    # Evolution examples (Marc, 24 Nov 2026): besides the picks, up to EXAMPLES thumbs-up pictures per style version,
+    # spread over the version's days, so each column shows what that version made. Only for styles that have a pick
+    # (a style Marc never published stays off the site), never a picture already picked. Evolution page only.
+    picked = {i['id'] for i in images}
+    pool = defaultdict(list)
+    for key, r in runs.items():
+        st = r.get('style', '')
+        if st in evo and r.get('ok', 'yes') == 'yes' and ratings.get(key) == 'keep' and image_id(*key) not in picked and r.get('date'):
+            src = BASE / key[0] / f'{key[1]}.png'
+            if src.is_file():
+                pool[st].append((r['date'], r.get('time', ''), key, r, src))
+    examples = []
+    for st, e in evo.items():
+        cuts = [''] + e['edits'] + ['9999']
+        cands = sorted(pool[st], key=lambda c: (c[0], c[1], c[2]))
+        for lo, hi in zip(cuts, cuts[1:]):
+            g = [c for c in cands if lo <= c[0] < hi]
+            n = min(EXAMPLES, len(g))
+            for j in range(n):
+                c = g[round(j * (len(g) - 1) / max(1, n - 1))] if n > 1 else g[len(g) // 2]
+                examples.append({**image_row(c[2], c[3], c[4]), 'example': True})
+    examples.sort(key=lambda i: (i['date'], i['id']))
+    return images, examples, {k: keys[k] for k in used if k in keys}, {'styles': evo, 'all': totals, 'changelog': changelog()}, skipped
 
 
 # ------------------------------------------------------------------ privacy check
@@ -328,10 +356,10 @@ def main():
 
     picks = [k for k in read_json(a.picks, []) if isinstance(k, dict) and k.get('batch') and k.get('name')]
     styles, runs, ratings = load_styles(), read_runs(), latest_ratings()
-    images, names, evo, skipped = build(picks, styles, runs, ratings)
-    problems, dropped = check_all(images, names, evo, styles)
+    images, examples, names, evo, skipped = build(picks, styles, runs, ratings)
+    problems, dropped = check_all(images + examples, names, evo, styles)
 
-    print(f'{len(picks)} picks, {len(images)} exportable, {len(names)} styles, {len(evo["changelog"])} changelog entries')
+    print(f'{len(picks)} picks, {len(images)} exportable, {len(examples)} evolution examples, {len(names)} styles, {len(evo["changelog"])} changelog entries')
     for s in skipped:
         print('  skipped:', s)
     for c in dropped:
@@ -354,13 +382,14 @@ def main():
         return 0
 
     (out / 'data').mkdir(parents=True, exist_ok=True)
-    made = export(images, out)
+    made = export(images + examples, out)
     # remove pictures that are no longer picked
-    keep_ids = {i['id'] for i in images}
+    keep_ids = {i['id'] for i in images + examples}
     for p in list((out / 'img').glob('*.webp')) + list((out / 'img' / 't').glob('*.webp')):
         if p.stem not in keep_ids:
             p.unlink()
     rows = [{k: v for k, v in i.items() if k != '_src'} for i in images]
+    evo['examples'] = [{k: v for k, v in i.items() if k not in ('_src', 'example')} for i in examples]
     for fn, data in (('images.json', rows), ('styles.json', names), ('evolution.json', evo)):
         (out / 'data' / fn).write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding='utf-8')
     # The site opens by double-click (file://), where fetch() of a JSON file is blocked: the same data as one script.
