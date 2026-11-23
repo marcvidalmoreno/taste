@@ -250,6 +250,9 @@ def log_row(row):
 
 
 FLUX_REFS, FLUX_POOL = 3, 12   # examples per FLUX image; how many recent ones it turns through
+FLUX_STYLE_ONLY = ('The attached images show only the style to match: palette, linework, texture and light. '
+                   'Make one new, single scene from the description below. Do not copy the attached images, '
+                   'do not combine them and do not place them side by side. ')   # 23 Nov 2026: 2 of 18 came out stitched
 
 
 def flux_examples(style, name, out):
@@ -301,8 +304,11 @@ def gen_cloudflare(a, out, refs, ref):
         prog.begin(a.name, a.subject or a.change)
     start = time.time()
     png = out / f'{a.name}.png'
-    ok, spent, text, why = cf_run.make(a.prompt, a.ratio, refs or examples, png)
+    style_only = bool(examples) or (a.refs_kept and bool(refs))   # examples of a look, not a seed to edit
+    ok, spent, text, why = cf_run.make((FLUX_STYLE_ONLY if style_only else '') + a.prompt, a.ratio, refs or examples, png)
     secs = round(time.time() - start)
+    if style_only:
+        text = 'prompt starts with the style-only line (FLUX_STYLE_ONLY)\n' + text
     if examples:
         text = 'style examples (FLUX default): ' + ', '.join(f'{p.parent.name}/{p.name}' for p in examples) + '\n' + text
     (out / f'{a.name}.codex.log').write_text(text + '\n', encoding='utf-8')

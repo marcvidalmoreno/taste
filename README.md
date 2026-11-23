@@ -117,6 +117,11 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – FLUX no longer stitches the examples together: in 2 of 18 A/B images FLUX pasted two of the
+  attached images side by side, near copies. When FLUX gets examples of a look (the default ones, or kept examples),
+  its prompt now starts with one line saying they show the style only, one new scene, don't copy or combine them
+  (`FLUX_STYLE_ONLY` in `scripts/codex_run.py`; not for a seed image in Variations). Remake of those 2:
+  `2026-11-23-ab-flux-nocopy`, both one scene. Undo: `git revert` this commit.
 - **23 Nov 2026** – On FLUX, the make button in Remix and Variations says "Make 4 free images" instead of
   "Spend allowance: make 4 images" (FLUX costs nothing). ChatGPT keeps the old label.
 - **23 Nov 2026** – FLUX takes Marc's examples along: an A/B test (18 prompts of a rated ChatGPT batch, FLUX with
