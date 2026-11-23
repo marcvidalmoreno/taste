@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 23 Nov 2026. This guide changes with the app.</p>
+<p class="muted small">Last updated 23 Nov 2026 (Styles page). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -21,6 +21,7 @@
   <a href="#/guide/remix">Remix</a>
   <a href="#/guide/variations">Variations</a>
   <a href="#/guide/gallery">Gallery</a>
+  <a href="#/guide/styles">Styles</a>
   <a href="#/guide/taste">Taste</a>
   <a href="#/guide/newstyle">New style from images</a>
   <a href="#/guide/change">Change a style</a>
@@ -61,6 +62,7 @@
       <tr><td><strong>taste</strong> / <strong>Batches</strong></td><td>The home page: what is being made, and every batch.</td></tr>
       <tr><td><strong>Overview</strong></td><td>Ratings per style, the next suggestion round, your notes for Claude.</td></tr>
       <tr><td><strong>Gallery</strong></td><td>Every image ever made, to browse.</td></tr>
+      <tr><td><strong>Styles</strong></td><td>Every style with an on / off switch, its history, runs and how often you liked it.</td></tr>
       <tr><td><strong>Taste</strong></td><td>The styles themselves, with your images as examples.</td></tr>
       <tr><td><strong>Guide</strong></td><td>This page.</td></tr>
       <tr><td><strong>About</strong></td><td>Why the project exists.</td></tr>
@@ -304,6 +306,26 @@
     ← → step through the Gallery as filtered. Two things stay in the batch view only: Ignore (the Gallery leaves
     ignored images out) and holding <kbd>S</kbd> for the seed. The grid keeps its order while you mark, so nothing
     jumps away; the filters apply again on the next visit.</p>
+</section>
+
+<section id="guide-styles">
+  <h2>Styles</h2>
+  <p>Every style on one page, newest run first. Each row: its colours, name, the <strong>On / Off switch</strong>, how many
+    images it made, <strong>👍 rate</strong> with <strong>n</strong> (👍 out of 👍 + 👎, latest mark per image; greyed under 5
+    rated images, when it is only a hint), ★ kept as examples, the date of its last run and a small trend over its
+    last rated batches. <strong>Find a style</strong> narrows the list.</p>
+  <ul>
+    <li><strong>Switch off</strong> (archive): the style is no longer offered in New run, in Suggestions or in the style
+      guesses of Remix and Variations. Its images stay in the Gallery and in the Overview chart (marked "archived"). It acts at
+      once and says <strong>Undo</strong>. Switched-off styles are folded under <strong>Archived</strong>, here and at the bottom
+      of Taste, each with <strong>Switch back on</strong>.</li>
+    <li>While a run or a suggestion round uses a style, its switch is greyed: hover it to see why.</li>
+    <li><strong>Click a name</strong> to open its <strong>history</strong> under its row (one at a time; the address
+      <code>#/styles/&lt;style&gt;</code> opens it directly). <strong>Evolution</strong> lists, oldest first, when it was created,
+      each commit, each edit or suggestion applied from the app and each switch, and for each the 👍 rate of the images made
+      since the event before it, then since this one, with n. The chart shows the 👍 rate per batch with the numbered events;
+      <strong>Runs</strong> lists every batch with its 👍, 👎 and ★ and links to it. Reading history costs nothing.</li>
+  </ul>
 </section>
 
 <section id="guide-taste">
@@ -574,6 +596,7 @@
       <tr><td>Start a run</td><td>Joins the queue; one image at a time into a dated folder</td><td>Remove, or Stop</td></tr>
       <tr><td>Apply a style change or suggestion</td><td>Style file rewritten, prompts rebuilt, before and after logged</td><td>Undo in the message, or on the Taste card</td></tr>
       <tr><td>Create a new style</td><td>Style file written, prompts rebuilt, the reference images kept on your laptop</td><td>Undo on the last step, or on the Taste card</td></tr>
+      <tr><td>Switch a style off or on</td><td>Its file moves to <code>taste/styles/archived/</code> (or back) and prompts are rebuilt; logged in the style history</td><td>Undo in the message, or the switch again</td></tr>
       <tr><td>Note for Claude</td><td>Waits until you say "process my app notes"</td><td>Take back, on Overview</td></tr>
     </tbody>
   </table>

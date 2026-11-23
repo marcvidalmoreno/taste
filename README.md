@@ -117,6 +117,14 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   web app's budget warning (`WEEK_BUDGET` in `scripts/app.py`) now uses 200.
 
 ## Changelog
+- **23 Nov 2026** – New **Styles** page (header, after Gallery, `#/styles`): every style in one list with an on / off
+  switch, images, 👍 rate with n, ★ kept, last run and a trend; click a name for its history (timeline of commits,
+  app edits, suggestions and switches with the 👍 rate before and after each, a per-batch chart, the runs). Switching
+  off moves the style file to `taste/styles/archived/` (every script then skips it), logs it in
+  `style-edits.json`, and refuses while a run or suggestion round uses the style; Undo in the message. Archived styles
+  drop out of New run, Suggestions and the Remix / Variations guesses, stay in the Gallery and Overview, and sit folded
+  at the bottom of Taste with "Switch back on". Guide updated. Undo: `git revert` this commit (styles switched off stay
+  in `taste/styles/archived/`: move them back).
 - **23 Nov 2026** – Gallery: the large view is now the batch large view's twin. Same layout (image on a stage with
   Fit / 1 : 1, panel on the right) and the same buttons and keys: Remix, Variations, Change the style, Note for
   Claude, Keep, More like this, the details (made as, seed, size, time) and Copy prompt. It still steps through the

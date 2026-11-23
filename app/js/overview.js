@@ -1,7 +1,7 @@
 // Overview: what the saved ratings say per style, and when the next distil is due.
 // The chart is a stacked bar per style (up / down, plus "almost" from older ratings), one shared scale, so both the mix inside a
 // style and the amount of evidence behind it can be read at a glance. A table holds the same numbers.
-import { api, styles } from './api.js';
+import { api, allStyles, archivedStyles } from './api.js';
 import { h, batchHref, batchTitle, plural, RATING_LABELS, showError } from './ui.js';
 import { notesCard } from './notes.js';
 
@@ -9,9 +9,9 @@ let scope = 'since';   // 'since' the last distil (what the distil will read) or
 
 export async function renderOverview(view) {
   view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the ratings…'));
-  let o, all;
+  let o, all, off;
   try {
-    [o, all] = await Promise.all([api('overview'), styles()]);
+    [o, all, off] = await Promise.all([api('overview'), allStyles(), archivedStyles()]);
   } catch (err) {
     view.replaceChildren(h('p', {}, 'Could not load the ratings.'));
     return showError(err);
@@ -24,7 +24,7 @@ export async function renderOverview(view) {
     h('div', { class: 'overview' },
       distilCard(o),
       notes,
-      chartCard(o, all, draw)));
+      chartCard(o, all, off, draw)));
   draw();
 }
 
@@ -55,7 +55,7 @@ function distilCard(o) {
     out);
 }
 
-function chartCard(o, all, redraw) {
+function chartCard(o, all, off, redraw) {
   const rows = Object.entries(o.styles)
     .map(([key, v]) => ({ key, ...v[scope], total: v[scope].keep + v[scope].almost + v[scope].no }))
     .filter((r) => r.total > 0)
@@ -75,7 +75,8 @@ function chartCard(o, all, redraw) {
     rows.length ? h('div', { class: 'bars', role: 'img', 'aria-label': 'Ratings per style; the same numbers are in the table below' },
       rows.map((r) => h('div', { class: 'bar-row' },
         h('span', { class: 'label', title: r.key }, all[r.key]?.name || r.key,
-          !all[r.key] && h('small', { class: 'muted' }, ' (old style)')),
+          off[r.key] ? h('small', { class: 'muted' }, ' (archived)')
+            : !all[r.key] && h('small', { class: 'muted' }, ' (old style)')),
         h('span', { class: 'track' },
           h('span', { class: 'stack', style: { width: (r.total / max) * 100 + '%' } },
             series.filter((s) => r[s]).map((s) => h('span', {

@@ -35,6 +35,7 @@ Files this server reads or writes (all in generated/codex/)
                        so it stays here, git-ignored). references/.drafts/ holds them until "Create style"
   removed-styles/      a new style whose creation was undone (its file and references move here, never deleted)
   .progress.json       live progress of the running run (read; written by the run scripts)
+  taste/styles/archived/  styles switched off on the Styles page (their file moves here; every script then skips them, 23 Nov 2026)
   .app-restart-<port>.json  the last runs and the port, handed from a server to the one that restarts it (deleted
                        on start)
 
@@ -269,7 +270,8 @@ def guess_styles(path):
             from nearest import model
             _guess = model(str(ROOT))
     top, far, _ = _guess(str(path))
-    return {'top': [{'style': s, 'distance': d} for s, d in top], 'far': far}
+    # nearest.py still knows the styles switched off: leave them out
+    return {'top': [{'style': s, 'distance': d} for s, d in top if (ROOT / 'taste' / 'styles' / f'{s}.json').is_file()], 'far': far}
 
 
 def slugify(text, fallback='run'):
@@ -1078,6 +1080,189 @@ def suggestions():
     return {'ready': sum(1 for c in run['styles'].values() if c['status'] == 'ready') if run else 0}
 
 
+# -- archive and history of styles (23 Nov 2026). Archiving moves taste/styles/<key>.json to taste/styles/archived/:
+# every script that globs taste/styles/*.json or reads taste.json then skips the style, with no change to it.
+
+STYLES_DIR = ROOT / 'taste' / 'styles'
+ARCHIVED = STYLES_DIR / 'archived'
+_hist = {}     # {style: (cache key, answer)}: the history is read from files and git, so it is kept until one changes
+
+
+def archived_keys():
+    return sorted(p.stem for p in ARCHIVED.glob('*.json')) if ARCHIVED.is_dir() else []
+
+
+def style_busy(key):
+    """Why a style cannot be switched off right now (a run or a distil round is using it), or ''."""
+    with _QLOCK:
+        queued = any(key in (s.get('styles') or []) for s in QUEUE)
+        running = bool(CUR.get('running')) and key in (CUR.get('styles') or [])
+    if running or queued:
+        return 'a run that uses it is ' + ('running' if running else 'waiting in the queue')
+    run = current_run()
+    if run and key in run.get('styles', {}) and (run.get('running') or run['styles'][key].get('status') in ('waiting', 'thinking', 'ready')):
+        return 'Codex is working on suggestions for it'
+    return ''
+
+
+def rebuild_taste():
+    import subprocess
+    r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'build_taste.py'), str(ROOT)], cwd=ROOT,
+                       capture_output=True, text=True, encoding='utf-8', errors='replace')
+    if r.returncode:
+        raise ApiError(500, 'build_taste.py failed: ' + (r.stderr or r.stdout).strip()[-300:])
+
+
+def set_archived(key, off):
+    """Switch a style off (move its file to archived/) or on again. Logged like the other style edits."""
+    import time
+    if not key or '/' in key or '\\' in key or key.startswith('.'):
+        raise ApiError(400, f'unknown style "{key}"')
+    live, shelf = STYLES_DIR / f'{key}.json', ARCHIVED / f'{key}.json'
+    src, dst = (live, shelf) if off else (shelf, live)
+    with LOCK:
+        if not src.is_file():
+            if dst.is_file():
+                raise ApiError(409, f'"{key}" is already {"off" if off else "on"}')
+            raise ApiError(404, f'unknown style "{key}"')
+        if dst.exists():
+            raise ApiError(409, f'a style called "{key}" exists already')
+        if off and (why := style_busy(key)):
+            raise ApiError(409, f'Cannot switch it off now: {why}')
+        name = read_json(src, {}).get('name', key)
+        ARCHIVED.mkdir(parents=True, exist_ok=True)
+        os.replace(src, dst)
+        try:
+            rebuild_taste()
+        except ApiError:
+            os.replace(dst, src)   # leave things as they were
+            raise
+        edits = read_json(STYLE_EDITS, [])
+        rec = {'id': f'{int(time.time() * 1000)}', 'style': key, 'at': time.strftime('%Y-%m-%d %H:%M'),
+               'change': f'Switched {name} {"off" if off else "on"}', 'summary': '', 'how': 'archive' if off else 'unarchive',
+               'before': {}, 'after': {}, 'source': None, 'undone': False}
+        edits.append(rec)
+        write_json(STYLE_EDITS, edits)
+    return rec
+
+
+def style_runs():
+    """{style: [batch rows]}: per style and batch, the images made, their latest marks and when the batch began.
+    A row: {batch, date, first ('YYYY-MM-DD HH:MM'), images, up, down, kept, imgs: [(at, mark)]}."""
+    marks = {k: v['rating'] for k, v in saved_ratings().items()}
+    kept = kept_set()
+    per = {}
+    if rate.RUNS.exists():
+        rows = {}
+        for r in csv.DictReader(open(rate.RUNS, encoding='utf-8')):
+            rows[(r['batch'], r['name'])] = r   # the last row per image wins
+        for (batch, name), r in rows.items():
+            if r['ok'] != 'yes' or not r['style'] or not (BASE / batch / f'{name}.png').is_file():
+                continue
+            at = f"{r['date']} {r['time'] or '00:00'}"
+            b = per.setdefault(r['style'], {}).setdefault(batch, {'batch': batch, 'date': r['date'], 'first': at, 'images': 0,
+                                                                  'up': 0, 'down': 0, 'kept': 0, 'imgs': []})
+            m = marks.get((batch, name))
+            b['first'] = min(b['first'], at)
+            b['images'] += 1
+            b['up'] += m == 'keep'
+            b['down'] += m == 'no'
+            b['kept'] += (batch, name) in kept
+            b['imgs'].append((at, m))
+    return {k: sorted(v.values(), key=lambda b: (b['first'], b['batch'])) for k, v in per.items()}
+
+
+def rate_of(up, down):
+    return {'up': up, 'down': down, 'n': up + down, 'rate': round(up / (up + down), 3) if up + down else None}
+
+
+def styles_overview():
+    """One row per style (on and off) for the Styles page: images, thumbs-up rate, kept, last run, sparkline."""
+    runs = style_runs()
+    out = []
+    for key, on in [(k, True) for k in sorted(p.stem for p in STYLES_DIR.glob('*.json'))] + [(k, False) for k in archived_keys()]:
+        s = read_json((STYLES_DIR if on else ARCHIVED) / f'{key}.json', {})
+        bs = runs.get(key, [])
+        up, down = sum(b['up'] for b in bs), sum(b['down'] for b in bs)
+        marked = [b for b in bs if b['up'] + b['down']][-8:]
+        out.append({'key': key, 'name': s.get('name', key), 'palette': s.get('palette', [])[:5], 'on': on,
+                    'images': sum(b['images'] for b in bs), 'batches': len(bs), **rate_of(up, down),
+                    'kept': sum(b['kept'] for b in bs), 'last': max((b['first'] for b in bs), default=''),
+                    'spark': [rate_of(b['up'], b['down'])['rate'] for b in marked],
+                    'busy': style_busy(key) if on else ''})
+    return {'styles': out}
+
+
+def git_events(key):
+    """Commits that added or changed the style file: the public repo (older history) and taste/ (the private repo)."""
+    import subprocess
+    out, private_root = [], None
+    for repo, path in ((ROOT, f'taste/styles/{key}.json'), (ROOT / 'taste', f'styles/{key}.json')):
+        try:
+            r = subprocess.run(['git', '-C', str(repo), 'log', '--diff-filter=AM', '--format=%aI|%s', '--', path],
+                               capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=10)
+            lines = r.stdout.splitlines() if r.returncode == 0 else []
+            if repo != ROOT and lines:
+                root = subprocess.run(['git', '-C', str(repo), 'log', '--max-parents=0', '--format=%aI'],
+                                      capture_output=True, text=True, timeout=10).stdout.split()
+                private_root = root[0] if root else None
+        except Exception:
+            lines = []
+        for line in lines:
+            iso, _, subject = line.partition('|')
+            out.append({'at': iso[:16].replace('T', ' '), 'iso': iso, 'kind': 'commit', 'title': subject, 'private': repo != ROOT})
+    # the move to the private repo only re-adds the file: when the public history says more, leave that commit out
+    if any(not e['private'] for e in out) and private_root:
+        out = [e for e in out if not (e['private'] and e['iso'] == private_root)]
+    return out
+
+
+def style_history(key):
+    on = (STYLES_DIR / f'{key}.json').is_file()
+    if not on and not (ARCHIVED / f'{key}.json').is_file():
+        raise ApiError(404, f'unknown style "{key}"')
+    path = (STYLES_DIR if on else ARCHIVED) / f'{key}.json'
+    stamp = lambda p: p.stat().st_mtime_ns if p.exists() else 0  # noqa: E731
+    cache_key = tuple(stamp(p) for p in (path, rate.RUNS, rate.RATINGS, STYLE_EDITS, KEPT, ROOT / '.git' / 'logs' / 'HEAD',
+                                         ROOT / 'taste' / '.git' / 'logs' / 'HEAD')) \
+        + (len([p for p in BASE.iterdir() if p.is_dir()]) if BASE.exists() else 0,)
+    hit = _hist.get(key)
+    if hit and hit[0] == cache_key:
+        return hit[1]
+    batches = style_runs().get(key, [])
+    edits = [e for e in read_json(STYLE_EDITS, []) if e.get('style') == key]
+    kinds = {'new': 'created', 'codex': 'edit', 'words': 'edit', 'distil': 'distil', 'archive': 'off', 'unarchive': 'on'}
+    events = []
+    for e in edits:
+        events.append({'at': e['at'], 'kind': kinds.get(e.get('how'), 'edit'), 'title': e.get('change', ''),
+                       'detail': e.get('summary', ''), 'undone': bool(e.get('undone')), 'id': e.get('id')})
+    commits = git_events(key)
+    if not any(e['kind'] == 'created' and not e['undone'] for e in events) and commits:
+        min(commits, key=lambda c: c['iso'])['kind'] = 'created'
+    events += [{k: v for k, v in c.items() if k not in ('iso', 'private')} | {'undone': False} for c in commits]
+    events.sort(key=lambda e: (e['at'], e.get('id') or ''))
+    imgs = sorted(i for b in batches for i in b['imgs'])
+    live = [e for e in events if not e['undone']]
+    cuts = [e['at'] for e in live]
+
+    def segment(lo, hi):   # images made from lo (included) to hi (excluded): the thumbs-up rate and n
+        sel = [m for at, m in imgs if (lo is None or at >= lo) and (hi is None or at < hi)]
+        return {**rate_of(sel.count('keep'), sel.count('no')), 'images': len(sel)}
+    for i, e in enumerate(live):
+        e['before'] = segment(cuts[i - 1] if i else None, e['at'])
+        e['after'] = segment(e['at'], cuts[i + 1] if i + 1 < len(cuts) else None)
+    for e in events:
+        if e['undone']:
+            e['before'] = e['after'] = None
+        e['index'] = sum(1 for b in batches if b['first'] < e['at'])   # it sits after this many batches
+    rows = [{k: v for k, v in b.items() if k != 'imgs'} | rate_of(b['up'], b['down']) for b in batches]
+    up, down = sum(b['up'] for b in batches), sum(b['down'] for b in batches)
+    ans = {'key': key, 'on': on, 'name': read_json(path, {}).get('name', key), 'events': events, 'batches': rows,
+           'total': {'images': sum(b['images'] for b in batches), 'kept': sum(b['kept'] for b in batches), **rate_of(up, down)}}
+    _hist[key] = (cache_key, ans)
+    return ans
+
+
 # ---------------------------------------------------------------- HTTP
 
 class ApiError(Exception):
@@ -1094,6 +1279,9 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/batches'): 'get_batches',
         ('GET', 'api/batch'): 'get_batch',
         ('GET', 'api/styles'): 'get_styles',
+        ('GET', 'api/styles/overview'): 'get_styles_page',
+        ('GET', 'api/styles/history'): 'get_style_history',
+        ('POST', 'api/styles/switch'): 'post_style_switch',
         ('PUT', 'api/mark'): 'put_mark',
         ('POST', 'api/keep'): 'post_keep',
         ('GET', 'api/kept'): 'get_kept',
@@ -1529,7 +1717,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def get_style_edits(self, style=''):
         """Edits made from the page, newest first (one style, or all)."""
-        edits = [e for e in read_json(STYLE_EDITS, []) if not style or e['style'] == style]
+        edits = [e for e in read_json(STYLE_EDITS, []) if (not style or e['style'] == style) and e.get('how') not in ('archive', 'unarchive')]
         return {'edits': list(reversed(edits))[:30]}
 
     def get_distil_state(self):
@@ -1623,17 +1811,32 @@ class Handler(BaseHTTPRequestHandler):
         return {'output': (r.stdout + r.stderr).strip(), 'returncode': r.returncode}
 
     def get_styles(self):
-        """The 14 styles, whole: name, palette, description, light, composition, medium, mood, detail,
-        avoid, subjects and uses (the picker and labels use the first three, the Taste page all of it)."""
-        out = {}
-        for p in sorted((ROOT / 'taste' / 'styles').glob('*.json')):
-            s = read_json(p, {})
-            out[p.stem] = {**s, 'name': s.get('name', p.stem), 'palette': s.get('palette', [])[:7],
-                           'description': s.get('description', '')}
-            refs = REFS / p.stem
-            if refs.is_dir():   # started from reference images in the page
-                out[p.stem]['refs'] = sorted(f.name for f in refs.glob('ref-*.jpg'))
-        return {'styles': out}
+        """The styles that are on, whole: name, palette, description, light, composition, medium, mood, detail,
+        avoid, subjects and uses (the picker and labels use the first three, the Taste page all of it).
+        'archived' holds the ones switched off (23 Nov 2026), so labels still find their names."""
+        out, off = {}, {}
+        for folder, into in ((STYLES_DIR, out), (ARCHIVED, off)):
+            for p in sorted(folder.glob('*.json')):
+                s = read_json(p, {})
+                into[p.stem] = {**s, 'name': s.get('name', p.stem), 'palette': s.get('palette', [])[:7],
+                                'description': s.get('description', '')}
+                refs = REFS / p.stem
+                if refs.is_dir():   # started from reference images in the page
+                    into[p.stem]['refs'] = sorted(f.name for f in refs.glob('ref-*.jpg'))
+        return {'styles': out, 'archived': off}
+
+    def get_styles_page(self):
+        """The Styles page: one row per style, on and off. Free: reads files."""
+        return styles_overview()
+
+    def get_style_history(self, key=''):
+        """One style's timeline, runs and thumbs-up rate before and after each event. Free: files and git log."""
+        return style_history(key)
+
+    def post_style_switch(self):
+        """Switch a style off or on: {style, on: true|false}. Off moves its file to taste/styles/archived/."""
+        body = self.read_body()
+        return set_archived(str(body.get('style', '')), not body.get('on'))
 
     def get_similar(self, batch='', name='', mode=''):
         """The 8 images that look most like this one (colour and framing, scripts/similar.py), in the Gallery's shape.

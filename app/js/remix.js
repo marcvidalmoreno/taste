@@ -3,7 +3,7 @@
 //      or I edit the prompt myself.
 //   2. Read the new prompt, with the changed words marked against the old one, edit it if needed, then make 1-4.
 // The image itself can go along as a reference (closer result) or not (more freedom).
-import { api, styles } from './api.js';
+import { api, allStyles } from './api.js';
 import { allowance, costBlock } from './cost.js';
 import { job, enqueueRun } from './job.js';
 import { h, thumbUrl, plural, toast, showError } from './ui.js';
@@ -14,7 +14,7 @@ const LOCKS = { subject: 'Subject', palette: 'Palette', composition: 'Compositio
 
 // src: {batch, file, label, style, prompt}
 export async function openRemix(src) {
-  const all = await styles();
+  const all = await allStyles();
   const st = { step: 1, change: '', keep: [], ref: true, n: 1, prompt: src.prompt || '', summary: '', busy: 0, alw: null, edited: false, editing: false };
   const dlg = h('dialog', { class: 'variations remix' });
   const body = h('div');

@@ -16,12 +16,15 @@ export async function api(path, { method = 'GET', body } = {}) {
 }
 
 // Styles change rarely: load them once and share.
+// styles() is the ones that are on (the picker, Taste, edits); allStyles() adds the ones switched off, for labels
+// (a switched-off style still names its images in the Gallery and the Overview).
 let stylesPromise;
-export function styles() {
-  stylesPromise ??= api('styles').then((d) => d.styles).catch(() => ({}));
-  return stylesPromise;
-}
-// After a style edit: read them again (every caller of styles() then gets the new text).
+const load = () => (stylesPromise ??= api('styles').catch(() => ({ styles: {}, archived: {} })));
+export const styles = () => load().then((d) => d.styles);
+export const archivedStyles = () => load().then((d) => d.archived || {});
+export const allStyles = () => load().then((d) => ({
+  ...Object.fromEntries(Object.entries(d.archived || {}).map(([k, v]) => [k, { ...v, archived: true }])), ...d.styles }));
+// After a style edit or a switch: read them again (every caller then gets the new text).
 export function refreshStyles() {
   stylesPromise = null;
   return styles();

@@ -3,11 +3,11 @@
 // Kept images next to rejected ones (with the reason): the contrast says more than the description.
 //   #/taste            all styles
 //   #/taste/<style>    the same page, scrolled to one style
-import { h, thumbUrl, plural, RATING_LABELS, showError } from './ui.js';
+import { h, thumbUrl, plural, RATING_LABELS, showError, toast } from './ui.js';
 import { loadGallery, openLarge, galleryHref } from './gallery.js';
 import { openNote } from './notes.js';
 import { openStyleEdit, undoEdit, diffValue, FIELDS } from './styleedit.js';
-import { api } from './api.js';
+import { api, refreshStyles } from './api.js';
 import { openNewStyle } from './newstyle.js';
 import { setKept } from './marks.js';
 
@@ -17,9 +17,9 @@ const USES = { teams: 'Teams background', desktop: 'Desktop', phone: 'Phone', po
 
 export async function renderTaste(view, focus) {
   view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the styles…'));
-  let images, styles;
+  let images, styles, archived;
   try {
-    ({ images, styles } = await loadGallery());
+    ({ images, styles, archived } = await loadGallery());
   } catch (err) {
     view.replaceChildren(h('p', {}, 'Could not load the styles.'));
     return showError(err);
@@ -41,7 +41,8 @@ export async function renderTaste(view, focus) {
       keys.map((k) => h('a', { href: '#/taste/' + encodeURIComponent(k) },
         h('span', { class: 'mini-swatch', 'aria-hidden': 'true' }, styles[k].palette.slice(0, 4).map((c) => h('i', { style: { background: c } }))),
         styles[k].name))),
-    ...keys.map((k) => styleCard(k, styles[k], images.filter((im) => im.style === k))));
+    ...keys.map((k) => styleCard(k, styles[k], images.filter((im) => im.style === k))),
+    archivedBox(archived, images, focus));
 
   if (focus) document.getElementById('style-' + focus)?.scrollIntoView({ block: 'start' });
 }
@@ -90,6 +91,26 @@ function styleCard(key, s, imgs) {
                unrated ? `${plural(unrated, 'image')} not rated yet. ` : '',
                h('a', { href: galleryHref({ style: key }) }, `All ${plural(imgs.length, 'image')} in the gallery`))]
           : h('p', { class: 'muted' }, 'No images made in this style yet.'))));
+}
+
+// Styles switched off (Styles page): folded at the bottom, each with a way back
+function archivedBox(archived, images, focus) {
+  const keys = Object.keys(archived).sort((a, b) => archived[a].name.localeCompare(archived[b].name));
+  if (!keys.length) return null;
+  return h('details', { class: 'archived-box', open: keys.includes(focus) ? true : null },
+    h('summary', {}, `Archived (${keys.length})`),
+    keys.map((k) => h('article', { class: 'card style-card is-off', id: 'style-' + k },
+      h('div', { class: 'style-title' },
+        h('span', { class: 'mini-swatch', 'aria-hidden': 'true' }, archived[k].palette.slice(0, 4).map((c) => h('i', { style: { background: c } }))),
+        h('h2', {}, archived[k].name),
+        h('button', { class: 'secondary outline small-btn', onClick: async () => {
+          try { await api('styles/switch', { method: 'POST', body: { style: k, on: true } }); await refreshStyles(); toast(`${archived[k].name} is back on.`); }
+          catch (err) { return showError(err); }
+          renderTaste(document.getElementById('view'), k);
+        } }, 'Switch back on'),
+        h('a', { class: 'small', href: '#/styles/' + encodeURIComponent(k) }, 'History')),
+      h('p', { class: 'muted small' }, archived[k].description),
+      h('a', { class: 'small', href: galleryHref({ style: k }) }, plural(images.filter((im) => im.style === k).length, 'image') + ' in the gallery'))));
 }
 
 // Edits made from the page to this style, newest first, each with Undo (while nothing later changed the same field).

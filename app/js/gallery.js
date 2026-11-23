@@ -7,7 +7,7 @@
 // Typing redraws only the grid and the count (the field keeps its cursor); the address follows without a reload.
 // Rows: each tile grows in proportion to its width / height, so every row fills the width at one shared
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
-import { api, styles } from './api.js';
+import { api, styles, archivedStyles, allStyles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton } from './marks.js';
 import { openRemix } from './remix.js';
@@ -21,7 +21,7 @@ let all = [];        // every image from the server
 let stepList = [];   // what the large view steps through: the grid's list, or a "More like this" row
 let shown = [];      // after the filters, in page order (the large view steps through these)
 let styleMap = {};
-styles().then((st) => { styleMap = st; });   // names for a large view opened from outside this page
+allStyles().then((st) => { styleMap = st; });   // names for a large view opened from outside this page
 let dlg, index = 0;
 
 export const galleryHref = (q = {}) => {
@@ -32,14 +32,15 @@ export const galleryHref = (q = {}) => {
 export const ratingLabel = (r) => (r ? RATING_LABELS[r].label : 'Not rated');
 
 export async function loadGallery() {
-  const [g, st] = await Promise.all([api('gallery'), styles()]);
-  return { images: g.images, styles: st };
+  const [g, st, off] = await Promise.all([api('gallery'), styles(), archivedStyles()]);
+  // styles: the ones that are on; archived: switched off; labels: both (an image keeps its style's name)
+  return { images: g.images, styles: st, archived: off, labels: { ...off, ...st } };
 }
 
 export async function renderGallery(view, query) {
   view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the gallery…'));
   try {
-    ({ images: all, styles: styleMap } = await loadGallery());
+    ({ images: all, labels: styleMap } = await loadGallery());
   } catch (err) {
     view.replaceChildren(h('p', {}, 'Could not load the gallery.'));
     return showError(err);

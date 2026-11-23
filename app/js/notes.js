@@ -2,7 +2,7 @@
 // They wait in generated/codex/claude-notes.json; in chat, "process my app notes" makes Claude read them
 // (scripts/notes.py), propose the style edits as one set for Marc's OK, and answer each note here.
 // Codex never reads them: the taste stays with Claude (CLAUDE.md, "Who owns what").
-import { api, styles } from './api.js';
+import { api, allStyles } from './api.js';
 import { h, thumbUrl, shortDate, plural, toast, showError } from './ui.js';
 
 const EXAMPLES = ['too pink, more varied light', 'this composition is the one: more like it', 'faces look plastic',
@@ -10,7 +10,7 @@ const EXAMPLES = ['too pink, more varied light', 'this composition is the one: m
 
 // ctx: {batch, name, file, label, style} for an image, or {style} alone for a style
 export async function openNote(ctx) {
-  const all = await styles();
+  const all = await allStyles();
   const styleName = all[ctx.style]?.name || ctx.style;
   const st = { about: ctx.name ? 'image' : 'style', text: '' };
   const area = h('textarea', { rows: 4, maxlength: 1000, 'aria-label': 'Note',
@@ -55,7 +55,7 @@ export async function openNote(ctx) {
 // The notes card on the Overview page: open ones first (can be taken back), answered ones with Claude's answer.
 export async function notesCard() {
   const box = h('article', { class: 'card notes-card' }, h('h2', {}, 'Notes for Claude'), h('p', { 'aria-busy': 'true' }, 'Loading…'));
-  const all = await styles();
+  const all = await allStyles();
   const draw = async () => {
     let notes;
     try { ({ notes } = await api('notes')); } catch (err) { box.replaceChildren(h('h2', {}, 'Notes for Claude'), h('p', {}, err.message)); return; }

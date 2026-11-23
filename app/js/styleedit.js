@@ -3,7 +3,7 @@
 // ~15 s), shown field by field with the changed words marked; untick what you don't want, then apply. Or skip
 // Codex and add your words as they are, as a "lean towards" or an "avoid" line. Applying rewrites
 // taste/styles/<style>.json, rebuilds taste.json, and every image made after that uses it. Each edit can be undone.
-import { api, styles, refreshStyles } from './api.js';
+import { api, styles, archivedStyles, refreshStyles } from './api.js';
 import { wordDiff } from './remix.js';
 import { h, thumbUrl, toast, showError } from './ui.js';
 
@@ -16,7 +16,10 @@ const QUICK = ['fewer elements, more empty space', 'less repetition of the same 
 export async function openStyleEdit(ctx) {
   const all = await styles();
   const s = all[ctx.style];
-  if (!s) return showError(new Error('This image has no style on record.'));
+  if (!s) {
+    const off = (await archivedStyles())[ctx.style];
+    return showError(new Error(off ? `${off.name} is switched off. Switch it on in Styles to change it.` : 'This image has no style on record.'));
+  }
   const st = { step: 1, change: '', busy: 0, proposal: null, how: 'codex', words: 'prefer', skip: new Set() };
   const body = h('div');
   const foot = h('footer');

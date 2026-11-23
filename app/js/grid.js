@@ -1,5 +1,5 @@
 // One batch: thumbnails with filters. The large view (viewer.js) opens on top of it.
-import { api, styles } from './api.js';
+import { api, allStyles } from './api.js';
 import { store, item, styleName, kindOf, FILTERS, visible, onChange } from './store.js';
 import { toggleMark, ignoreWithUndo, markButtons } from './marks.js';
 import { openViewer, closeViewer, viewerHref } from './viewer.js';
@@ -18,7 +18,7 @@ export async function renderBatch(el, batch, show, open) {
     store.justRated = new Set();
     view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the batch…'));
     try {
-      [store.data, store.styles] = await Promise.all([api('batch/' + encodeURIComponent(batch)), styles()]);
+      [store.data, store.styles] = await Promise.all([api('batch/' + encodeURIComponent(batch)), allStyles()]);
     } catch (err) {
       view.replaceChildren(h('p', {}, 'Could not open this batch. ', h('a', { href: '#/' }, 'Back to batches')));
       return showError(err);
@@ -115,7 +115,7 @@ function batchMeta(d) {
   const p = d.parent;
   const parentHref = p && (p.file.startsWith('seed.') ? batchHref(p.batch)
     : `#/b/${encodeURIComponent(p.batch)}/${encodeURIComponent(p.file.replace(/\.[^.]+$/, ''))}`);
-  const styles = [...new Set(d.items.map((im) => im.style).filter(Boolean))];
+  const styles = [...new Set(d.items.map((im) => im.style).filter((k) => k && !store.styles[k]?.archived))];   // switched-off styles have no runs
   return h('section', { class: 'batch-meta' },
     h('div', { class: 'meta-row' },
       h('span', { class: 'muted small' }, 'Folder'),

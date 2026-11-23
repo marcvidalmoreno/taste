@@ -4,6 +4,7 @@
 //   #/b/<batch>/<image>?show=   the same, with the large view open on one image
 //   #/overview                  ratings per style
 //   #/gallery?style=&rating=&batch=   every image; the large view has the thumbs
+//   #/styles[/<style>]          every style, on / off, its history, runs and 👍 rate
 //   #/taste[/<style>]           the styles with my images as examples
 //   #/guide[/<section>]         how to use the app, page by page, and use cases
 //   #/about[/<section>]         why the project exists
@@ -14,6 +15,7 @@ import { renderBatch } from './grid.js';
 import { renderOverview } from './overview.js';
 import { renderGallery } from './gallery.js';
 import { renderTaste } from './taste.js';
+import { renderStyles } from './styles.js';
 import { renderAbout, renderGuide } from './about.js';
 import { renderNewRun } from './newrun.js';
 import { renderDistil } from './distil.js';
@@ -30,7 +32,7 @@ function parseHash() {
 
 async function route() {
   const { parts, query } = parseHash();
-  const pages = { overview: 'overview', b: 'batch', gallery: 'gallery', taste: 'taste', about: 'about', guide: 'guide', new: 'new', distil: 'overview', suggestions: 'overview' };
+  const pages = { overview: 'overview', b: 'batch', gallery: 'gallery', styles: 'styles', taste: 'taste', about: 'about', guide: 'guide', new: 'new', distil: 'overview', suggestions: 'overview' };
   const page = pages[parts[0]] || 'batches';
   for (const a of document.querySelectorAll('[data-nav]')) {
     a.toggleAttribute('aria-current', a.dataset.nav === page);
@@ -40,6 +42,7 @@ async function route() {
   if (parts[0] === 'distil' || parts[0] === 'suggestions') return renderDistil(view);   // under Overview in the header
   if (page === 'overview') return renderOverview(view);
   if (page === 'gallery') return renderGallery(view, query);
+  if (page === 'styles') return renderStyles(view, parts[1]);
   if (page === 'taste') return renderTaste(view, parts[1]);
   if (page === 'about') return renderAbout(view, parts[1]);
   if (page === 'guide') return renderGuide(view, parts[1]);
