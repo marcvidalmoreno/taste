@@ -881,7 +881,7 @@ def spec_batch(body, preview=False):
 
 
 def spec_single(body):
-    """One image (or a few) from a style and a subject I write: {style, subject, ratio, n: 1-4}."""
+    """One image (or a few) from a style and a subject I write: {style, subject, ratio, n: 1-10}."""
     style = str(body.get('style', ''))
     st = style_file(style)
     subject = clean(body.get('subject'))
@@ -890,7 +890,7 @@ def spec_single(body):
     ratio = body.get('ratio') or 'wide'
     if ratio not in RATIO_CHOICES[1:]:
         raise ApiError(400, 'ratio: wide, portrait or square')
-    n = max(1, min(4, int(body.get('n') or 1)))
+    n = max(1, min(10, int(body.get('n') or 1)))
     _, batch = free_slug(subject[:24], flux_end(body))
     stem = '-'.join(slugify(subject, 'image').split('-')[:3])   # first words, never cut mid-word
     jobs = [{'name': f'{stem}-{i}', 'style': style, 'subject': subject, 'ratio': ratio, 'mode': 'text'}

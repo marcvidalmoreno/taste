@@ -263,7 +263,7 @@ function oneForm() {
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Images'),
       h('div', { class: 'nr-grid' },
-        h('div', {}, h('span', { class: 'nr-label' }, 'How many'), stepper(o.n, [1, 2, 3, 4], (v) => { o.n = v; }, 'one-n')),
+        h('div', {}, h('span', { class: 'nr-label' }, 'How many'), stepper(o.n, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], (v) => { o.n = v; }, 'one-n')),
         h('div', {}, h('span', { class: 'nr-label' }, 'Shape'),
           ratioSeg(o.ratio, { wide: 'Wide', portrait: 'Portrait', square: 'Square' }, (v) => { o.ratio = v; }, 'one-ratio'))),
       h('p', { class: 'muted small' }, RATIO_HINT[o.ratio] + (o.n > 1 ? ' Same prompt each time: Codex varies the result on its own.' : ''))),
