@@ -121,6 +121,7 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **24 Nov 2026** – A button newer than the running server (the page updates at once, the server restarts only once the current run ends) now says so – "the app was just updated and restarts by itself once the current run ends; try again then" – instead of a bare `not found` (seen with the new queue arrows). Undo: `git revert` this commit.
 - **24 Nov 2026** – Queue: each waiting run under **Next** has **↑ / ↓** beside Remove to change the order (`POST /api/queue/move`; focus stays on the arrow so you can keep pressing). Guide updated. Undo: `git revert` this commit.
 - **24 Nov 2026** – New run: the helper under **Name** really gets its space now (Pico's built-in rule pulled any small text after an input up by a negative margin, cancelling the 23 Nov fix). Undo: `git revert` this commit.
 - **24 Nov 2026** – Gallery: the Style menu is now a row of **style tags** (colours and count, several on at once, `style=a,b` in the address; old single-style links still work); **Small / Medium / Large** moved to the end of the filter row; tiles (and Taste examples) show the normal hand pointer instead of the loupe, since a click opens the large view rather than zooming. Guide updated. Undo: `git revert` this commit.

@@ -265,6 +265,7 @@ HOLD = {}                 # the queue is on hold: {'reason', 'since', 'auto'} (2
 _QLOCK = threading.Lock()
 _WAKE = threading.Event()
 RESTART = 3                   # exit code: "start me again", for the supervisor (scripts/ changed, 23 Nov 2026)
+BORN = [0.0]               # code_stamp() when this server started (set in main): a newer page may call a route it lacks
 RESTARTING = threading.Event()  # set once a restart is decided: no new run or distil round starts after it
 ACTIVE = [0]                  # requests being answered right now (a restart waits for them)
 _ALOCK = threading.Lock()
@@ -1806,6 +1807,8 @@ class Handler(BaseHTTPRequestHandler):
                     args = [p for p in path[len(prefix):].split('/') if p]
                     return self.send(200, getattr(self, fn)(*args))
             if method != 'GET':
+                if path.startswith('api/') and code_stamp() > BORN[0]:   # the page is newer than this server (24 Nov 2026)
+                    raise ApiError(409, 'the app was just updated and restarts by itself once the current run ends; try again then')
                 raise ApiError(404, 'not found')
             # 2. Images and thumbnails: /img/<batch>/<file>, /thumb/<batch>/<file>
             if parts[0] in ('img', 'thumb') and len(parts) == 3:
@@ -2556,7 +2559,7 @@ def restart_when_idle(httpd, state_file):
     server and stop with RESTART. A run, a queued run starting, a distil round or a request being answered
     holds the restart; the queue and the distil round are files, so they carry over by themselves."""
     import time
-    born = code_stamp()
+    born = BORN[0] = code_stamp()
     while True:
         time.sleep(5)
         now = code_stamp()
