@@ -121,6 +121,7 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **24 Nov 2026** – New run: the helper under **Name** really gets its space now (Pico's built-in rule pulled any small text after an input up by a negative margin, cancelling the 23 Nov fix). Undo: `git revert` this commit.
 - **24 Nov 2026** – Gallery: the Style menu is now a row of **style tags** (colours and count, several on at once, `style=a,b` in the address; old single-style links still work); **Small / Medium / Large** moved to the end of the filter row; tiles (and Taste examples) show the normal hand pointer instead of the loupe, since a click opens the large view rather than zooming. Guide updated. Undo: `git revert` this commit.
 - **24 Nov 2026** – Styles page: **New style from images…** next to Find a style opens the same dialog as on the Taste page (1 to 4 pictures, Codex writes the style, you check it, Create); the new style's history opens on the Styles page afterwards. Guide updated. Undo: `git revert` this commit.
 - **24 Nov 2026** – Public gallery large view: tall pictures fit whole again instead of being cropped at the top, and the large view no longer shows a page-high scrollbar that scrolled nothing (`taste-gallery/docs/site.css`: the grid row is bounded to the screen and the picture area stretches to it). Undo: `git revert` the taste-gallery commit.
