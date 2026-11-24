@@ -122,8 +122,8 @@ function editsSlot(key) {
   api('style/edits/' + encodeURIComponent(key)).then(({ edits }) => {
     if (!edits.length) return;
     const fork = edits.find((e) => e.how === 'fork' && !e.undone);
-    box.replaceChildren(fork && h('p', { class: 'muted small fork-from' }, 'Forked from ',
-      h('a', { href: '#/taste/' + encodeURIComponent(fork.source.from) }, fork.source.from_name || fork.source.from)),
+    box.replaceChildren(fork ? h('p', { class: 'muted small fork-from' }, 'Forked from ',
+      h('a', { href: '#/taste/' + encodeURIComponent(fork.source.from) }, fork.source.from_name || fork.source.from)) : '',
       h('details', {},
       h('summary', { class: 'small' }, (() => { const on = edits.filter((e) => !e.undone).length, off = edits.length - on;
         return `Changed from the app: ${plural(on, 'edit')}${off ? ` (${off} undone)` : ''}`; })()),

@@ -140,6 +140,7 @@ function batchMeta(d) {
       h('img', { src: thumbUrl(p.batch, p.file), alt: '' }),
       h('span', {}, 'Made from ', h('strong', {}, p.file.replace(/\.[^.]+$/, '')), ' in ', batchTitle(p.batch),
         d.run?.change && h('span', { class: 'muted' }, ` · asked: “${d.run.change}”`))),
+    styles.length > 0 && styleSources(styles),
     d.run && runDetails(d.run),
     d.children?.length > 0 && h('div', { class: 'children' },
       h('span', { class: 'muted small' }, 'Made from images here'),
@@ -148,6 +149,23 @@ function batchMeta(d) {
           c.preview ? h('img', { src: thumbUrl(c.batch, c.preview), alt: '' }) : h('span', { class: 'no-img' }),
           h('span', { class: 'small' }, `${KIND[c.kind]?.label || c.kind} of ${c.file.replace(/\.[^.]+$/, '')}`, h('br'),
             h('span', { class: 'muted' }, plural(c.images, 'image')))))))));
+}
+
+// The batch's styles, each a link to its page on Taste; a style started from your own images shows them,
+// small, each opening full size (24 Nov 2026: "where are the images I made this style from?").
+function styleSources(keys) {
+  return h('div', { class: 'meta-row style-sources' },
+    h('span', { class: 'muted small' }, keys.length > 1 ? 'Styles' : 'Style'),
+    keys.map((k) => {
+      const refs = store.styles[k]?.refs || [];
+      return h('span', { class: 'style-source' },
+        h('a', { class: 'small', href: '#/taste/' + encodeURIComponent(k), title: 'Open this style on Taste' }, styleName(k)),
+        refs.length > 0 && h('span', { class: 'ref-strip small-refs', role: 'list', 'aria-label': `${styleName(k)} started from these images` },
+          h('span', { class: 'muted small' }, 'started from'),
+          refs.map((f, i) => h('a', { role: 'listitem', href: `/ref/${encodeURIComponent(k)}/${encodeURIComponent(f)}`, target: '_blank', rel: 'noopener',
+                                      title: 'Open full size' },
+            h('img', { src: `/ref/${encodeURIComponent(k)}/${encodeURIComponent(f)}`, alt: `Starting image ${i + 1}`, loading: 'lazy' })))));
+    }));
 }
 
 // The images the grid shows, as one zip: the whole batch on "All", only those on another filter.
