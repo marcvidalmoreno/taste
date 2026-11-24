@@ -386,15 +386,22 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 /* Selected = filled light, like a checked box: hover only tints, so the choice never looks like a hover (Marc, 23 Nov 2026). */
 .rseg-btn[aria-pressed=true], .rseg-btn[aria-pressed=true]:hover { background: var(--pico-primary-background); color: var(--pico-primary-inverse); font-weight: 600; }
 .rseg-btn[aria-pressed=true] small { opacity: .75; }
-/* Image size sits apart from the filters, top right: it changes the view, not which images show. */
-.gallery-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-.gallery-head .page-head { margin-bottom: 0; }
+/* Image size closes the filter row, pushed to its end: it changes the view, not which images show (24 Nov 2026). */
+.gallery-filters .size-seg { margin-left: auto; }
+/* Style tags: toggle chips, same pressed look as the segments; several can be on (24 Nov 2026). */
+.style-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin: -.5rem 0 1.25rem; }
+.tag { display: inline-flex; align-items: center; gap: .4rem; width: auto; margin: 0; padding: .2rem .7rem; font-size: .85rem;
+       border: 1px solid var(--line); border-radius: 99px; background: transparent; color: var(--pico-muted-color); }
+.tag small { opacity: .7; }
+.tag:hover { background: var(--surface-2); color: var(--text); }
+.tag[aria-pressed=true], .tag[aria-pressed=true]:hover { background: var(--pico-primary-background); border-color: var(--pico-primary-background);
+       color: var(--pico-primary-inverse); font-weight: 600; }
 
 /* Justified rows: tiles grow by their width/height ratio; the filler keeps the last row from stretching. */
 .justified { display: flex; flex-wrap: wrap; gap: 6px; }
 .justified .filler { flex: 1000 1 0; height: 0; }
 .jtile { position: relative; margin: 0; padding: 0; border: 0; border-radius: 4px; overflow: hidden;
-         background: var(--frame); cursor: zoom-in; width: auto; }
+         background: var(--frame); cursor: pointer; width: auto; }  /* opens a view to judge and act, not a zoom */
 .jtile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .15s; }
 .jtile:hover img { opacity: .85; }
 .jtile .mark { top: .4rem; left: .4rem; width: 1.4rem; height: 1.4rem; font-size: .7rem; }
@@ -426,7 +433,7 @@ ul.plain { padding: 0; margin: 0; } ul.plain li { list-style: none; font-size: .
 .ex-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; }
 .ex-row figure { margin: 0; }
 .ex { margin: 0; padding: 0; border: 0; width: 100%; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden;
-      background: var(--frame); cursor: zoom-in; }
+      background: var(--frame); cursor: pointer; }
 .ex img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ex-row figcaption { font-size: .78rem; color: var(--pico-muted-color); margin-top: .2rem; }
 

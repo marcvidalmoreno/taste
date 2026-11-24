@@ -2,7 +2,7 @@
 // The large view has the same thumbs as the batch view (21 Nov 2026): a mark is saved at once and counts
 // for the style's next runs; the same thumb again takes it back. Filters are not re-applied while you mark,
 // so nothing jumps away under the pointer.
-//   #/gallery?q=<words>&style=<key>&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
+//   #/gallery?q=<words>&style=<key>[,<key>…]&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
 //   #/gallery/<batch>/<image>?...   the same, with the large view open on one image (23 Nov 2026): the address
 //   follows every step, so an image can be linked and reloaded; Back closes the view (one history entry per opening).
 // Find (23 Nov 2026): every word must appear in the prompt, the why, the style name, the batch or the variation.
@@ -11,6 +11,8 @@
 // height and no image is cropped. A last invisible filler stops the final row from stretching.
 // Size (23 Nov 2026): Small / Medium / Large set the target row height through --row-h, so a change reflows the
 // rows without redrawing them; the choice is a view preference, kept in localStorage (not in the address).
+// Style tags (24 Nov 2026): one toggle chip per style instead of a dropdown; several can be on at once
+// (style=a,b in the address), none on = every style. Size sits at the end of the same filter row.
 import { api, styles, archivedStyles, allStyles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton, setPublished, publishButton } from './marks.js';
@@ -68,8 +70,9 @@ async function drawGallery(view, query) {
   document.title = 'Gallery · taste';
   const f = { q: query.get('q') || '', style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '', pub: query.get('pub') || '' };
   curF = f;
+  const picked = new Set(f.style.split(',').filter(Boolean));
   const base = all.filter((im) =>
-    (!f.style || im.style === f.style) &&
+    (!picked.size || picked.has(im.style)) &&
     (!f.rating || (f.rating === 'none' ? !im.rating : im.rating === f.rating)) &&
     (!f.batch || im.batch === f.batch) &&
     (!f.pub || im.published));
@@ -97,8 +100,8 @@ async function drawGallery(view, query) {
   };
   draw();
   pageKey = galleryHref(f);
-  view.replaceChildren(h('div', { class: 'gallery-head' }, h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count), sizeControl(grid)),
-    filters(f, onFind), grid);
+  view.replaceChildren(h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count),
+    filters(f, onFind, sizeControl(grid)), styleTags(f, picked), grid);
 }
 
 // Words in any order, each one somewhere in the image's text; dashes count as spaces (batch names use them).
@@ -112,11 +115,9 @@ function matcher(q) {
   };
 }
 
-function filters(f, onFind) {
+function filters(f, onFind, size) {
   const set = (k, v) => { location.hash = galleryHref({ ...f, [k]: v }); };
   const count = (pred) => all.filter(pred).length;
-  const styleKeys = [...new Set(all.map((im) => im.style).filter(Boolean))]
-    .sort((a, b) => (styleMap[a]?.name || a).localeCompare(styleMap[b]?.name || b));
   const batches = [...new Set(all.map((im) => im.batch))].sort().reverse();
   const ratings = [['', 'All'], ['keep', 'Up'], ['no', 'Down'], ['almost', 'Almost (old)'], ['none', 'Not rated']];
   return h('div', { class: 'gallery-filters' },
@@ -128,13 +129,26 @@ function filters(f, onFind) {
       }, label, h('small', {}, ' ', count((im) => !v || (v === 'none' ? !im.rating : im.rating === v)))))),
     h('button', { class: 'rseg-btn pub-filter', 'aria-pressed': String(!!f.pub), onClick: () => set('pub', f.pub ? '' : '1'),
       title: 'Only the images picked for the public gallery site' }, '◉ Published', h('small', {}, ' ', count((im) => im.published))),
-    h('select', { 'aria-label': 'Style', onChange: (e) => set('style', e.target.value) },
-      h('option', { value: '' }, 'All styles'),
-      styleKeys.map((k) => h('option', { value: k, selected: f.style === k },
-        `${styleMap[k]?.name || k} (${count((im) => im.style === k)})`))),
     h('select', { 'aria-label': 'Batch', onChange: (e) => set('batch', e.target.value) },
       h('option', { value: '' }, 'All batches'),
-      batches.map((b) => h('option', { value: b, selected: f.batch === b }, `${shortDate(b.slice(0, 10))} · ${batchTitle(b)}`))));
+      batches.map((b) => h('option', { value: b, selected: f.batch === b }, `${shortDate(b.slice(0, 10))} · ${batchTitle(b)}`))),
+    size);
+}
+
+// One chip per style, with its palette and image count: press to show it, press again to take it away.
+// Several can be on; "All styles" clears them. Alphabetical, so a chip never moves when pressed.
+function styleTags(f, picked) {
+  const keys = [...new Set(all.map((im) => im.style).filter(Boolean))]
+    .sort((a, b) => (styleMap[a]?.name || a).localeCompare(styleMap[b]?.name || b));
+  if (keys.length < 2) return '';
+  const go = (next) => { location.hash = galleryHref({ ...f, style: [...next].join(',') }); };
+  const toggle = (k) => { const n = new Set(picked); n.has(k) ? n.delete(k) : n.add(k); go(n); };
+  return h('div', { role: 'group', class: 'style-tags', 'aria-label': 'Styles' },
+    h('button', { class: 'tag', 'aria-pressed': String(!picked.size), onClick: () => go([]) }, 'All styles'),
+    keys.map((k) => h('button', { class: 'tag', 'aria-pressed': String(picked.has(k)), onClick: () => toggle(k) },
+      h('span', { class: 'mini-swatch', 'aria-hidden': 'true' }, (styleMap[k]?.palette || []).slice(0, 4).map((c) => h('i', { style: { background: c } }))),
+      styleMap[k]?.name || k,
+      h('small', {}, ' ', all.filter((im) => im.style === k).length))));
 }
 
 // Small / Medium / Large: more images at a glance, or bigger ones to judge. Reflows at once, no reload.
