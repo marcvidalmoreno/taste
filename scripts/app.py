@@ -731,7 +731,7 @@ def launch(spec):
             write_json(folder / 'run.json', rec)
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
-                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'note', 'change', 'keep', 'kept_refs', 'route')
+                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'palette', 'note', 'change', 'keep', 'kept_refs', 'route')
                if spec.get(k) not in (None, '', [], {})}
         rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
         write_json(folder / 'run.json', rec)
@@ -881,7 +881,11 @@ def spec_batch(body, preview=False):
 
 
 def spec_single(body):
-    """One image (or a few) from a style and a subject I write: {style, subject, ratio, n: 1-10}."""
+    """One image (or a few) from a style and a subject I write: {style, subject, ratio, n: 1-10}.
+    Palette only (24 Nov 2026): {style: '', palette: [hex...], text, prompt, ratio, n}; the prompt is the one Codex
+    wrote from the text (api/text/compose), maybe edited in the page."""
+    if not body.get('style'):
+        return spec_palette(body)
     style = str(body.get('style', ''))
     st = style_file(style)
     subject = clean(body.get('subject'))
@@ -898,6 +902,38 @@ def spec_single(body):
     return {'kind': 'single', 'title': f'{st.get("name", style)}: {subject[:50]}', 'batch': batch, 'jobs': jobs,
             'styles': [style], 'n': n, 'subject': subject, 'ratio': ratio, 'use_kept': bool(body.get('use_kept')),
             'expected': [j['name'] for j in jobs]}
+
+
+def palette_of(body):
+    pal = [str(c).lower() for c in body.get('palette') or [] if re.fullmatch(r'#[0-9a-fA-F]{6}', str(c))][:8]
+    if len(pal) < 2:
+        raise ApiError(400, 'pick a palette')
+    return pal
+
+
+def spec_palette(body):
+    """Palette only, no style: every image gets the same prompt; its ratio sentence follows the shape picked."""
+    pal = palette_of(body)
+    text = clean(body.get('text'), 600)
+    prompt = clean(body.get('prompt'), 4000)
+    if not prompt:
+        raise ApiError(400, 'write the prompt first')
+    ratio = body.get('ratio') or 'wide'
+    if ratio not in RATIO_CHOICES[1:]:
+        raise ApiError(400, 'ratio: wide, portrait or square')
+    from codex_run import RATIOS as SENTENCE
+    for v in SENTENCE.values():   # the shape changed after Codex wrote it: swap the first sentence, keep the rest
+        if prompt.startswith(v):
+            prompt = SENTENCE[ratio] + prompt[len(v):]
+            break
+    n = max(1, min(10, int(body.get('n') or 1)))
+    label = text or prompt
+    _, batch = free_slug(label[:24], flux_end(body))
+    stem = '-'.join(slugify(label, 'image').split('-')[:3])
+    jobs = [{'name': f'{stem}-{i}', 'prompt': prompt, 'style': '', 'mode': 'text', 'change': 'palette only'}
+            for i in range(1, n + 1)]
+    return {'kind': 'single', 'title': f'Palette only: {label[:50]}', 'batch': batch, 'jobs': jobs, 'styles': [],
+            'n': n, 'subject': text, 'palette': pal, 'ratio': ratio, 'expected': [j['name'] for j in jobs]}
 
 
 def spec_remix(body):
@@ -1716,6 +1752,7 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/queue/move'): 'post_queue_move',
         ('POST', 'api/text/subjects'): 'post_text_subjects',
         ('POST', 'api/text/rewrite'): 'post_text_rewrite',
+        ('POST', 'api/text/compose'): 'post_text_compose',
         ('POST', 'api/reveal'): 'post_reveal',
         ('GET', 'api/notes'): 'get_notes',
         ('POST', 'api/notes/delete'): 'post_notes_delete',
@@ -2206,6 +2243,16 @@ class Handler(BaseHTTPRequestHandler):
         style = style if re.fullmatch(r'[\w-]+', style) and (ROOT / 'taste' / 'styles' / f'{style}.json').is_file() else ''
         return text_job('rewrite', '--image', str(img), '--change', change, '--keep', keep,
                         *(['--style', style] if style else []))
+
+    def post_text_compose(self):
+        """Palette only (24 Nov 2026): Codex writes the prompt from Marc's text and a palette: {text, palette, ratio}."""
+        body = self.read_body()
+        text = clean(body.get('text'), 600)
+        if not text:
+            raise ApiError(400, 'write what the image should show')
+        from codex_run import RATIOS as SENTENCE
+        ratio = SENTENCE.get(body.get('ratio') or 'wide', SENTENCE['wide'])
+        return text_job('compose', '--text', text, '--palette', ','.join(palette_of(body)), '--ratio', ratio)
 
     def post_reveal(self):
         """Open a batch folder in Windows Explorer (this machine only)."""

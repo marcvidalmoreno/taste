@@ -2,6 +2,7 @@
 //   #/new                     a batch: one or more styles, N images each, fresh subjects
 //   #/new?mode=one            one image (or a few) from one style and a subject I write
 //   #/new?style=a,b           start with exactly these styles picked (from the Taste page or a batch)
+//   Palette only (24 Nov 2026): One image without a style: pick a palette, write what you want, Codex writes the prompt
 //   Experimental (23 Nov 2026): a batch switch for bolder subjects, new palettes and a wildcard on all but the first image
 // The form survives leaving the page (sessionStorage), so a look at another batch never loses a half-made run.
 // Nothing spends until "Start": the preview prints the exact prompts for free, the cost is always in view.
@@ -17,10 +18,11 @@ const RATIO_HINT = {
   wide: '16:9, desktop and Teams backgrounds.', portrait: '4:5, LinkedIn posts and phones.', square: '1:1, LinkedIn posts.',
 };
 const fresh = () => ({ mode: 'batch', styles: [], n: 4, ratio: 'mixed', wildcards: true, experimental: false, useKept: true, subjects: {}, hints: {}, name: '',
-  one: { style: '', subject: '', ratio: 'wide', n: 1 } });
+  one: { style: '', subject: '', ratio: 'wide', n: 1, palOnly: false, palette: [], palFrom: '', text: '', prompt: '', summary: '' } });
+const PAL = '__palette';
 
 let kept = {};   // style -> how many images are kept as examples
-let state, all, view, alw = null, filter = '', writing = {}, unsub = null;
+let state, all, view, alw = null, filter = '', writing = {}, unsub = null, composing = false;
 
 export async function renderNewRun(el, query) {
   view = el;
@@ -246,11 +248,16 @@ function oneForm() {
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Style'),
       h('div', { class: 'nr-row' },
-        h('select', { 'data-focus': 'one-style', 'aria-label': 'Style', onChange: (e) => { o.style = e.target.value; save(); drawForm(); drawSummary(); } },
-          keys.map((k) => h('option', { value: k, selected: k === o.style }, all[k].name))),
-        st && h('span', { class: 'swatches big', 'aria-hidden': 'true' }, (st.palette || []).map((c) => h('i', { style: { background: c } })))),
-      st?.description && h('p', { class: 'muted small' }, st.description)),
-    keptTick(o.style ? [o.style] : []),
+        h('select', { 'data-focus': 'one-style', 'aria-label': 'Style', onChange: (e) => {
+          o.palOnly = e.target.value === PAL;
+          if (!o.palOnly) o.style = e.target.value;
+          save(); drawForm(); drawSummary(); } },
+          h('option', { value: PAL, selected: o.palOnly }, 'No style · palette only'),
+          keys.map((k) => h('option', { value: k, selected: !o.palOnly && k === o.style }, all[k].name))),
+        !o.palOnly && st && h('span', { class: 'swatches big', 'aria-hidden': 'true' }, (st.palette || []).map((c) => h('i', { style: { background: c } })))),
+      o.palOnly ? h('p', { class: 'muted small' }, 'No style rules: Codex writes the whole prompt from your words, in the palette you pick.')
+        : st?.description && h('p', { class: 'muted small' }, st.description)),
+    ...(o.palOnly ? paletteParts() : [keptTick(o.style ? [o.style] : []),
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Subject'),
       h('textarea', { rows: 3, maxlength: 200, 'data-focus': 'one-subject', 'aria-label': 'Subject',
@@ -259,7 +266,7 @@ function oneForm() {
       st?.subjects?.length > 0 && h('details', { class: 'small' },
         h('summary', {}, "The style's example subjects"),
         h('ul', { class: 'plain examples-list' }, st.subjects.map((x) => h('li', {},
-          h('button', { class: 'ghost small', onClick: () => { o.subject = x; save(); drawForm('[data-focus="one-subject"]'); drawStart(); } }, x)))))),
+          h('button', { class: 'ghost small', onClick: () => { o.subject = x; save(); drawForm('[data-focus="one-subject"]'); drawStart(); } }, x))))))]),
     h('fieldset', { class: 'nr-block' },
       h('legend', {}, 'Images'),
       h('div', { class: 'nr-grid' },
@@ -268,6 +275,70 @@ function oneForm() {
           ratioSeg(o.ratio, { wide: 'Wide', portrait: 'Portrait', square: 'Square' }, (v) => { o.ratio = v; }, 'one-ratio'))),
       h('p', { class: 'muted small' }, RATIO_HINT[o.ratio] + (o.n > 1 ? ' Same prompt each time: Codex varies the result on its own.' : ''))),
   ];
+}
+
+// Palette only: the palettes of my styles to pick from, my own words, and the prompt Codex writes from them.
+function paletteParts() {
+  const o = state.one;
+  const keys = Object.keys(all).filter((k) => (all[k].palette || []).length >= 2).sort((a, b) => all[a].name.localeCompare(all[b].name));
+  const shown = keys.filter((k) => !filter || all[k].name.toLowerCase().includes(filter.toLowerCase()));
+  const pick = (k) => {
+    if (o.palFrom === k) return;
+    o.palFrom = k; o.palette = [...all[k].palette]; o.prompt = ''; o.summary = '';   // the old prompt names the old colours
+    save(); drawForm(`[data-focus="pal-${k}"]`); drawSummary();
+  };
+  return [
+    h('fieldset', { class: 'nr-block' },
+      h('legend', {}, 'Palette ', h('span', { class: 'muted' }, o.palFrom && all[o.palFrom] ? `· from ${all[o.palFrom].name}` : '· pick one')),
+      keys.length > 8 && h('div', { class: 'nr-row' },
+        h('input', { type: 'search', placeholder: 'Filter palettes by style', value: filter, 'aria-label': 'Filter palettes', 'data-focus': 'filter',
+          onInput: (e) => { filter = e.target.value; drawForm(); } })),
+      h('div', { class: 'style-picker', role: 'radiogroup', 'aria-label': 'Palette' },
+        shown.map((k) => h('button', { type: 'button', class: 'style-chip', role: 'radio', 'aria-checked': String(o.palFrom === k),
+          'aria-pressed': String(o.palFrom === k), 'data-focus': 'pal-' + k, onClick: () => pick(k), title: all[k].palette.join(' ') },
+        h('span', { class: 'swatches', 'aria-hidden': 'true' }, all[k].palette.slice(0, 7).map((c) => h('i', { style: { background: c } }))),
+        h('span', {}, all[k].name))),
+        !shown.length && h('p', { class: 'muted small' }, 'No palette matches.'))),
+    h('fieldset', { class: 'nr-block' },
+      h('legend', {}, 'What you want'),
+      h('textarea', { rows: 3, maxlength: 600, 'data-focus': 'pal-text', 'aria-label': 'What the image shows',
+        placeholder: 'In your own words: what it shows, and any feel or medium you have in mind',
+        onInput: (e) => { o.text = e.target.value; save(); drawStart(); syncWrite(); } }, o.text),
+      h('div', { class: 'nr-row' },
+        h('button', { class: 'secondary outline small-btn', 'data-focus': 'pal-write', disabled: composing || !o.text.trim() || !o.palette.length,
+          'aria-busy': composing ? 'true' : null, onClick: () => compose().catch(showError),
+          title: 'Codex writes the prompt now (about 15 s), so you can read and edit it before Start' },
+        composing ? 'Writing the prompt…' : o.prompt ? 'Write it again' : 'Write the prompt now'),
+        !o.prompt && h('small', { class: 'muted' }, 'Or just press Start: Codex writes it first.'))),
+    o.prompt && h('fieldset', { class: 'nr-block' },
+      h('legend', {}, 'The prompt ', h('span', { class: 'muted' }, '· edit freely')),
+      h('textarea', { rows: 6, maxlength: 4000, 'data-focus': 'pal-prompt', 'aria-label': 'The prompt',
+        onInput: (e) => { o.prompt = e.target.value; save(); drawStart(); } }, o.prompt),
+      o.summary && h('p', { class: 'muted small' }, `Codex added: ${o.summary}`)),
+  ];
+}
+
+// Typing never redraws the form (it would steal the caret): only the write button follows the text.
+function syncWrite() {
+  const b = form.querySelector('[data-focus="pal-write"]');
+  if (b) b.disabled = composing || !state.one.text.trim() || !state.one.palette.length;
+}
+
+async function compose() {
+  const o = state.one;
+  composing = true;
+  drawForm('[data-focus="pal-write"]');
+  drawStart();
+  try {
+    const r = await api('text/compose', { method: 'POST', body: { text: o.text, palette: o.palette, ratio: o.ratio } });
+    o.prompt = r.prompt; o.summary = r.summary || '';
+    save();
+    return r;
+  } finally {
+    composing = false;
+    drawForm(o.prompt ? '[data-focus="pal-prompt"]' : '[data-focus="pal-write"]');
+    drawStart();
+  }
 }
 
 // ---------------------------------------------------------------- small controls
@@ -305,7 +376,9 @@ function drawSummary() {
       ? h('p', { class: 'small' }, state.styles.length
         ? `${state.experimental ? 'Experimental: ' : ''}${plural(state.styles.length, 'style')} × ${state.n} = ${plural(n, 'image')}, ${RATIOS[state.ratio].toLowerCase()} shapes${state.experimental ? ', new palettes, bolder subjects' : state.wildcards && state.n > 1 ? ', one wildcard each' : ''}.`
         : 'Pick at least one style.')
-      : h('p', { class: 'small' }, `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
+      : h('p', { class: 'small' }, state.one.palOnly
+        ? `${plural(n, 'image')}, palette only${state.one.palFrom && all[state.one.palFrom] ? ` (${all[state.one.palFrom].name})` : ''}, ${state.one.ratio}.`
+        : `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
     costBlock(alw, n, { onRoute: drawSummary, extra: codexStyles ? `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.` : '' }),
     h('p', { class: 'muted small' }, (route() === 'cloudflare' ? 'Images land in generated/codex/<date>-<name>-flux/' : 'Images land in generated/codex/<date>-<name>/') + ' (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.'),
     h('div', { class: 'nr-actions' }, startBtn, state.mode === 'batch' && previewBtn),
@@ -316,7 +389,9 @@ function drawSummary() {
 function blocker() {
   if (routeBlocker(alw)) return routeBlocker(alw);
   if (state.mode === 'batch') return !state.styles.length ? 'Pick at least one style.' : '';
-  return !state.one.subject.trim() ? 'Write a subject.' : '';
+  const o = state.one;
+  if (o.palOnly) return composing ? 'Writing the prompt…' : !o.palette.length ? 'Pick a palette.' : !o.text.trim() && !o.prompt.trim() ? 'Write what you want.' : '';
+  return !o.subject.trim() ? 'Write a subject.' : '';
 }
 
 function drawStart() {
@@ -334,6 +409,7 @@ function drawStart() {
 function body() {
   if (state.mode === 'one') {
     const o = state.one;
+    if (o.palOnly) return { kind: 'single', route: route(), style: '', palette: o.palette, text: o.text, prompt: o.prompt, ratio: o.ratio, n: o.n };
     return { kind: 'single', route: route(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
   }
   return { kind: 'batch', route: route(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, experimental: state.experimental, name: state.name, use_kept: state.useKept,
@@ -345,11 +421,16 @@ async function start() {
   startBtn.setAttribute('aria-busy', 'true');
   startBtn.disabled = true;
   try {
+    if (state.mode === 'one' && state.one.palOnly && !state.one.prompt.trim()) {   // Start without a prompt yet: Codex writes it first
+      await compose();
+      startBtn.setAttribute('aria-busy', 'true');
+      startBtn.disabled = true;
+    }
     const res = await enqueueRun(body(), { go: '#/' });
     const title = res.queue?.find((q) => q.id === res.queued_id)?.title || res.title || 'the run';
     toast(res.position <= 1 ? `Started: ${title}` : `Queued, number ${res.position} in line: ${title}`);
     // The subjects and name were for this run: clear them, keep the styles and settings for the next one.
-    if (state.mode === 'batch') { state.subjects = {}; state.name = ''; } else state.one.subject = '';
+    if (state.mode === 'batch') { state.subjects = {}; state.name = ''; } else { state.one.subject = ''; state.one.text = ''; state.one.prompt = ''; state.one.summary = ''; }
     save();
   } catch (err) {
     startBtn.removeAttribute('aria-busy');

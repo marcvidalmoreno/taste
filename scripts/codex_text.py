@@ -14,6 +14,8 @@ Usage (from the project root):
         # a whole new style from 1-4 reference images (Codex looks at them); answers {"style": {...}, "summary": "..."}
   .venv/Scripts/python -I scripts/codex_text.py fork --style <style> --change "<what should differ>" [--name "..."]
         # a variant of a style (24 Nov 2026): answers {"style": {...whole style, parent's shape...}, "summary": "..."}
+  .venv/Scripts/python -I scripts/codex_text.py compose --text "<what Marc wants>" --palette "#112233,#aabbcc" --ratio "<sentence>"
+        # palette only, no style (24 Nov 2026): Codex writes the whole prompt from Marc's text and the palette
   add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
 
 Prints one JSON object on stdout: {"subjects": [...]}, {"prompt": "...", "summary": "..."} or, for style,
@@ -77,6 +79,20 @@ wallpaper.", matching the image's shape), then "Subject: ..." (what the image sh
 "Style notes: ..." (medium, light, composition, palette, mood, as the image shows them). Plain, concrete words.
 Never name artists, studios, brands or real people. No text or logos.
 Answer exactly: {{"prompt": "<the prompt>", "summary": "<what you changed against the image, under 15 words>"}}"""
+
+
+# Palette only (24 Nov 2026): no style, Marc writes what he wants in his own words and picks a palette in New run.
+COMPOSE = """You write one image prompt from a short text. Do not run commands, do not read or write files. Answer with JSON only.
+
+What Marc wants: {text}
+Palette (use these colours and nothing far from them): {palette}
+
+Write the prompt an image model will follow. Structure: first exactly this sentence: "{ratio}", then
+"Subject: ..." (what the image shows, concrete, from Marc's text), then "Style notes: ..." (medium, light,
+composition, mood and texture that suit the text; then "Palette: " with the colours above, as hex codes, and how
+they are used). Keep everything Marc asked for; add only what the text leaves open. Plain, concrete words, under
+120 words. Never name artists, studios, brands or real people. End with "No text, no logos, no watermark."
+Answer exactly: {{"prompt": "<the prompt>", "summary": "<what you added to the text, under 15 words>"}}"""
 
 
 STYLE = """You edit the written description of one visual style that an image model follows. Do not run commands,
@@ -209,6 +225,21 @@ def rewrite(a):
                      f'Medium: {s.get("camera_or_medium", "")}\n')
         answer, secs = ask('describe', DESCRIBE.format(change=a.change, keep=keep, style=style),
                            images=[str(Path(a.image).resolve())])
+    d = parse_json(answer)
+    prompt = clean(d.get('prompt', ''), 3000)
+    if not prompt:
+        sys.exit('Codex returned an empty prompt')
+    return {'prompt': prompt, 'summary': clean(d.get('summary', ''), 160), 'seconds': secs}
+
+
+def compose(a):
+    palette = ', '.join(c for c in a.palette.split(',') if re.fullmatch(r'#[0-9a-fA-F]{6}', c.strip()))
+    if not palette:
+        sys.exit('give --palette as hex codes, e.g. #112233,#aabbcc,#ffffff')
+    if a.dry_run:
+        return {'prompt': f'{a.ratio} Subject: {a.text} (dry run). Style notes: Palette: {palette}. No text, no logos, no watermark.',
+                'summary': 'dry run stand-in', 'seconds': 0, 'dry_run': True}
+    answer, secs = ask('compose', COMPOSE.format(text=a.text, palette=palette, ratio=a.ratio))
     d = parse_json(answer)
     prompt = clean(d.get('prompt', ''), 3000)
     if not prompt:
@@ -455,6 +486,11 @@ if __name__ == '__main__':
     r.add_argument('--change', required=True)
     r.add_argument('--keep', default='')
     r.add_argument('--dry-run', action='store_true')
+    c = sub.add_parser('compose')
+    c.add_argument('--text', required=True)
+    c.add_argument('--palette', required=True, help='hex codes, comma-separated')
+    c.add_argument('--ratio', required=True, help='the ratio sentence the prompt starts with')
+    c.add_argument('--dry-run', action='store_true')
     e = sub.add_parser('style')
     e.add_argument('--style', required=True)
     e.add_argument('--change', required=True)
@@ -475,5 +511,5 @@ if __name__ == '__main__':
     f.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
     a.n = max(1, min(24, getattr(a, 'n', 4)))
-    run = {'subjects': subjects, 'rewrite': rewrite, 'style': style_edit, 'distil': distil, 'new': new_style, 'fork': fork_style}[a.cmd]
+    run = {'subjects': subjects, 'rewrite': rewrite, 'compose': compose, 'style': style_edit, 'distil': distil, 'new': new_style, 'fork': fork_style}[a.cmd]
     print(json.dumps(run(a), ensure_ascii=False))
