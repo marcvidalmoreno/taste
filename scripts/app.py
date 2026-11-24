@@ -1712,6 +1712,7 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/stop'): 'post_stop',
         ('POST', 'api/queue/cancel'): 'post_queue_cancel',
         ('POST', 'api/queue/resume'): 'post_queue_resume',
+        ('POST', 'api/queue/move'): 'post_queue_move',
         ('POST', 'api/text/subjects'): 'post_text_subjects',
         ('POST', 'api/text/rewrite'): 'post_text_rewrite',
         ('POST', 'api/reveal'): 'post_reveal',
@@ -2153,6 +2154,22 @@ class Handler(BaseHTTPRequestHandler):
             if len(QUEUE) == before:
                 raise ApiError(404, 'not in the queue any more (it may have started)')
             save_queue()
+        return job_state()
+
+    def post_queue_move(self):
+        """Up / down in the queue (24 Nov 2026): swap a waiting run with its neighbour; delta -1 up, +1 down."""
+        body = self.read_body()
+        qid, delta = str(body.get('id', '')), int(body.get('delta', 0))
+        if delta not in (-1, 1):
+            raise ApiError(400, 'delta must be -1 or 1')
+        with _QLOCK:
+            i = next((k for k, s in enumerate(QUEUE) if s['id'] == qid), None)
+            if i is None:
+                raise ApiError(404, 'not in the queue any more (it may have started)')
+            j = i + delta
+            if 0 <= j < len(QUEUE):
+                QUEUE[i], QUEUE[j] = QUEUE[j], QUEUE[i]
+                save_queue()
         return job_state()
 
     def post_queue_resume(self):

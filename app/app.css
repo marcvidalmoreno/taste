@@ -529,6 +529,9 @@ dialog.preview-dialog article { max-width: 52rem; }
 .queue ol { margin: 0; padding-left: 1.4rem; }
 .queue li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: .9rem; margin: 0 0 .2rem; }
 .queue li::marker { color: var(--pico-muted-color); }
+.queue-actions { display: flex; gap: .25rem; flex-shrink: 0; }
+.queue-actions button[data-move] { min-width: 2rem; padding-inline: .4rem; }
+.queue-actions button[disabled] { visibility: hidden; }
 .log-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
 .log-head hgroup { margin: 0; }
 .log-dialog .queue { margin-top: 1rem; }

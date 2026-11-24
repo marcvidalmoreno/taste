@@ -75,6 +75,21 @@ export async function cancelQueued(id, title) {
   } catch (err) { showError(err); }
 }
 
+// Up / down in the queue (24 Nov 2026). The list redraws, so focus goes back to the same arrow on the moved
+// row (or its other arrow once it reaches the top or bottom): pressing it again keeps moving it.
+async function moveQueued(id, delta) {
+  try {
+    await api('queue/move', { method: 'POST', body: { id, delta } });
+    await poll();
+    const dir = delta < 0 ? 'up' : 'down';
+    for (const box of document.querySelectorAll(`.queue li[data-id="${CSS.escape(id)}"]`)) {
+      if (!box.isConnected) continue;
+      const btn = box.querySelector(`[data-move="${dir}"]:not([disabled])`) || box.querySelector('[data-move]:not([disabled])');
+      btn?.focus();
+    }
+  } catch (err) { showError(err); }
+}
+
 // Ask once, at the moment it makes sense (Marc just started a run), never on page load.
 function askToNotify() {
   if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
@@ -293,9 +308,14 @@ export function queueList(queue) {
     job.hold && h('p', { class: 'muted small' }, `${job.hold.reason}. `,
       job.hold.auto ? 'Nothing starts until the script compiles again; then the queue goes on by itself.'
         : h('button', { class: 'ghost small', onClick: resumeQueue }, 'Continue')),
-    h('ol', {}, queue.map((q) => h('li', {},
+    h('ol', {}, queue.map((q, i) => h('li', { 'data-id': q.id },
       h('span', {}, h('strong', {}, q.title), ' ', h('span', { class: 'muted small' }, `${KIND[q.kind]?.label || q.kind} · ${noun(q.kind, q.expected.length)}`)),
-      h('button', { class: 'ghost small', onClick: () => cancelQueued(q.id, q.title), 'aria-label': `Remove ${q.title} from the queue` }, 'Remove')))));
+      h('span', { class: 'queue-actions' },
+        queue.length > 1 && h('button', { class: 'ghost small', 'data-move': 'up', disabled: i === 0, title: 'Move up',
+          onClick: () => moveQueued(q.id, -1), 'aria-label': `Move ${q.title} up` }, '↑'),
+        queue.length > 1 && h('button', { class: 'ghost small', 'data-move': 'down', disabled: i === queue.length - 1, title: 'Move down',
+          onClick: () => moveQueued(q.id, 1), 'aria-label': `Move ${q.title} down` }, '↓'),
+        h('button', { class: 'ghost small', onClick: () => cancelQueued(q.id, q.title), 'aria-label': `Remove ${q.title} from the queue` }, 'Remove'))))));
 }
 
 // ---------------------------------------------------------------- header chip
