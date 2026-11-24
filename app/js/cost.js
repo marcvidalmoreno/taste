@@ -135,15 +135,22 @@ function cloudflareBlock(a, n, onRoute, extra) {
   const cf = a.cloudflare;
   if (!cf) return h('p', { class: 'small' }, 'Cloudflare status unknown: restart the app once.');
   if (!cf.connected) return connectCard(onRoute);
-  const over = n > cf.images_left;
+  // No promised reset time (24 Nov 2026): Cloudflare's "00:00 UTC" didn't hold. Once it refuses a call for the limit,
+  // the block says so plainly and when the app last checked; the server checks once an hour for free.
+  const over = !cf.used_up && n > cf.images_left;
+  const day = cf.used_up
+    ? h('p', { class: 'small over' },
+      `FLUX's free images are used up (since ${cf.used_up_since}). Last checked ${cf.checked_at}; the app checks every hour `
+      + 'and this line changes when FLUX is back. A run made now stops at once; "Finish this batch" makes it later.')
+    : h('p', { class: 'small' + (over ? ' over' : ' muted') },
+      `${plural(cf.images_today, 'image')} made today, about ${cf.images_left} left.`
+      + (over ? ` This run needs ${n}: the ones past the limit wait for "Finish this batch" once FLUX is back.` : ''));
   return [
     h('p', { class: 'cost-main' }, h('strong', {}, plural(n, 'image')), h('span', { class: 'muted' }, ' · free · a few seconds each')),
     extra && h('p', { class: 'muted small' }, extra),
-    meter('Today', Math.round((cf.neurons_used / cf.daily) * 100)),
-    h('p', { class: 'small' + (over ? ' over' : ' muted') },
-      `${plural(cf.images_today, 'image')} made today, about ${cf.images_left} left; more at ${cf.resets_at}.`
-      + (over ? ` This run needs ${n}: the ones past the limit wait for "Finish this batch" after ${cf.resets_at}.` : '')),
-    h('p', { class: 'muted small' }, 'Estimated from this laptop\'s runs. ',
+    !cf.used_up && meter('Today', Math.round((cf.neurons_used / cf.daily) * 100)),
+    day,
+    h('p', { class: 'muted small' }, cf.used_up ? '' : 'Estimated from this laptop\'s runs. ',
       h('button', { class: 'ghost small', onClick: async () => { await api('cloudflare/disconnect', { method: 'POST', body: {} }); await allowance(true); onRoute(); } },
         'Disconnect')),
   ];

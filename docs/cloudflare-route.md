@@ -60,8 +60,10 @@ model, not the option, is to blame; then leaning would count each route on its o
 2. Rate the first comparison batch: 2 styles × 4 images on each route, same subjects.
 
 ## Limits
-- The free allowance is per Cloudflare account and resets at 00:00 UTC (01:00 in Spain in winter, 02:00 in
-  summer).
+- The free allowance is per Cloudflare account. Cloudflare says it resets at 00:00 UTC, but on 24 Nov 2026 it
+  stayed used up all day and came back only around 17:30 UTC. So the app promises no time: after a refusal it
+  shows "used up since … · last checked …" and checks once an hour with one 256x256 image (~26 neurons; refused
+  calls cost nothing). The real count is on the dashboard: Workers AI, "Neurons used today".
 - Cloudflare applies its own content rules; the `erotic` style's sensual end stays with the local route.
 - Prompts go to Cloudflare (not published). Nothing else leaves the laptop: no ratings, no style files.
 

@@ -237,7 +237,7 @@ async function finish(d, n, btn, resume) {
 // Images that were tried and gave nothing: say exactly why (read from Codex's log, 23 Nov 2026), offer one retry.
 function failReason(r = {}, route = 'codex') {
   if (route === 'cloudflare') {   // tried with FLUX (23 Nov 2026)
-    if (r.code === 'limit') return ["FLUX's free images for today ran out", 'Retry after the reset (01:00 in winter).'];
+    if (r.code === 'limit') return ["FLUX's free images ran out", 'Not about the image. The app checks every hour; New run shows when FLUX is back, then retry.'];
     if (r.code === 'filter') return ["Blocked by FLUX's filter too", "Cloudflare's rules refused it as well. Change the prompt (Remix) or keep it for the local route."];
     return ['FLUX gave no image', 'A retry usually works.'];
   }

@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 24 Nov 2026 (batch page: style line with starting images). This guide changes with the app.</p>
+<p class="muted small">Last updated 24 Nov 2026 (FLUX: "used up" line and hourly check instead of a reset time). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -274,8 +274,10 @@
         <li>The first time you pick FLUX, <strong>Connect Cloudflare</strong> asks for a free Cloudflare account, an
           API token (from the "Workers AI" template) and your account ID: paste the two and Save. They stay on this
           laptop; <strong>Disconnect</strong> forgets them.</li>
-        <li>With FLUX the block shows how many images are left today and when more come (01:00 in winter). A run
-          past the limit stops; the rest wait for <strong>Finish this batch</strong> once the day turns.</li>
+        <li>With FLUX the block shows about how many images are left. Once Cloudflare's free images are used up it
+          says so, with when that started and when the app last checked; the app checks every hour and the line
+          changes when FLUX is back (Cloudflare's own reset time proved unreliable, so no time is promised). A run
+          past the limit stops; the rest wait for <strong>Finish this batch</strong>.</li>
         <li>Subjects you leave empty are still written by Codex (a small text job). "How it was made" on a batch
           says which model made it.</li>
         <li>New FLUX runs get their own folder ending in <code>-flux</code> (for example
