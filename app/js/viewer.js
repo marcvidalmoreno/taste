@@ -7,6 +7,7 @@ import { openRemix } from './remix.js';
 import { openNote } from './notes.js';
 import { openStyleEdit } from './styleedit.js';
 import { similarRow } from './similar.js';
+import { historySection } from './history.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
@@ -135,6 +136,7 @@ function drawPanel(im) {
     markSection(im),
     actions(im),
     similarRow(im, store.data.batch, !!im.style),
+    historySection(im, store.data.batch),
     details(im),
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),

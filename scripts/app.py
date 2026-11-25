@@ -1774,6 +1774,7 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/distil'): 'get_distil',
         ('GET', 'api/gallery'): 'get_gallery',
         ('GET', 'api/similar'): 'get_similar',
+        ('GET', 'api/history'): 'get_history',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -2519,18 +2520,67 @@ class Handler(BaseHTTPRequestHandler):
         shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set())
         for b in names:
             for im in batch_images(b, shared):
-                if im['status'] == 'ignored':
-                    continue
-                s = im['draft']   # the current mark ("saved" is always empty since marks save at once)
-                out.append({'batch': b, 'name': im['name'], 'file': im['file'], 'mtime': im['mtime'],
-                            'style': im['style'], 'mode': im['mode'], 'change': im['change'],
-                            'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
-                            'date': im['date'] or b[:10], 'number': im['number'], 'seed': im['seed'],
-                            'time': im['time'], 'seconds': im['seconds'], 'route': im['route'],
-                            'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept'],
-                            'published': im['published']})
+                if im['status'] != 'ignored':
+                    out.append(gallery_item(b, im))
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return out
+
+    def get_history(self, batch='', name=''):
+        """How an image got here (25 Nov 2026): the versions it came from, oldest first, ending with itself.
+        Each step is in the Gallery's shape (so the page can open it there) plus 'kind' (how that version was
+        made: batch, single, remix, variations…) and 'asked' (what Marc asked for: a remix's words, a variation's
+        change). A reference image Marc gave (a seed with no earlier image found) is the first step, with
+        'given': True. Walks lineage() up from the batch; a loop or a missing batch ends the walk."""
+        if not is_batch(batch) or name not in rate.batch_images(batch):
+            raise ApiError(404, f'no image "{name}" in batch "{batch}"')
+        lin, steps, seen, cur = lineage(), [history_step(batch, f'{name}.png')], {batch}, batch
+        while True:
+            ref = steps[0].get('seed') or ''   # runs.csv: the image it was made from; 'kept …' = examples, not a source
+            if steps[0].get('given') or not ref or ref.startswith('kept '):
+                break
+            src = lin.get(cur)
+            if not src:
+                seed = seed_file(cur)
+                if seed:
+                    steps.insert(0, history_step(cur, seed))
+                break
+            sb, sf = src.get('batch', ''), src.get('file', '')
+            if not is_batch(sb) or sb in seen:
+                break
+            seen.add(sb)
+            if not sf.startswith('seed.'):   # made from a batch's seed: that seed is a copy of the batch's own source
+                steps.insert(0, history_step(sb, sf))
+            cur = sb
+        return {'steps': steps}
+
+
+def gallery_item(b, im):
+    """One image in the Gallery's shape (Gallery, More like this, How it got here)."""
+    s = im['draft']   # the current mark ("saved" is always empty since marks save at once)
+    return {'batch': b, 'name': im['name'], 'file': im['file'], 'mtime': im['mtime'],
+            'style': im['style'], 'mode': im['mode'], 'change': im['change'],
+            'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
+            'date': im['date'] or b[:10], 'number': im['number'], 'seed': im['seed'],
+            'time': im['time'], 'seconds': im['seconds'], 'route': im['route'],
+            'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept'],
+            'published': im['published']}
+
+
+def history_step(batch, file):
+    """One step of get_history: the image in the Gallery's shape, how it was made and what was asked."""
+    rec = run_record(batch) or {}
+    if file.startswith('seed.'):
+        return {'batch': batch, 'file': file, 'name': Path(file).stem, 'given': True, 'kind': 'seed', 'asked': '',
+                'date': batch[:10], 'mtime': int((BASE / batch / file).stat().st_mtime)}
+    stem = Path(file).stem
+    im = next((x for x in batch_images(batch) if x['name'] == stem), None)
+    if not im:   # the file is gone (deleted or moved): still a step, without a picture
+        return {'batch': batch, 'file': file, 'name': stem, 'missing': True, 'kind': kind_of_batch(batch, [], rec),
+                'asked': rec.get('change', ''), 'date': batch[:10]}
+    kind = kind_of_batch(batch, [], rec)
+    asked = rec.get('change', '') if kind == 'remix' else im['change'] if kind == 'variations' else \
+        rec.get('subject', '') if kind == 'single' else ''
+    return {**gallery_item(batch, im), 'kind': kind, 'asked': asked or '', 'ignored': im['status'] == 'ignored'}
 
 
 def supervise():

@@ -20,6 +20,7 @@ import { openRemix } from './remix.js';
 import { openVariations } from './variations.js';
 import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
+import { historySection } from './history.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // Target row height in px; rows end up a little taller to fill the width. Large stays within the 640 px thumbnails.
@@ -375,6 +376,7 @@ function draw() {
         im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
         h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C'))),
       similarRow(im, im.batch, !!im.style),
+      historySection(im, im.batch),
       details(im, st),
       h('footer', { class: 'keys muted small' },
         h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'), ' up / down  ',

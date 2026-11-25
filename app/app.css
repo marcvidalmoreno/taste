@@ -737,6 +737,23 @@ dialog.variations footer a[role=button] { margin: 0; width: auto; }
 .similar-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .similar-thumb:hover, .similar-thumb:focus-visible { outline: 2px solid var(--pico-primary, #8ab); }
 
+/* How it got here (25 Nov 2026): the versions an image came from, oldest first, a thin line joining the thumbs */
+.lineage { margin: .25rem 0 1rem; }
+.lineage-head { display: flex; gap: .6rem; align-items: baseline; margin-bottom: .4rem; }
+.lineage-list { list-style: none; padding: 0; margin: 0; }
+.lineage-list li { list-style: none; margin: 0; position: relative; }
+.lineage-list li + li::before { content: ''; position: absolute; left: calc(.3rem + 1px + 32px); top: -.35rem; height: .7rem;
+                                border-left: 1px solid #555; }
+.lineage-step { display: flex; gap: .65rem; align-items: center; width: 100%; margin: .35rem 0; padding: .3rem; text-align: left;
+                background: transparent; border: 1px solid transparent; border-radius: var(--radius); color: var(--text); font-size: .85rem; }
+button.lineage-step:hover, button.lineage-step:focus-visible { background: var(--surface-2); border-color: var(--line); }
+.lineage-list li.me .lineage-step { background: var(--surface); }
+.lineage-step img, .lineage-step .no-img { flex: none; width: 64px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 3px; background: var(--frame); }
+.lineage-text { display: grid; gap: .1rem; min-width: 0; line-height: 1.35; }
+.lineage-asked { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #c8c8c8; }
+.lineage-mark { margin-left: .35rem; font-size: .8rem; }
+.lineage-mark.keep { color: var(--keep); } .lineage-mark.no { color: var(--no); } .lineage-mark.almost { color: var(--almost); }
+
 /* Styles page (23 Nov 2026): one row per style, an on / off switch, a history that opens under its row */
 .page-head:has(.find) { display: flex; gap: 1rem; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
 .page-head .find { width: 16rem; margin: 0; }
