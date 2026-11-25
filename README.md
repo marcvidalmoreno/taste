@@ -121,6 +121,7 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **25 Nov 2026** – Fix: New run stayed empty below the title when the saved form named a style that was since renamed or deleted (a page error while drawing the style cards). The page now drops unknown styles from the saved form when it opens. Undo: `git revert` this commit.
 - **24 Nov 2026** – New run, **One image**: a **No style · palette only** choice. Pick a palette (from your styles), write what you want in your own words, and Codex writes the whole prompt (`codex_text.py compose`, new route `api/text/compose`, read-only text job, ~15 s); the prompt shows for editing before Start, or is written at Start. Runs record the palette in `run.json`. Guide updated. Undo: `git revert` this commit.
 - **24 Nov 2026** – Local model test: new `scripts/local_test.py` runs the same prompts on three open models through ComfyUI on this laptop (FLUX.2 klein 4B, Z-Image Turbo, Playground v2.5), one batch each plus a blind batch, logged in `runs.csv` with route `local`. Test only, not a route in the app yet. ComfyUI and the models live outside the repo (`%USERPROFILE%\ComfyUI`). Undo: `git revert` this commit.
 - **24 Nov 2026** – New run, **One image**: How many now goes up to 10 (was 4); the server accepts the same. Guide updated. Undo: `git revert` this commit.

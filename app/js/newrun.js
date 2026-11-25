@@ -36,6 +36,11 @@ export async function renderNewRun(el, query) {
   let pre = (query.get('style') || '').split(',').filter(Boolean);
   if (pre.some((k) => !all[k])) all = await refreshStyles();
   pre = pre.filter((k) => all[k]);
+  // The saved form can name a style that was since renamed or deleted: drop it, or the form can't draw (25 Nov 2026).
+  const before = state.styles.length;
+  state.styles = state.styles.filter((k) => all[k]);
+  if (!all[state.one.style]) state.one.style = '';
+  if (state.styles.length !== before) save();
   if (pre.length) {
     filter = '';
     if (state.mode === 'one') state.one.style = pre[0];
