@@ -1,7 +1,8 @@
 // "How it got here" (25 Nov 2026): the versions an image came from, oldest first, ending with itself, in both
 // large views. Each step says how it was made (batch, remix, variations…) and what was asked. A click opens that
 // version in the Gallery large view, stepping through the chain with ← →, so the changes can be flicked through
-// in place. Hidden when the image has no earlier version: a fresh image needs no history line.
+// in place. An image with no earlier version gets one muted line instead (25 Nov 2026), so "no history" reads
+// differently from "feature missing".
 import { api, allStyles } from './api.js';
 import { h, thumbUrl, batchTitle, shortDate, RATING_LABELS } from './ui.js';
 import { KIND } from './job.js';
@@ -16,7 +17,7 @@ export function historySection(im, batch) {
   const box = h('section', { class: 'lineage', 'aria-label': 'How it got here', hidden: true });
   const k = `${batch}/${im.name}`;
   const show = (steps, names) => {
-    if (steps.length < 2) { box.hidden = true; return; }
+    if (steps.length < 2) { box.replaceChildren(freshLine(steps[0], names)); box.hidden = false; return; }
     // The versions that open in the Gallery large view, this image last, so ← → walk the whole chain.
     const openable = steps.filter((s) => !s.given && !s.missing && !s.ignored);
     box.replaceChildren(
@@ -39,6 +40,19 @@ export function historySection(im, batch) {
       });
   }
   return box;
+}
+
+// One quiet line for an image that starts its own chain: how it was made, and that nothing came before.
+// A remix or seeded image whose source can't be found says so instead of "made fresh".
+function freshLine(s, names) {
+  const style = s && s.kind !== 'remix' && s.kind !== 'variations' ? names[s.style]?.name || s.style : '';
+  const kind = s && s.kind !== 'batch' ? KIND[s.kind]?.label || s.kind : '';
+  const what = [kind, style].filter(Boolean).join(' · ');
+  const ref = s?.seed || '';
+  const lost = s && (s.kind === 'remix' || s.kind === 'variations' || (ref && !ref.startsWith('kept ')));
+  const text = lost ? `${what || 'Made from an earlier image'}, earlier version not found`
+    : `made fresh in this batch${what ? ` (${what})` : ''}, no earlier versions`;
+  return h('div', { class: 'lineage-head' }, h('strong', {}, 'How it got here'), h('span', { class: 'muted small' }, text));
 }
 
 function stepRow(s, isMe, openable, names) {

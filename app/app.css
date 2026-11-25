@@ -739,7 +739,8 @@ dialog.variations footer a[role=button] { margin: 0; width: auto; }
 
 /* How it got here (25 Nov 2026): the versions an image came from, oldest first, a thin line joining the thumbs */
 .lineage { margin: .25rem 0 1rem; }
-.lineage-head { display: flex; gap: .6rem; align-items: baseline; margin-bottom: .4rem; }
+.lineage-head { display: flex; flex-wrap: wrap; gap: .1rem .6rem; align-items: baseline; margin-bottom: .4rem; }
+.lineage-head strong { white-space: nowrap; }
 .lineage-list { list-style: none; padding: 0; margin: 0; }
 .lineage-list li { list-style: none; margin: 0; position: relative; }
 .lineage-list li + li::before { content: ''; position: absolute; left: calc(.3rem + 1px + 32px); top: -.35rem; height: .7rem;
