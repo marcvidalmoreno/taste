@@ -567,7 +567,7 @@ def planned_names(rec):
     if kind == 'variations':
         return [f'{i}-{c}' for i, c in enumerate(rec.get('changes') or CHANGES[:n], 1)]
     if kind == 'remix':
-        return [f'remix-{i}' for i in range(1, n + 1)]
+        return rec.get('names') or [f'remix-{i}' for i in range(1, n + 1)]
     if kind == 'single' and rec.get('subject'):
         stem = '-'.join(slugify(rec['subject'], 'image').split('-')[:3])
         return [f'{stem}-{i}' for i in range(1, n + 1)]
@@ -724,6 +724,10 @@ def launch(spec):
         CUR['batch'] = spec['batch']
     folder = SPECS / spec['id'] if DRY_RUN else BASE / spec['batch']
     folder.mkdir(parents=True, exist_ok=True)
+    if spec['kind'] == 'remix' and spec.get('source') and not DRY_RUN:   # the original as seed.<ext>: Seed tile, Hold S
+        original = BASE / spec['source']['batch'] / spec['source']['file']
+        if original.is_file() and not seed_file(spec['batch']):
+            shutil.copy2(original, folder / f'seed{original.suffix.lower()}')
     say = lambda line: CUR.__setitem__('log', CUR['log'] + [f'{time.strftime("%H:%M:%S")}  {line}'])  # noqa: E731
     if spec['kind'] == 'batch':
         subjects = {}
@@ -797,7 +801,7 @@ def launch(spec):
             write_json(folder / 'run.json', rec)
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
-                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'palette', 'note', 'change', 'keep', 'kept_refs', 'route', 'model')
+                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'palette', 'note', 'change', 'keep', 'kept_refs', 'route', 'model', 'extra', 'combine', 'close', 'names')
                if spec.get(k) not in (None, '', [], {})}
         rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
         write_json(folder / 'run.json', rec)
@@ -1006,9 +1010,122 @@ def spec_palette(body):
             'n': n, 'subject': text, 'palette': pal, 'ratio': ratio, 'expected': [j['name'] for j in jobs]}
 
 
+# -- Remix (merged with Variations, 25 Nov 2026): one dialog, one server path. The page sends what changes, how close
+# the result stays and how many; the server turns that into per-image jobs for run_list.py with template prompts
+# (scripts/variations.py's wording), so nothing is spent on a Codex text call before Make.
+
+REMIX_AXES = ('palette', 'subject', 'light', 'composition')   # the order they are shared out in
+REMIX_SPREAD = ['palette', 'subject', 'composition']          # nothing picked, no text: today's Variations default
+REMIX_CLOSE = ('close', 'balanced', 'loose', 'wild')
+REMIX_COMPOSITIONS = ['a wider view with much more empty space around the subject',
+                      'a closer view, the subject large and placed off-centre',
+                      'a low horizon, most of the frame given to sky or ceiling',
+                      'a high viewpoint looking down on the scene']   # the same four as scripts/variations.py
+REMIX_LIGHT = 'the light: its direction, quality and time of day'
+REMIX_BALANCED = 'The reference is a starting point, not a template: it may move away from it where the change asks.'
+REMIX_WILD = 'Reinterpret boldly: odd angles, surreal turns, another medium. Do not play it safe.'
+
+
+def remix_hex(colours):
+    return [str(c).lower() for c in colours or [] if re.fullmatch(r'#[0-9a-fA-F]{6}', str(c))][:8]
+
+
+def remix_plan(body, src, model=None):
+    """What a Remix makes: (jobs, kinds, meta). jobs go to run_list.py as they are; kinds say which images share a
+    prompt (key, title), so the page can write one prompt per kind. body: {changes, palette, combine, extra, close, n,
+    prompts: {kind key: prompt}, prompt (the original's, when none is on record)}."""
+    import random
+    row = rate.batch_runs(src.parent.name).get(src.stem, {})
+    style = row.get('style') or ''
+    if not style and re.fullmatch(r'[\w-]+', str(body.get('style') or '')) and (ROOT / 'taste' / 'styles' / f'{body["style"]}.json').is_file():
+        style = body['style']
+    info = style_file(style) if style else {}
+    notes = (read_json(ROOT / 'taste' / 'taste.json', {}).get('styles', {}).get(style, {}) or {}).get('prompt', '') if style else ''
+    changes = [a for a in REMIX_AXES if a in (body.get('changes') or [])]
+    pal = remix_hex(body.get('palette'))
+    extra = clean(body.get('extra'), 400)
+    combine = 'together' if body.get('combine') == 'together' else 'separate'
+    close = body.get('close') if body.get('close') in REMIX_CLOSE else 'close'
+    n = int(body.get('n') or 3)
+    if not 1 <= n <= 12:
+        raise ApiError(400, 'how many: 1 to 12')
+    if not changes and not extra:
+        kinds = [[a] for a in REMIX_SPREAD]
+    elif not changes:
+        kinds = [[]]
+    elif combine == 'together' and len(changes) > 1:
+        kinds = [changes]
+    else:
+        kinds = [[a] for a in changes]
+    # Does the original go along? Close and Balanced send it; Loose and Wild never do; Z-Image can't take an image.
+    ref = '' if close in ('loose', 'wild') or model == 'zimage' else str(src)
+    base = clean(row.get('prompt') or body.get('prompt'), 4000)
+    if not ref and not base:
+        raise ApiError(400, 'this image has no prompt on record: write one first')
+    it = 'the seed' if ref else 'the original prompt'
+    subjects = list(info.get('subjects') or []) or ['a different subject that suits the same kind of scene (your choice)']
+    random.shuffle(subjects)
+    comps = random.sample(REMIX_COMPOSITIONS, len(REMIX_COMPOSITIONS))
+    pals = [p for p in info.get('palettes') or [] if isinstance(p, list) and len(p) >= 3]
+    count = {}
+
+    def clause(a):
+        i = count[a] = count.get(a, -1) + 1
+        if a == 'palette':
+            use = pal or (remix_hex(pals[i % len(pals)])[:5] if pals else [])
+            return ('the colour palette to these colours, dark to light: ' + ', '.join(use)) if use \
+                else 'the colour palette to a different one that suits the style notes'
+        if a == 'subject':
+            return f'the subject to: {subjects[i % len(subjects)].rstrip(".")}'
+        if a == 'light':
+            return REMIX_LIGHT
+        return f'the composition to {comps[i % len(comps)]}'
+
+    must = f' In every image, and above the style notes: {extra.rstrip(".")}.' if extra else ''
+    tail = {'balanced': REMIX_BALANCED, 'wild': REMIX_WILD}.get(close, '')
+    prompts = {k: clean(v, 4000) for k, v in (body.get('prompts') or {}).items() if isinstance(k, str) and clean(v, 4000)}
+    jobs, kind_info = [], {}
+    for i in range(n):
+        axes = kinds[i % len(kinds)]
+        key = '+'.join(axes) or 'text'
+        cl = [clause(a) for a in axes]
+        wish = ' and '.join(cl) + (f'; {extra}' if extra and cl else extra) + (f'; {tail}' if close == 'wild' and (cl or extra) else '')
+        wish = wish or 'a new take on it'
+        if key in prompts:
+            prompt = prompts[key]
+        else:
+            what = f'Keep everything else of {it} as it is; change only {" and ".join(cl)}.' if cl \
+                else f'Keep {it} as it is, except for what is asked below.'
+            prompt = ((f'{base} ' if not ref else 'Wide 16:9 desktop wallpaper. ') + what + must
+                      + (f' {tail}' if tail else '')
+                      + (f' Style notes (follow them where the change leaves room): {notes}' if notes else ''))
+        name = f'{i + 1}-{key.replace("+", "-")}'
+        jobs.append({'name': name, 'prompt': prompt, 'style': style, 'mode': 'remix', 'change': f'remix: {wish}'[:400], 'ref': ref})
+        kind_info.setdefault(key, {'key': key, 'axes': axes, 'change': wish, 'prompt': prompt, 'images': 0})['images'] += 1
+    meta = {'style': style, 'style_name': info.get('name', style), 'changes': changes, 'palette': pal, 'extra': extra,
+            'combine': combine, 'close': close, 'ref': bool(ref), 'base': base}
+    return jobs, list(kind_info.values()), meta
+
+
 def spec_remix(body):
-    """A new image from one I made, with a rewritten prompt: {batch, file, prompt, change, keep, ref: bool, n: 1-4}."""
+    """Remix of one image: {batch, file, changes, palette, combine, extra, close, n: 1-12, prompts, prompt, model}.
+    The older dialog's body (no 'close': {prompt, change, keep, ref, n: 1-4}) is still understood."""
     src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+    if 'close' not in body:
+        return spec_remix_old(body, src)
+    jobs, kinds, meta = remix_plan(body, src, body.get('model'))
+    _, batch = free_slug(f'{src.stem}-remix', flux_end(body))
+    spoken = ', '.join(meta['changes']) or ('palette, subject, composition' if not meta['extra'] else '')
+    summary = (spoken + (': ' if spoken and meta['extra'] else '') + meta['extra']).strip()
+    return {'kind': 'remix', 'title': f'Remix of {src.stem}' + (f': {summary[:40]}' if summary else ''), 'batch': batch,
+            'jobs': jobs, 'source': {'batch': src.parent.name, 'file': src.name}, 'change': summary,
+            'changes': meta['changes'] or None, 'palette': meta['palette'] or None, 'extra': meta['extra'],
+            'combine': meta['combine'] if len(meta['changes']) > 1 else '', 'close': meta['close'],
+            'styles': [meta['style']] if meta['style'] else [], 'n': len(jobs), 'names': [j['name'] for j in jobs],
+            'expected': [j['name'] for j in jobs]}
+
+
+def spec_remix_old(body, src):
     prompt = clean(body.get('prompt'), 4000)
     if not prompt:
         raise ApiError(400, 'the prompt is empty')
@@ -1023,6 +1140,41 @@ def spec_remix(body):
             'jobs': jobs, 'source': {'batch': src.parent.name, 'file': src.name}, 'change': change,
             'keep': [k for k in body.get('keep') or [] if k in KEEPABLE], 'styles': [style] if style else [], 'n': n,
             'expected': [j['name'] for j in jobs]}
+
+
+_PAL_CACHE = {}
+
+
+def remix_palettes(batch, file, style=''):
+    """Up to 5 palettes to offer in Remix: the style's own, then ones measured from images of that style marked 👍.
+    Free: reads files (the measuring needs numpy and scikit-learn; without them only the style's palettes show)."""
+    src = source_image(batch, file)
+    style = style or rate.batch_runs(batch).get(src.stem, {}).get('style', '')
+    if not style or not re.fullmatch(r'[\w-]+', style) or not (ROOT / 'taste' / 'styles' / f'{style}.json').is_file():
+        return {'style': '', 'palettes': []}
+    info = style_file(style)
+    out = []
+
+    def add(name, colours):
+        c = remix_hex(colours)[:5]
+        if len(c) >= 3 and all(x['c'][:3] != c[:3] for x in out):
+            out.append({'name': name, 'c': c})
+    add('Style palette', info.get('palette'))
+    for i, p in enumerate(info.get('palettes') or [], 2):
+        add(f'Style palette {i}', p if isinstance(p, list) else [])
+    runs = all_runs()
+    liked = [(b, n) for (b, n), r in saved_ratings().items() if r['rating'] == 'keep' and runs.get(b, {}).get(n, {}).get('style') == style]
+    for b, n in reversed(liked):
+        if len(out) >= 5:
+            break
+        path = BASE / b / f'{n}.png'
+        if not path.is_file():
+            continue
+        key = (str(path), int(path.stat().st_mtime))
+        if key not in _PAL_CACHE:
+            _PAL_CACHE[key] = measured_palette([path])
+        add('From a 👍 image', _PAL_CACHE[key])
+    return {'style': style, 'palettes': out[:5]}
 
 
 def spec_retry(body):
@@ -1094,10 +1246,11 @@ def spec_resume(body):
                 'changes': rec.get('changes') or CHANGES[:int(rec.get('n') or 3)], 'subject': rec.get('subject', ''),
                 'note': rec.get('note', ''), 'n': len(names), 'expected': names}
     # remix / single: every job of the run shares its prompt (or style, subject, ratio): copy one, rename it
-    template = read_json(BASE / batch / '.jobs.json', [])[0]
+    old_jobs = read_json(BASE / batch / '.jobs.json', [])
+    template, by_name = old_jobs[0], {j['name']: j for j in old_jobs}
     jobs = []
     for nm in names:
-        j = {**template, 'name': nm}
+        j = {**by_name.get(nm, template), 'name': nm}   # a Remix has its own prompt per image
         if j.get('kept'):
             paths = [p for p in (rec.get('kept_refs') or {}).get(j.get('style'), []) if Path(p).is_file()]
             j['ref'] = pick_refs(paths, int(nm.rsplit('-', 1)[-1]) - 1) if paths else ''
@@ -1832,6 +1985,9 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/blocked/flux'): 'post_blocked_flux',
         ('POST', 'api/guess'): 'post_guess',
         ('POST', 'api/variations'): 'post_variations',
+        ('POST', 'api/remix'): 'post_remix',
+        ('POST', 'api/remix/plan'): 'post_remix_plan',
+        ('GET', 'api/remix/palettes'): 'get_remix_palettes',
         ('POST', 'api/run'): 'post_run',
         ('GET', 'api/stopped'): 'get_stopped',
         ('POST', 'api/resume-all'): 'post_resume_all',
@@ -2163,6 +2319,38 @@ class Handler(BaseHTTPRequestHandler):
             res = enqueue(with_model(spec, {**body, 'model': m}))
             ids.append(res['queued_id'])
         return {**res, 'queued_ids': ids, 'runs': len(ids)}
+
+    def post_remix(self):
+        """Remix of one image (Remix and Variations merged, 25 Nov 2026): see spec_remix. {…, models: [..] or model}.
+        One batch per model, each with the whole set. Queued."""
+        body = {**self.read_body(), 'kind': 'remix'}
+        body.setdefault('close', 'close')
+        models = [m for m in dict.fromkeys(body.get('models') or []) if m in MODELS]
+        if len(models) <= 1:
+            return self.post_run({**body, 'model': models[0] if models else body.get('model')})
+        for m in models:   # check them all first, so a refusal queues nothing
+            with_model({}, {'model': m})
+            with _QLOCK:
+                spec_remix({**body, 'model': m})
+        res, ids = None, []
+        for m in models:
+            with _QLOCK:
+                spec = spec_remix({**body, 'model': m})
+            res = enqueue(with_model(spec, {**body, 'model': m}))
+            ids.append(res['queued_id'])
+        return {**res, 'queued_ids': ids, 'runs': len(ids)}
+
+    def post_remix_plan(self):
+        """What a Remix would make, without making anything: the kinds of image (one prompt each), for the page's
+        "Review the prompts". Same body as post_remix. Free."""
+        body = self.read_body()
+        src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+        _, kinds, meta = remix_plan({**body, 'prompts': {}}, src, body.get('model'))
+        return {'kinds': kinds, 'style': meta['style'], 'style_name': meta['style_name'], 'ref': meta['ref'], 'prompt': meta['base']}
+
+    def get_remix_palettes(self, batch='', file='', style=''):
+        """Palettes to offer when Remix changes the palette. Free."""
+        return remix_palettes(batch, file, style)
 
     def post_run(self, body=None):
         """Queue one run. kind: batch | single | remix | retry | finish | resume | variations (see the spec_* helpers)."""

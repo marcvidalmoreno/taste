@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mockup – one Remix (Remix + Variations merged), v4</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Same rule as the app: pure greys, no hue near the image. */
+  :root { --bg:#161616; --card:#1d1d1d; --surface:#232323; --surface-2:#2b2b2b; --line:#3a3a3a; --text:#e4e4e4;
+          --muted:#9a9a9a; --radius:.4rem; --almost:#d9a441; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui, "Segoe UI", sans-serif; }
+  button, select, textarea, input { font:inherit; color:inherit; }
+  .page { display:grid; grid-template-columns: minmax(0, 48rem) 17rem; gap:2rem; max-width:70rem; margin:2rem auto; padding:0 1.5rem; }
+  @media (max-width: 1000px) { .page { grid-template-columns:1fr; } }
+  .muted { color:var(--muted); } .small { font-size:.85rem; }
+
+  .dlg { background:var(--card); border:1px solid #2c2c2c; border-radius:.6rem; padding:1.4rem 1.5rem 1.1rem; }
+  .head { display:flex; gap:1rem; align-items:center; margin-bottom:1.3rem; }
+  .thumb { width:64px; height:64px; border-radius:var(--radius); flex:none;
+           background: radial-gradient(circle at 30% 35%, #f1c27d 0 8%, transparent 9%), radial-gradient(circle at 70% 70%, #5a3d8a, transparent 55%), linear-gradient(160deg,#0d1b2a,#3b1f4a 60%,#120b18); }
+  .head h3 { margin:0; font-size:1.15rem; } .head p { margin:.15rem 0 0; }
+  .row { margin-bottom:1.25rem; }
+  .label { display:block; font-weight:600; margin-bottom:.4rem; }
+  .label .muted { font-weight:400; }
+  .hint { margin:.4rem 0 0; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .chip { border:1px solid var(--line); background:transparent; border-radius:999px; padding:.35rem .85rem; cursor:pointer; }
+  .chip:hover { background:var(--surface-2); }
+  .chip[aria-pressed=true] { background:var(--text); color:#111; border-color:var(--text); font-weight:600; }
+
+  /* suggestion chips: smaller, dashed until used */
+  .s { border:1px dashed var(--line); background:transparent; border-radius:999px; padding:.2rem .65rem; cursor:pointer; font-size:.82rem; color:var(--muted); }
+  .s:hover { color:var(--text); background:var(--surface-2); }
+  .s[aria-pressed=true] { border-style:solid; color:var(--text); background:var(--surface-2); }
+  /* "More ideas" is a link, not a chip: it must not look like one more suggestion */
+  .linkbtn { border:0; background:none; padding:.2rem .1rem; cursor:pointer; color:var(--text); font-size:.85rem; text-decoration:underline;
+             text-underline-offset:3px; text-decoration-color:#666; }
+  .linkbtn:hover { text-decoration-color:var(--text); }
+  .srow { display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
+
+  /* sub-panel that belongs to a chip (palette) or to a pair of choices (combine) */
+  .sub { margin-top:.6rem; padding:.7rem .85rem; background:var(--surface); border-radius:var(--radius); border-left:2px solid #555; }
+  .sub .label { font-size:.9rem; margin-bottom:.35rem; }
+  .pals { display:flex; flex-wrap:wrap; gap:.45rem; }
+  .pal { display:flex; flex-direction:column; gap:.25rem; align-items:flex-start; border:1px solid var(--line); background:var(--card);
+         border-radius:var(--radius); padding:.4rem .5rem; cursor:pointer; font-size:.78rem; color:var(--muted); }
+  .pal:hover { border-color:#777; }
+  .pal[aria-pressed=true] { border-color:var(--text); color:var(--text); box-shadow:0 0 0 1px var(--text); }
+  .sw { display:flex; } .sw i { width:16px; height:16px; display:block; }
+  .sw i:first-child { border-radius:3px 0 0 3px; } .sw i:last-child { border-radius:0 3px 3px 0; }
+  .pal.random .sw i { background:repeating-linear-gradient(45deg,#444 0 3px,#2a2a2a 3px 6px) !important; }
+
+  textarea, input[type=search] { width:100%; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:.55rem .7rem; }
+  textarea { resize:vertical; }
+  textarea:focus, input:focus, select:focus, button:focus-visible { outline:2px solid #8a8a8a; outline-offset:1px; }
+  .ideas { margin-top:.55rem; }
+
+  /* the five suggestion layouts */
+  .L-box { margin-top:.5rem; padding:.7rem .8rem; background:var(--surface); border-radius:var(--radius); max-height:16rem; overflow-y:auto; display:grid; gap:.6rem; }
+  .gh { font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:.25rem; display:block; }
+  .L-cols { display:grid; grid-template-columns:repeat(auto-fill, minmax(9.5rem, 1fr)); gap:1rem 1.2rem; padding:.8rem .9rem; background:var(--surface); border-radius:var(--radius); }
+  .L-cols .col { display:flex; flex-direction:column; gap:.1rem; }
+  .L-cols .gh { border-bottom:1px solid #333; padding-bottom:.3rem; margin-bottom:.3rem; }
+  .L-cols .s { border:0; border-radius:3px; text-align:left; padding:.12rem .35rem; }
+  .L-cols .s[aria-pressed=true] { background:var(--text); color:#111; }
+  .L-cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(14rem, 1fr)); gap:.6rem; }
+  .L-cards .card { border:1px solid #333; border-radius:.5rem; padding:.6rem .7rem .7rem; background:#1a1a1a; }
+  .L-cards .card .gh { font-size:.72rem; color:#c8c8c8; }
+  .L-cards .gh .n { color:var(--muted); letter-spacing:0; }
+  .L-cards.compact { grid-template-columns:repeat(4, minmax(0,1fr)); gap:.45rem; }
+  @media (max-width: 760px) { .L-cards.compact { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .L-cards.compact .card { padding:.45rem .5rem .5rem; }
+  .L-cards.compact .srow { gap:.25rem; }
+  .L-cards.compact .s { font-size:.76rem; padding:.12rem .5rem; }
+  .L-cards.wide { max-height:22rem; overflow-y:auto; padding-right:.2rem; }
+  .ideas-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.35rem; }
+  .tabs { display:flex; flex-wrap:wrap; gap:0; border-bottom:1px solid #333; margin-bottom:.6rem; }
+  .tab { border:0; background:none; padding:.4rem .7rem; cursor:pointer; color:var(--muted); font-size:.85rem; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab:hover { color:var(--text); }
+  .tab[aria-selected=true] { color:var(--text); border-bottom-color:var(--text); }
+  .tab .n { font-size:.72rem; color:#777; margin-left:.25rem; }
+  .L-search .srow { margin-top:.5rem; }
+  .L-search .s mark { background:none; color:var(--text); font-weight:600; }
+
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; flex-wrap:wrap; }
+  .seg button { border:0; background:transparent; padding:.38rem .8rem; cursor:pointer; }
+  .seg button + button { border-left:1px solid var(--line); }
+  .seg button:hover { background:var(--surface-2); }
+  .seg button[aria-pressed=true] { background:var(--text); color:#111; font-weight:600; }
+  .two { display:flex; flex-wrap:wrap; gap:1rem 2rem; }
+  .two > div { flex:1 1 18rem; min-width:0; }
+  .two .seg { flex-wrap:nowrap; }
+
+  .models { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .mchip small { font-weight:400; opacity:.75; margin-left:.3rem; }
+
+  .plan-grid { display:grid; gap:.5rem; }
+  .plan-row { display:grid; grid-template-columns:repeat(auto-fill, minmax(6.4rem,1fr)); gap:.5rem; }
+  .plan-mdl { font-size:.78rem; color:var(--muted); margin:.3rem 0 -.1rem; }
+  .tile { aspect-ratio:1; border:1px dashed var(--line); border-radius:var(--radius); padding:.45rem; display:flex; flex-direction:column; justify-content:flex-end;
+          background:linear-gradient(180deg, transparent 40%, rgba(255,255,255,.03)); font-size:.76rem; gap:.1rem; }
+  .tile b { font-size:.82rem; display:block; line-height:1.2; }
+  .tile .sw i { width:10px; height:10px; }
+  .will { margin:.7rem 0 0; }
+
+  .cost { background:var(--surface); border-radius:var(--radius); padding:.75rem 1rem; margin-top:1rem; }
+  .cost p { margin:.15rem 0; }
+  .meters { display:grid; gap:.35rem; margin-top:.65rem; }
+  .meter { display:grid; grid-template-columns:9rem 1fr 7.5rem; gap:.75rem; align-items:center; font-size:.85rem; }
+  .bar { height:6px; background:#2e2e2e; border-radius:3px; overflow:hidden; position:relative; }
+  .bar i { position:absolute; inset:0 auto 0 0; background:#cfcfcf; }
+  .bar i.add { background:repeating-linear-gradient(90deg,#cfcfcf 0 3px,transparent 3px 5px); }
+  .num { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .warn { color:var(--almost); }
+
+  details.more { margin-top:1rem; border-top:1px solid #2c2c2c; padding-top:.7rem; }
+  details.more summary { cursor:pointer; color:var(--muted); }
+  details.more summary:hover { color:var(--text); }
+  .more-body { display:grid; gap:.7rem; margin-top:.7rem; }
+  .check { display:flex; gap:.5rem; align-items:flex-start; cursor:pointer; }
+  .check input { margin-top:.25rem; }
+
+  .foot { display:flex; gap:.5rem; align-items:center; margin-top:1.1rem; }
+  .spacer { flex:1; }
+  .btn { border:0; border-radius:var(--radius); padding:.5rem 1.1rem; cursor:pointer; font-weight:600; background:var(--text); color:#111; }
+  .btn:hover { background:#fff; }
+  .btn.secondary { background:#3a3a3a; color:#ddd; font-weight:400; }
+  .btn.secondary:hover { background:#474747; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .kbd { font:12px ui-monospace,monospace; border:1px solid var(--line); border-radius:3px; padding:0 .3rem; color:var(--muted); }
+
+  aside { font-size:.88rem; }
+  aside h4 { margin:.2rem 0 .6rem; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  aside fieldset { border:1px solid #2c2c2c; border-radius:var(--radius); padding:.6rem .8rem; margin:0 0 .9rem; }
+  aside legend { padding:0 .3rem; color:var(--muted); }
+  aside label { display:flex; gap:.45rem; align-items:flex-start; margin:.3rem 0; cursor:pointer; }
+  aside label input { margin-top:.25rem; }
+  aside label small { display:block; color:var(--muted); }
+  aside p { margin:.3rem 0 .8rem; color:var(--muted); }
+  aside { position:sticky; top:1rem; align-self:start; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<main class="dlg" aria-labelledby="ttl">
+  <header class="head">
+    <div class="thumb" aria-hidden="true"></div>
+    <div><h3 id="ttl">Remix #3</h3><p class="muted small">Dark cosmic glow · more images from this one, in its style</p></div>
+  </header>
+
+  <!-- 1. what changes -->
+  <div class="row">
+    <span class="label" id="lbl-change">Change <span class="muted small">· pick none and you get one of each</span></span>
+    <div class="chips" role="group" aria-labelledby="lbl-change" id="axes"></div>
+    <div id="palette-sub"></div>
+    <div id="combine-sub"></div>
+  </div>
+
+  <!-- 2. free text + ideas -->
+  <div class="row">
+    <label class="label" for="extra">Anything else? <span class="muted small">· goes into every image</span></label>
+    <textarea id="extra" rows="2" maxlength="400" placeholder="e.g. a red-orange sun, no planet in the sky"></textarea>
+    <div class="ideas" id="ideas" aria-label="Ideas: click to add to the text, click again to take out"></div>
+  </div>
+
+  <!-- 3. closeness + count -->
+  <div class="row two">
+    <div>
+      <span class="label" id="lbl-close">How close to the original</span>
+      <div class="seg" role="group" aria-labelledby="lbl-close" id="close"></div>
+      <p class="hint muted small" id="close-hint"></p>
+    </div>
+    <div>
+      <span class="label" id="lbl-n">How many images</span>
+      <div class="seg" role="group" aria-labelledby="lbl-n" id="count"></div>
+      <p class="hint muted small" id="n-hint"></p>
+    </div>
+  </div>
+
+  <!-- 4. models -->
+  <div class="row">
+    <span class="label" id="lbl-model">Made with <span class="muted small">· pick one or more</span></span>
+    <div class="models" role="group" aria-labelledby="lbl-model" id="models"></div>
+    <p class="hint muted small" id="model-hint"></p>
+  </div>
+
+  <!-- 5. outcome -->
+  <div class="row" style="margin-bottom:0">
+    <span class="label">What you'll get</span>
+    <div class="plan-grid" id="plan" aria-live="polite"></div>
+    <p class="will" id="will"></p>
+  </div>
+
+  <section class="cost" aria-label="Cost" id="cost"></section>
+
+  <details class="more">
+    <summary>More options</summary>
+    <div class="more-body">
+      <label class="check"><input type="checkbox" id="review"> <span>Review the prompts before making
+        <span class="muted small"> · Codex writes them first (about 15 s each, nothing spent), you read and edit</span></span></label>
+      <label class="check"><input type="checkbox" id="own"> <span>Write the prompt myself
+        <span class="muted small"> · start from the original prompt, change what you like</span></span></label>
+    </div>
+  </details>
+
+  <footer class="foot">
+    <button class="btn secondary" type="button">Cancel</button>
+    <span class="spacer"></span>
+    <span class="muted small"><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span></span>
+    <button class="btn" type="button" id="make"></button>
+  </footer>
+</main>
+
+<aside>
+  <h4>Mockup controls</h4>
+  <p>Not part of the app: they let you see other states.</p>
+  <fieldset>
+    <legend>Five-hour window already used</legend>
+    <label><input type="radio" name="win" value="34" checked><span>34 % <small>calm: one line</small></span></label>
+    <label><input type="radio" name="win" value="82"><span>82 % <small>meters show up</small></span></label>
+  </fieldset>
+  <fieldset>
+    <legend>Original has a prompt on record</legend>
+    <label><input type="radio" name="hasprompt" value="1" checked><span>yes</span></label>
+    <label><input type="radio" name="hasprompt" value="0"><span>no <small>Codex reads the image first</small></span></label>
+  </fieldset>
+  <p>Shortcuts in the app: <span class="kbd">R</span> opens this; <span class="kbd">V</span> opens it with nothing picked (one of each), for old habits.</p>
+  <p>Numbers are rough, from the app's current estimates, not live readings.</p>
+</aside>
+
+</div>
+
+<script>
+const AXES = { palette: ['Palette', 'new palette'], subject: ['Subject', 'new subject'], light: ['Light', 'other light'], composition: ['Composition', 'new framing'] };
+const SPREAD = ['palette', 'subject', 'composition'];          // nothing picked: today's Variations default
+// Proposed palettes (in the app: from the style's palette and from images you rated 👍; here mock).
+const PALS = {
+  ember:  { name: 'Ember',      c: ['#2a0f0a', '#7a2314', '#d9531e', '#f4a259', '#f7e1b5'] },
+  tide:   { name: 'Deep tide',  c: ['#04151f', '#0c3b4f', '#1b7a8c', '#7cc6c2', '#e3f2ee'] },
+  moss:   { name: 'Moss',       c: ['#141a10', '#344a23', '#6f8f3a', '#c2c98a', '#efe9cf'] },
+  dusk:   { name: 'Rose dusk',  c: ['#1c1022', '#4e2348', '#a4467a', '#e59aa6', '#f6dccf'] },
+  ash:    { name: 'Ash & gold', c: ['#151515', '#3b3b3b', '#8a8a8a', '#c9a24a', '#ecebe4'] },
+};
+const TOP = ['less busy', 'at night', 'no people', 'warmer light', 'a closer view', 'wider, more empty space', 'calmer mood', 'more contrast'];
+const GROUPS = {
+  'Light & time': ['golden hour', 'blue hour', 'at dawn', 'midday sun', 'overcast, soft light', 'backlit', 'rim light',
+    'one light source', 'candlelight', 'moonlight', 'harsh shadows', 'no shadows', 'cooler light', 'fog'],
+  'Colour': ['more saturated colour', 'muted colours', 'fewer colours', 'black and white', 'one accent colour',
+    'darker overall', 'lighter overall', 'pastel', 'warmer palette', 'cooler palette', 'higher contrast', 'lower contrast'],
+  'Framing': ['seen from far above', "worm's-eye view", 'eye level', 'centred', 'off-centre, rule of thirds', 'symmetrical',
+    'more negative space', 'tighter crop', 'subject smaller', 'subject larger', 'wide panorama', 'shallow depth of field', 'everything in focus'],
+  'Content': ['simpler', 'more detail', 'fewer objects', 'one main subject', 'add a person', 'add an animal', 'no text or signs',
+    'no buildings', 'more nature', 'add water', 'add sky', 'less background clutter', 'add a path or road'],
+  'Mood': ['calmer', 'more dramatic', 'lonelier', 'more playful', 'mysterious', 'cosy', 'eerie', 'dreamlike', 'hopeful', 'melancholic', 'energetic', 'quiet, still'],
+  'Weather & season': ['rain', 'snow', 'after rain, wet surfaces', 'mist', 'storm clouds', 'clear sky', 'autumn', 'spring', 'summer heat', 'winter'],
+  'Experimental': ['surreal', 'impossible scale', 'seen through glass or water', 'double exposure', 'as a miniature', 'turned into a pattern',
+    'one colour only', 'extreme close-up', 'upside down world', 'made of paper', 'glitch', 'as a dream half-remembered'],
+  'Medium & texture': ['more painterly', 'more photographic', 'film grain', 'smoother', 'flat, graphic', 'watercolour', 'ink drawing',
+    'paper texture', 'less glossy', 'softer edges', 'sharper detail', 'long exposure'],
+};
+// Shown first: the 4 groups most relevant to this image, 4 picks each (in the app: from the style, the image and what you use most).
+const RELEVANT = [
+  ['Content', ['less busy', 'no people', 'simpler', 'fewer objects']],
+  ['Light & time', ['at night', 'warmer light', 'golden hour', 'fog']],
+  ['Framing', ['a closer view', 'wider, more empty space', 'seen from far above', 'tighter crop']],
+  ['Colour', ['more contrast', 'muted colours', 'one accent colour', 'darker overall']],
+];
+for (const [g, l] of RELEVANT) GROUPS[g] = [...new Set([...l, ...GROUPS[g]])];
+GROUPS['Mood'] = [...new Set(['calmer mood', ...GROUPS['Mood']])];
+const ALL_IDEAS = [...new Set([...TOP, ...Object.values(GROUPS).flat()])];
+const CLOSE = {
+  close: ['Close', 'The original goes along as a reference: the result stays near it.'],
+  balanced: ['Balanced', 'Reference sent, and the model is told it may move away.'],
+  loose: ['Loose', 'Only the prompt goes: more freedom, may drift far.'],
+  wild: ['Wild ✦', 'Experimental: the model is asked to reinterpret boldly (odd angles, surreal turns, another medium). Expect misses and a few surprises.'],
+};
+const COUNTS = [1, 2, 3, 4, 6, 8, 12];
+const MODELS = {
+  chatgpt:    { name: 'ChatGPT',    note: 'best, uses tokens', kind: 'tokens', ref: true },
+  flux:       { name: 'FLUX',       note: 'free, daily limit', kind: 'daily', ref: true },
+  klein:      { name: 'FLUX local', note: 'free, laptop', kind: 'local', sec: 70, ref: true },
+  zimage:     { name: 'Z-Image',    note: 'free, laptop', kind: 'local', sec: 45, ref: false },
+  playground: { name: 'Playground', note: 'free, laptop', kind: 'local', sec: 90, ref: true },
+};
+const st = { axes: [], pal: 'random', combo: 'separate', extra: '', close: 'close', n: 3, models: ['chatgpt'],
+             review: false, own: false, layout: 'collapse', more: false, tab: 'Top picks', q: '', win: 34, hasPrompt: true };
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (v == null || v === false) continue; if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); } e.append(...kids.flat().filter((k) => k != null && k !== false)); return e; };
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const sw = (c) => el('span', { class: 'sw', 'aria-hidden': 'true' }, c.map((x) => el('i', { style: `background:${x}` })));
+const parts = () => st.extra.split(',').map((x) => x.trim()).filter(Boolean);
+const palLabel = () => st.pal === 'random' ? 'new palette, picked for you' : `palette: ${PALS[st.pal].name}`;
+const axisTitle = (a) => a === 'palette' ? palLabel() : AXES[a][1];
+
+// From what's filled in, which images get made. The count is Marc's; the changes are shared out over it.
+function plan() {
+  const extra = st.extra.trim();
+  const short = extra.length > 26 ? extra.slice(0, 24) + '…' : extra;
+  let kinds;
+  if (!st.axes.length && !extra) kinds = SPREAD.map((a) => ({ title: axisTitle(a), keep: 'rest kept', pal: a === 'palette' }));
+  else if (!st.axes.length) kinds = [{ title: `“${short}”`, keep: 'rest kept' }];
+  else if (st.combo === 'together' && st.axes.length > 1) kinds = [{ title: st.axes.map(axisTitle).join(' + '), keep: extra ? `+ “${short}”` : 'rest kept', pal: st.axes.includes('palette') }];
+  else kinds = st.axes.map((a) => ({ title: axisTitle(a), keep: extra ? `+ “${short}”` : 'rest kept', pal: a === 'palette' }));
+  return { images: Array.from({ length: st.n }, (_, i) => kinds[i % kinds.length]), kinds };
+}
+
+function draw() {
+  // 1. change chips
+  $('axes').replaceChildren(...Object.entries(AXES).map(([k, [label]]) => el('button', { type: 'button', class: 'chip', 'aria-pressed': String(st.axes.includes(k)),
+    onclick: () => { st.axes = st.axes.includes(k) ? st.axes.filter((x) => x !== k) : [...st.axes, k]; draw(); } }, label)));
+
+  // palette: picked for you, or one of the proposed ones
+  const palOn = st.axes.includes('palette');
+  $('palette-sub').replaceChildren(palOn ? el('div', { class: 'sub' },
+    el('span', { class: 'label' }, 'Which palette'),
+    el('div', { class: 'pals', role: 'group', 'aria-label': 'Palette' },
+      el('button', { type: 'button', class: 'pal random', 'aria-pressed': String(st.pal === 'random'), onclick: () => { st.pal = 'random'; draw(); } },
+        sw(['', '', '', '', '']), 'Surprise me'),
+      Object.entries(PALS).map(([k, p]) => el('button', { type: 'button', class: 'pal', 'aria-pressed': String(st.pal === k), onclick: () => { st.pal = k; draw(); } },
+        sw(p.c), p.name))),
+    el('p', { class: 'hint muted small' }, st.pal === 'random'
+      ? 'A different palette per image, chosen to suit the style. Subject, framing and light stay.'
+      : `Every palette image uses ${PALS[st.pal].name}. Proposed from the style and from images you gave 👍.`)) : '');
+
+  // two or more changes: say how they combine, right where they're picked
+  $('combine-sub').replaceChildren(st.axes.length > 1 ? el('div', { class: 'sub' },
+    el('span', { class: 'label' }, `${plural(st.axes.length, 'change')} picked`),
+    el('div', { class: 'seg', role: 'group', 'aria-label': 'How the changes combine' },
+      el('button', { type: 'button', 'aria-pressed': String(st.combo === 'separate'), onclick: () => { st.combo = 'separate'; draw(); } }, 'One change per image'),
+      el('button', { type: 'button', 'aria-pressed': String(st.combo === 'together'), onclick: () => { st.combo = 'together'; draw(); } }, 'All changes in every image')),
+    el('p', { class: 'hint muted small' }, st.combo === 'separate'
+      ? `Each image changes one thing, so you see what each change does. ${st.axes.map((a) => AXES[a][0].toLowerCase()).join(', ')}, then round again.`
+      : `Every image changes ${st.axes.map((a) => AXES[a][0].toLowerCase()).join(' and ')} at once: further from the original, harder to tell which change did what.`)) : '');
+
+  drawIdeas();
+
+  // 3. closeness + count (count never moves by itself)
+  const noRef = st.models.some((m) => !MODELS[m].ref);
+  $('close').replaceChildren(...Object.entries(CLOSE).map(([k, [label]]) => el('button', { type: 'button', 'aria-pressed': String(st.close === k),
+    onclick: () => { st.close = k; draw(); } }, label)));
+  $('close-hint').textContent = CLOSE[st.close][1] + (noRef && !['loose', 'wild'].includes(st.close) ? ' Z-Image can\'t take an image, so its set works from the prompt only.' : '');
+  $('count').replaceChildren(...COUNTS.map((n) => el('button', { type: 'button', 'aria-pressed': String(st.n === n), onclick: () => { st.n = n; draw(); } }, String(n))));
+  const p = plan();
+  const k = p.kinds.length;
+  $('n-hint').textContent = k === 1 ? (st.n === 1 ? 'One image.' : `${st.n} takes on the same change, each a little different.`)
+    : st.n < k ? `Fewer images than changes: only the first ${st.n} get made.`
+    : st.n % k === 0 ? `${st.n / k} of each change.` : `Shared out in turn: ${st.n} images over ${k} changes.`;
+
+  // 4. models: each picked model makes the whole set
+  $('models').replaceChildren(...Object.entries(MODELS).map(([key, m]) => el('button', { type: 'button', class: 'chip mchip', 'aria-pressed': String(st.models.includes(key)),
+    onclick: () => { st.models = st.models.includes(key) ? st.models.filter((x) => x !== key) : [...st.models, key]; draw(); } }, m.name, el('small', {}, m.note))));
+  $('model-hint').textContent = !st.models.length ? 'Pick at least one model.'
+    : st.models.length === 1 ? 'The style\'s usual model is picked first. Pick more to compare: each makes the same set, side by side.'
+    : `Each model makes the same ${plural(st.n, 'image')}, in its own batch, so you can compare them.`;
+
+  // 5. plan tiles, one row per model
+  $('plan').replaceChildren(...(st.models.length ? st.models : ['chatgpt']).flatMap((mk) => [
+    st.models.length > 1 ? el('div', { class: 'plan-mdl' }, MODELS[mk].name) : '',
+    el('div', { class: 'plan-row' }, p.images.map((im) => el('div', { class: 'tile' },
+      im.pal && st.pal !== 'random' && sw(PALS[st.pal].c),
+      el('b', {}, im.title), el('span', { class: 'muted' }, im.keep))))]));
+
+  const total = st.n * Math.max(1, st.models.length);
+  const extra = st.extra.trim();
+  const what = !st.axes.length && !extra ? `one new palette, one new subject, one new framing${st.n > 3 ? ', and round again' : ''}`
+    : !st.axes.length ? `${st.n > 1 ? `${st.n} takes on ` : ''}“${extra}”`
+    : (p.kinds.length === 1 && st.n > 1 ? `${st.n} takes on ` : '') + [...new Set(p.images.map((i) => i.title))].join(' · ') + (extra ? `, ${st.n > 1 ? 'each ' : ''}with “${extra}”` : '');
+  const closeWord = { close: 'close to the original', balanced: 'near the original, free to move', loose: 'from the prompt only, more freedom', wild: 'a wild, experimental take: expect misses' }[st.close];
+  $('will').replaceChildren(el('strong', {}, `Will make ${plural(total, 'image')}`),
+    st.models.length > 1 ? ` (${plural(st.n, 'image')} × ${st.models.length} models)` : '',
+    `: ${what}. In the Dark cosmic glow style; everything not picked stays; ${closeWord}.`,
+    st.review ? el('span', { class: 'muted' }, ' You read the prompts first.') : '',
+    !st.hasPrompt && !st.own ? el('span', { class: 'muted' }, ' The original has no prompt on record, so Codex reads the image first (about 30 s).') : '');
+
+  drawCost(total);
+  const make = $('make');
+  make.disabled = !st.models.length;
+  make.textContent = st.review ? 'Write the prompts' : st.own ? 'Next: write the prompt' : `Make ${plural(total, 'image')}`;
+}
+
+// ------------------------------------------------------------------ ideas, five layouts
+function chip(s, q) {
+  const on = parts().includes(s);
+  let label = s;
+  if (q) { const i = s.toLowerCase().indexOf(q.toLowerCase()); if (i >= 0) label = [s.slice(0, i), el('mark', {}, s.slice(i, i + q.length)), s.slice(i + q.length)]; }
+  return el('button', { type: 'button', class: 's', 'aria-pressed': String(on), onclick: () => {
+    st.extra = on ? parts().filter((x) => x !== s).join(', ') : (st.extra.trim() ? `${st.extra.trim().replace(/[,.]$/, '')}, ${s}` : s);
+    $('extra').value = st.extra; draw(); } }, on ? '✓ ' : '+ ', label);
+}
+function drawIdeas() {
+  const box = $('ideas');
+  const used = (list) => list.filter((x) => parts().includes(x)).length;
+  // A picked idea always stays visible, even if it isn't among the first four of its card.
+  const shortList = (g, list) => [...new Set([...list.slice(0, 4), ...GROUPS[g].filter((x) => parts().includes(x))])];
+  const card = (g, list) => el('div', { class: 'card' },
+    el('span', { class: 'gh' }, g, used(GROUPS[g]) ? el('span', { class: 'n' }, ` ✓${used(GROUPS[g])}`) : ''),
+    el('div', { class: 'srow' }, list.map((x) => chip(x))));
+  const toggle = el('button', { type: 'button', class: 'linkbtn', 'aria-expanded': String(st.more), onclick: () => { st.more = !st.more; draw(); } },
+    st.more ? 'Fewer ideas ▴' : `More ideas (${ALL_IDEAS.length - RELEVANT.reduce((n, [, l]) => n + Math.min(4, l.length), 0)} more, ${Object.keys(GROUPS).length} groups) ▾`);
+  box.replaceChildren(
+    el('div', { class: 'ideas-head' }, el('span', { class: 'muted small' }, st.more ? 'All ideas, by group' : 'Picked for this image'), toggle),
+    st.more
+      ? el('div', { class: 'L-cards wide' }, Object.entries(GROUPS).map(([g, list]) => card(g, list)))
+      : el('div', { class: 'L-cards compact' }, RELEVANT.map(([g, list]) => card(g, shortList(g, list)))));
+}
+
+// ------------------------------------------------------------------ cost: one calm line per model; meters only when they matter
+function drawCost(total) {
+  const box = $('cost');
+  box.replaceChildren();
+  const ms = st.models.length ? st.models : [];
+  if (!ms.length) { box.append(el('p', { class: 'muted' }, 'No model picked, nothing to make.')); return; }
+  for (const k of ms) {
+    const m = MODELS[k];
+    const n = st.n;
+    const line = m.kind === 'tokens' ? [el('span', {}, `≈ ${(n * .25).toFixed(1)}–${(n * .75).toFixed(1)} % of the five-hour window`), el('span', { class: 'muted' }, ` · about ${n} min`)]
+      : m.kind === 'daily' ? [el('span', {}, 'Free'), el('span', { class: 'muted' }, ` · ${n} of ~80 today (51 left)`)]
+      : [el('span', {}, 'Free, no tokens'), el('span', { class: 'muted' }, ` · ~${Math.max(1, Math.round(m.sec * n / 60))} min on this laptop`)];
+    box.append(el('p', {}, ms.length > 1 && el('strong', {}, `${m.name}: `), line));
+  }
+  const chatN = ms.includes('chatgpt') ? st.n : 0;
+  if (chatN && st.win >= 70) {
+    const after = st.win + chatN * 0.75;
+    box.append(el('div', { class: 'meters' },
+      meter('Five-hour window', st.win, chatN * 0.75), meter('This week', 41, chatN * 0.1),
+      el('p', { class: `small ${after > 90 ? 'warn' : 'muted'}` },
+        after > 90 ? 'This would bring the window close to full. FLUX or a laptop model is free.' : 'Shown because the window is over 70 % used.')));
+  }
+}
+function meter(label, used, add) {
+  const a = Math.min(100 - used, add);
+  return el('div', { class: 'meter' }, el('span', {}, label),
+    el('span', { class: 'bar', role: 'meter', 'aria-valuenow': used, 'aria-label': `${label}: ${used} % used` },
+      el('i', { style: `width:${used}%` }), el('i', { class: 'add', style: `left:${used}%;width:${a}%` })),
+    el('span', { class: 'num' }, `${used} → ${Math.round(Math.min(100, used + add))} %`));
+}
+
+// wiring
+$('extra').addEventListener('input', (e) => { st.extra = e.target.value; draw(); });
+$('review').addEventListener('change', (e) => { st.review = e.target.checked; if (st.review) { st.own = false; $('own').checked = false; } draw(); });
+$('own').addEventListener('change', (e) => { st.own = e.target.checked; if (st.own) { st.review = false; $('review').checked = false; } draw(); });
+document.querySelectorAll('input[name=win]').forEach((r) => r.addEventListener('change', (e) => { st.win = +e.target.value; draw(); }));
+document.querySelectorAll('input[name=hasprompt]').forEach((r) => r.addEventListener('change', (e) => { st.hasPrompt = e.target.value === '1'; draw(); }));
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('make').click(); });
+$('make').addEventListener('click', () => { const b = $('make'); const t = b.textContent; b.textContent = 'Mockup: nothing is made'; setTimeout(() => (b.textContent = t), 1200); });
+draw();
+</script>
+</body>
+</html>

@@ -285,14 +285,6 @@ dialog.variations article { max-width: 40rem; width: 100%; }
 .var-head h3 { margin: 0 0 .15rem; font-size: 1.1rem; }
 dialog.variations fieldset { margin-bottom: 1.25rem; }
 dialog.variations legend { font-weight: 600; margin-bottom: .25rem; }
-.style-opts { display: grid; gap: .35rem; margin-bottom: .6rem; }
-.style-opt { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: .6rem;
-             padding: .45rem .7rem; border: 1px solid var(--line); border-radius: var(--radius); margin: 0; cursor: pointer; }
-.style-opt:hover { background: var(--surface); }
-.style-opt.is-on { border-color: #8a8a8a; background: var(--surface); }
-.style-opt input { margin: 0; }
-.style-opt small { min-width: 6rem; text-align: right; }
-.other select { margin-top: .3rem; margin-bottom: 0; }
 .count { margin-bottom: .75rem; }
 .count button { font-size: .88rem; padding: .45rem .6rem; }
 .cost { background: var(--surface); border-radius: var(--radius); padding: .8rem 1rem; }
@@ -315,6 +307,8 @@ dialog.variations legend { font-weight: 600; margin-bottom: .25rem; }
 .meter { display: grid; grid-template-columns: 9rem 1fr 6rem; align-items: center; gap: .75rem; font-size: .88rem; }
 .meter .bar { height: 6px; background: #2e2e2e; border-radius: 3px; overflow: hidden; }
 .meter .bar i { display: block; height: 100%; background: #cfcfcf; border-radius: 3px; }
+.meter .bar { position: relative; }
+.meter .bar i.add { position: absolute; inset: 0 auto 0 auto; background: repeating-linear-gradient(90deg, #cfcfcf 0 3px, transparent 3px 5px); border-radius: 0; }
 .meter .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--pico-muted-color); }
 pre.log { font-size: .8rem; max-height: 50vh; overflow: auto; white-space: pre-wrap; background: var(--surface); padding: .75rem; }
 
@@ -575,21 +569,15 @@ dialog.preview-dialog article { max-width: 52rem; }
 /* Remix and note dialogs */
 dialog.variations footer { display: flex; gap: .5rem; align-items: center; }
 dialog.variations footer button { margin: 0; width: auto; }
-dialog.remix article { max-width: 46rem; }
+dialog.remix article { max-width: 48rem; }
 dialog.remix textarea { font-size: .92rem; }
-.quick { display: flex; flex-wrap: wrap; gap: .35rem; margin: -.25rem 0 1rem; }
 .chip-btn { width: auto; margin: 0; padding: .2rem .65rem; font-size: .8rem; border-radius: 99px; background: transparent;
             border: 1px solid var(--line); color: var(--pico-muted-color); }
 .chip-btn:hover { color: var(--text); border-color: #555; }
-.locks { display: flex; flex-wrap: wrap; gap: .25rem 1.1rem; }
-.locks .nr-check { margin: .2rem 0; }
 .remix-summary { font-size: .9rem; background: var(--surface); border-radius: var(--radius); padding: .5rem .8rem; }
 .diff { white-space: normal; }
 .diff ins { text-decoration: none; background: #e4e4e4; color: #111; border-radius: 2px; padding: 0 .15em; }
 .diff del { color: #7a7a7a; }
-.change-opts { display: grid; gap: .35rem; margin-bottom: .8rem; }
-.change-opts .style-opt { grid-template-columns: auto 7rem 1fr; width: 100%; }
-.change-opts .style-opt small { text-align: left; min-width: 0; }
 dialog.note-dialog article { max-width: 36rem; }
 .note-dialog .about { margin-bottom: .75rem; }
 .notes-card { grid-column: 1 / -1; }
@@ -828,7 +816,6 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
 .made-with { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .25rem 0 .5rem; }
 .try-row { display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
 .try-row select, select.try-with { margin: 0; width: auto; padding: .25rem 2rem .25rem .5rem; font-size: .85rem; height: auto; }
-.multi-cost { margin: .25rem 0 0; padding-left: 1.1rem; }
 .local-chip { font-size: .8rem; padding: .15rem .6rem; border: 1px solid var(--line); border-radius: 99px; color: var(--text); text-decoration: none; white-space: nowrap; }
 .local-note { margin: .5rem 0; }
 .models-page { max-width: 72rem; }
@@ -870,3 +857,64 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
   .topbar nav a[data-nav] { padding-inline: .3rem; margin-inline: 0; font-size: .88rem; }
   .job-chip { max-width: min(34rem, 26vw); }
 }
+
+/* Remix (25 Nov 2026): one dialog for Remix and Variations. Pure greys, like the rest; sizes follow the mockup in docs/mockups. */
+dialog.remix button { width: auto; margin: 0; }
+dialog.remix .rx-row { margin-bottom: 1.25rem; }
+dialog.remix .rx-label { display: block; font-weight: 600; margin-bottom: .4rem; }
+dialog.remix .rx-label .muted { font-weight: 400; }
+dialog.remix .rx-hint { margin: .4rem 0 0; }
+dialog.remix .rx-chips, dialog.remix .rx-srow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+dialog.remix .rx-chip { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: .35rem .85rem; font-size: .92rem; }
+dialog.remix .rx-chip:hover { background: var(--surface-2); }
+dialog.remix .rx-chip[aria-pressed=true] { background: var(--pico-primary-background); color: var(--pico-primary-inverse); border-color: var(--pico-primary-background); font-weight: 600; }
+dialog.remix .rx-chip small { font-weight: 400; opacity: .75; margin-left: .3rem; }
+dialog.remix .rx-s { border: 1px dashed var(--line); background: transparent; border-radius: 999px; padding: .12rem .5rem; font-size: .76rem; color: var(--pico-muted-color); }
+dialog.remix .rx-s:hover { color: var(--text); background: var(--surface-2); }
+dialog.remix .rx-s[aria-pressed=true] { border-style: solid; color: var(--text); background: var(--surface-2); }
+dialog.remix .rx-link { border: 0; background: none; padding: .2rem .1rem; color: var(--text); font-size: .85rem; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #666; }
+dialog.remix .rx-link:hover { text-decoration-color: var(--text); }
+dialog.remix .rx-sub { margin-top: .6rem; padding: .7rem .85rem; background: var(--surface); border-radius: var(--radius); border-left: 2px solid #555; }
+dialog.remix .rx-sub .rx-label { font-size: .9rem; margin-bottom: .35rem; }
+dialog.remix .rx-pals { display: flex; flex-wrap: wrap; gap: .45rem; }
+dialog.remix .rx-pal { display: flex; flex-direction: column; gap: .25rem; align-items: flex-start; border: 1px solid var(--line); background: var(--pico-card-background-color);
+  border-radius: var(--radius); padding: .4rem .5rem; font-size: .78rem; color: var(--pico-muted-color); }
+dialog.remix .rx-pal:hover { border-color: #777; }
+dialog.remix .rx-pal[aria-pressed=true] { border-color: var(--text); color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+dialog.remix .sw { display: flex; }
+dialog.remix .sw i { width: 16px; height: 16px; display: block; }
+dialog.remix .sw i:first-child { border-radius: 3px 0 0 3px; } dialog.remix .sw i:last-child { border-radius: 0 3px 3px 0; }
+dialog.remix .rx-pal.random .sw i { background: repeating-linear-gradient(45deg, #444 0 3px, #2a2a2a 3px 6px); }
+dialog.remix textarea { margin-bottom: 0; }
+dialog.remix .rx-ideas { margin-top: .55rem; }
+dialog.remix .rx-ideas-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .35rem; }
+dialog.remix .rx-cards { display: grid; gap: .45rem; }
+dialog.remix .rx-cards.compact { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 760px) { dialog.remix .rx-cards.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+dialog.remix .rx-cards.wide { grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); max-height: 22rem; overflow-y: auto; padding-right: .2rem; }
+dialog.remix .rx-card { border: 1px solid #333; border-radius: .5rem; padding: .45rem .5rem .5rem; background: #1a1a1a; }
+dialog.remix .rx-gh { display: block; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #c8c8c8; margin-bottom: .25rem; }
+dialog.remix .rx-gh .n { color: var(--pico-muted-color); letter-spacing: 0; }
+dialog.remix .rx-seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; flex-wrap: wrap; }
+dialog.remix .rx-seg button { border: 0; border-radius: 0; background: transparent; color: var(--text); padding: .38rem .8rem; font-size: .92rem; }
+dialog.remix .rx-seg button + button { border-left: 1px solid var(--line); }
+dialog.remix .rx-seg button:hover { background: var(--surface-2); }
+dialog.remix .rx-seg button[aria-pressed=true] { background: var(--pico-primary-background); color: var(--pico-primary-inverse); font-weight: 600; }
+dialog.remix .rx-two { display: flex; flex-wrap: wrap; gap: 1rem 2rem; }
+dialog.remix .rx-two > div { flex: 1 1 18rem; min-width: 0; }
+dialog.remix .rx-two .rx-seg { flex-wrap: nowrap; }
+dialog.remix .rx-plan { display: grid; gap: .5rem; }
+dialog.remix .rx-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr)); gap: .5rem; }
+dialog.remix .rx-mdl { font-size: .78rem; color: var(--pico-muted-color); margin: .3rem 0 -.1rem; }
+dialog.remix .rx-tile { aspect-ratio: 1; border: 1px dashed var(--line); border-radius: var(--radius); padding: .45rem; display: flex; flex-direction: column;
+  justify-content: flex-end; font-size: .76rem; gap: .1rem; background: linear-gradient(180deg, transparent 40%, rgba(255,255,255,.03)); overflow: hidden; }
+dialog.remix .rx-tile b { font-size: .82rem; line-height: 1.2; }
+dialog.remix .rx-tile .sw i { width: 10px; height: 10px; }
+dialog.remix .rx-will { margin: .7rem 0 0; }
+dialog.remix .rx-cost { margin-top: 1rem; }
+dialog.remix .rx-more { margin-top: 1rem; border-top: 1px solid var(--pico-muted-border-color); padding-top: .7rem; }
+dialog.remix .rx-more summary { color: var(--pico-muted-color); }
+dialog.remix .rx-more-body { display: grid; gap: .7rem; margin-top: .7rem; }
+dialog.remix footer .keys kbd { font-size: .75rem; }
+dialog.remix [role=group] > * { flex: 0 0 auto; }
+dialog.remix .rx-chips[role=group], dialog.remix .rx-pals[role=group] { display: flex; flex-wrap: wrap; }

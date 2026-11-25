@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 25 Nov 2026 (the ChatGPT model badge now reads Codex). This guide changes with the app.</p>
+<p class="muted small">Last updated 25 Nov 2026 (Remix and Variations are one Remix dialog). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -19,7 +19,6 @@
   <a href="#/guide/newrun">New run</a>
   <a href="#/guide/queue">Runs and queue</a>
   <a href="#/guide/remix">Remix</a>
-  <a href="#/guide/variations">Variations</a>
   <a href="#/guide/gallery">Gallery</a>
   <a href="#/guide/styles">Styles</a>
   <a href="#/guide/taste">Taste</a>
@@ -193,7 +192,7 @@
   <ol>
     <li><strong>Number, style and kind.</strong></li>
     <li><strong>Thumbs and why</strong>, with a line saying what your thumb did (see Rating).</li>
-    <li><strong>Actions</strong>: <strong>Keep as example</strong> (<kbd>X</kbd>, see Taste), Remix… (<kbd>R</kbd>), Variations… (<kbd>V</kbd>), Change the style… (<kbd>E</kbd>),
+    <li><strong>Actions</strong>: <strong>Keep as example</strong> (<kbd>X</kbd>, see Taste), Remix… (<kbd>R</kbd> or <kbd>V</kbd>), Change the style… (<kbd>E</kbd>),
       Note for Claude… (<kbd>C</kbd>), and Ignore (<kbd>I</kbd>) or Restore when it has no thumb.</li>
     <li><strong>More like this</strong>: the 8 existing images that look most like this one, by colour and framing
       (not by subject). Free: nothing is made. <strong>Same style only</strong> narrows it to this style. Click one to
@@ -289,7 +288,7 @@
       references</strong> (on by default; up to 2 with each image, no extra images spent). The result then stays closer
       to those examples; untick it for a fresh start. The preview shows which images go with which prompt.</li>
     <li>The cost block shows images, minutes and allowance (see Allowance).</li>
-    <li><strong>Made with</strong>, at the top of the cost block (also in Remix, Variations and Try with): one of five
+    <li><strong>Made with</strong>, at the top of the cost block (also in Remix and Try with): one of five
       models. <strong>Codex</strong> (best quality, closest to the style, uses the Codex allowance),
       <strong>FLUX</strong> (free, about 80 images a day on Cloudflare; good for drafts and simpler scenes), and three
       on this laptop, free and with no tokens: <strong>FLUX local</strong>, <strong>Z-Image</strong> and
@@ -343,44 +342,35 @@
 
 <section id="guide-remix">
   <h2>Remix</h2>
-  <p>A new image from one you made, changed the way you say. Large view → <strong>Remix…</strong> or <kbd>R</kbd>.</p>
+  <p>More images from one you made, in its own style (this was Remix and Variations; they are one dialog now). Large view →
+    <strong>Remix…</strong>, <kbd>R</kbd> or <kbd>V</kbd>. Nothing is spent until you press Make.</p>
   <ol>
-    <li><strong>What should change?</strong> Write it, or click quick picks: seen from far above, a closer view, wider
-      with more empty space, at night, warmer light, less busy, no people, more saturated colour, calmer mood.</li>
-    <li><strong>Must stay the same</strong> (optional): Subject, Palette, Composition, Light, Medium.</li>
-    <li><strong>Send this image along as a reference</strong>: on, the result stays close; off, only the prompt
-      counts and there is more freedom.</li>
-    <li><strong>Write the new prompt</strong>: Codex rewrites it (about 15 s, nothing spent). An image with no
-      prompt on record gets one written from the image itself, with your change made (about 30 s). Or
-      <strong>Edit the prompt myself</strong>.</li>
-    <li>Read the new prompt with added words marked and removed ones struck through; <strong>Edit</strong> it if
-      needed.</li>
-    <li>Choose 1, 2 or 4 and make them. Only this step spends allowance.</li>
+    <li><strong>Change</strong>: pick any of <strong>Palette</strong>, <strong>Subject</strong>, <strong>Light</strong>,
+      <strong>Composition</strong>. Pick none and you get one of each (palette, subject, composition). Palette opens a panel:
+      <strong>Surprise me</strong> (a different palette per image, suited to the style) or one of up to five palettes, with
+      swatches, from the image's style and from images of that style you gave 👍. With two or more changes, choose
+      <strong>One change per image</strong> (you see what each does) or <strong>All changes in every image</strong>.</li>
+    <li><strong>Anything else?</strong>: words that go into every image. Under it, four cards of ideas "picked for this
+      image" (click to add to the text, click again to take out; a ✓ and a count show what is used). <strong>More ideas</strong>
+      opens all eight groups, Experimental included. The groups you use most come first.</li>
+    <li><strong>How close to the original</strong>: <strong>Close</strong> (the original goes along as a reference),
+      <strong>Balanced</strong> (reference sent, free to move away), <strong>Loose</strong> (prompt only) or
+      <strong>Wild ✦</strong> (prompt only, asked to reinterpret boldly: expect misses and a few surprises). Z-Image can't
+      take an image, so its set always works from the prompt only.</li>
+    <li><strong>How many images</strong>: 1, 2, 3, 4, 6, 8 or 12. The changes never move it. Fewer images than changes: only the
+      first ones are made; more: they are shared out in turn.</li>
+    <li><strong>Made with</strong>: tick one or more models. Each makes the whole set in its own batch, with the model in its
+      name, to compare. The style's usual model is ticked first; Local only limits the choice to this laptop.</li>
+    <li><strong>What you'll get</strong>: one tile per image, then a sentence saying what will be made, and one cost line per
+      model. The two usage meters appear only when the five-hour window is over 70 % used.</li>
+    <li><strong>More options</strong>: <strong>Review the prompts before making</strong> (Codex writes one prompt per kind of
+      image, about 15 s each and nothing spent; you read them with added words marked and removed ones struck through, and
+      edit) or <strong>Write the prompt myself</strong> (start from the original prompt). An image with no prompt on record
+      gets one written from the image first (about 30 s).</li>
   </ol>
-  <p>The remix lands in its own batch, linked back to the original under "Made from".</p>
-</section>
-
-<section id="guide-variations">
-  <h2>Variations</h2>
-  <p>A few images from one, each changing one thing. Large view → <strong>Variations…</strong> or <kbd>V</kbd>.</p>
-  <ol>
-    <li><strong>Style</strong>: confirm it. A guess (top 3, plus the style it was made with) reads colour and
-      composition only and is right first time about a third of the time, so look and pick. "Another style" lets
-      you try the image in a different style.</li>
-    <li><strong>What changes</strong>, one image per tick:
-      <ul>
-        <li><strong>Palette</strong>: palette and light pulled to the style; subject and framing kept.</li>
-        <li><strong>Subject</strong>: new subject; palette, light and framing kept (optionally write it).</li>
-        <li><strong>Composition</strong>: new framing; palette and subject kept.</li>
-        <li><strong>Mood</strong>: other time of day; subject and framing kept.</li>
-      </ul></li>
-    <li><strong>In every variation</strong> (optional): add or remove something, like "no planet in the sky".</li>
-    <li><strong>Made with</strong>: tick one or more models, or <strong>All</strong>, to get one set of variations per
-      model, each in its own batch with the model in its name, to compare. FLUX local edits the seed, Playground
-      starts from it, and Z-Image can't take an image, so it works from the seed's prompt plus the change (its option
-      says so). The style's default model is ticked first.</li>
-    <li>Check the cost (one line per model when there are several) and start.</li>
-  </ol>
+  <p>Each model's remix lands in its own batch, linked back to the original under "Made from", with the original as its
+    <strong>Seed</strong> tile (hold <kbd>S</kbd> in the large view to compare). Older remix and variations batches look as
+    they did.</p>
 </section>
 
 <section id="guide-gallery">
@@ -403,7 +393,7 @@
     <li>The filters and the words are in the address, so Back and reload keep them.</li>
   </ul>
   <p>Click an image for the large view. It is the same as the batch large view (see Large view): thumbs and a
-    why, <strong>Keep as example</strong>, <strong>Remix…</strong>, <strong>Variations…</strong>, <strong>Change
+    why, <strong>Keep as example</strong>, <strong>Remix…</strong>, <strong>Change
     the style…</strong>, <strong>Note for Claude…</strong>, <strong>More like this</strong>, <strong>How it got here</strong>, Download, 1 : 1, Full screen, the details
     with links to its <strong>style</strong> (on Taste) and its <strong>batch</strong>, and the prompt with Copy.
     ← → step through the Gallery as filtered. Two things stay in the batch view only: Ignore (the Gallery leaves
@@ -423,7 +413,7 @@
     starts a new one from 1 to 4 pictures (<a href="#/guide/newstyle">New style from images</a>).</p>
   <ul>
     <li><strong>Switch off</strong> (archive): the style is no longer offered in New run, in Suggestions or in the style
-      guesses of Remix and Variations. Its images stay in the Gallery and in the Overview chart (marked "archived"). It acts at
+      shown for Remix. Its images stay in the Gallery and in the Overview chart (marked "archived"). It acts at
       once and says <strong>Undo</strong>. Switched-off styles are folded under <strong>Archived</strong>, here and at the bottom
       of Taste, each with <strong>Switch back on</strong>.</li>
     <li>While a run uses a style, or Codex is still writing suggestions for it, its switch stays On with a 🔒 for those minutes (hover it to see why). Suggestions that are ready and waiting for you don't lock it: switching the style off sets them aside, and switching it back on brings them back. Styles that are off are dimmed as a whole row, under Archived.</li>
@@ -471,7 +461,7 @@
       Codex week for ChatGPT, free images left today for FLUX, laptop minutes for the local ones.</li>
     <li><strong>One style, every model</strong>: pick a style to see each model's latest images of it, side by side
       (the 24 Nov test images first: the same prompt on every local model), with the 👍 rate. <strong>Make
-      default</strong> sets the model that style starts with in New run, One image, Remix and Variations; press
+      default</strong> sets the model that style starts with in New run, One image and Remix; press
       <strong>✓ Default</strong> again to clear it. The address keeps the style, for example
       <code>#/models/erotic</code>.</li>
   </ul>
@@ -620,7 +610,7 @@
       <tr><td><kbd>X</kbd></td><td>Large view</td><td>Keep as example of its style, or stop</td></tr>
       <tr><td><kbd>Enter</kbd></td><td>Large view</td><td>Type a why; again saves and moves on</td></tr>
       <tr><td><kbd>R</kbd></td><td>Large view</td><td>Remix</td></tr>
-      <tr><td><kbd>V</kbd></td><td>Large view</td><td>Variations</td></tr>
+      <tr><td><kbd>V</kbd></td><td>Large view</td><td>Remix (the same dialog as <kbd>R</kbd>)</td></tr>
       <tr><td><kbd>E</kbd></td><td>Large view</td><td>Change the style</td></tr>
       <tr><td><kbd>C</kbd></td><td>Large view</td><td>Note for Claude</td></tr>
       <tr><td><kbd>S</kbd> (hold)</td><td>Batch large view</td><td>Show the seed in place</td></tr>
@@ -692,7 +682,7 @@
 
   <h3>Find out what you like about an image</h3>
   <ol>
-    <li>Open it and press <kbd>V</kbd>, tick palette, subject, composition and mood.</li>
+    <li>Open it and press <kbd>V</kbd> and pick nothing (one palette, one subject, one framing), or tick Palette, Subject, Light and Composition.</li>
     <li>In the new batch, hold <kbd>S</kbd> on each to compare with the original.</li>
     <li>Thumb them: you see which single change worked, and the style learns it too.</li>
   </ol>

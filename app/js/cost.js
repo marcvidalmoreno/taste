@@ -20,19 +20,22 @@ export async function allowance(fresh = false) {
 }
 
 // A used-percentage meter: one thin bar, the number written next to it (never colour alone).
-export function meter(label, used) {
+// add: what this run would add (Remix): a hatched stretch after the used part, and "used → after %".
+export function meter(label, used, add = 0) {
   const pct = Math.max(0, Math.min(100, Number(used) || 0));
+  const more = Math.max(0, Math.min(100 - pct, Number(add) || 0));
   return h('div', { class: 'meter' },
     h('span', {}, label),
     h('span', { class: 'bar', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct,
-                'aria-label': `${label}: ${pct} % used` }, h('i', { style: { width: pct + '%' } })),
-    h('span', { class: 'num' }, `${pct} % used`));
+                'aria-label': `${label}: ${pct} % used` }, h('i', { style: { width: pct + '%' } }),
+      more > 0 && h('i', { class: 'add', style: { left: pct + '%', width: more + '%' } })),
+    h('span', { class: 'num' }, more > 0 ? `${pct} → ${Math.round(pct + more)} %` : `${pct} % used`));
 }
 
 // a: GET /api/allowance (or {error}), n: images this run would make, extra: e.g. 'Codex writes subjects first: ~15 s each'
 // onRoute: redraw callback; given, the block starts with the "Made with" choice (ChatGPT or FLUX on Cloudflare).
 // style: the style this run is for (its default model is picked once); seed: the run starts from an image.
-// picker: false leaves out the "Made with" choice (Variations has its own, for several models).
+// picker: false leaves out the "Made with" choice.
 export function costBlock(a, n, { extra = '', compact = false, onRoute = null, style = '', seed = false, picker = true } = {}) {
   if (onRoute) preselect(style);
   const pick = onRoute && picker && routePicker(onRoute, style);
@@ -185,19 +188,6 @@ function localBlock(a, n, m, extra, seed) {
     h('p', { class: 'muted small' }, `About ${Math.round(secs / 60 * 10) / 10} min per image here, plus a minute to load the model. `
       + 'The laptop works hard meanwhile; ComfyUI starts by itself and lets go of the memory after the run.'),
   ];
-}
-
-// Several models at once (Variations): one short line per model, what it costs.
-export function multiCost(a, n, models) {
-  if (!a) return h('section', { class: 'cost', 'aria-busy': 'true' }, 'Reading the allowance…');
-  return h('section', { class: 'cost' },
-    h('p', { class: 'cost-main' }, h('strong', {}, plural(n * models.length, 'image')),
-      h('span', { class: 'muted' }, ` · ${plural(models.length, 'set')} of ${n}, one per model, each in its own batch`)),
-    h('ul', { class: 'small multi-cost' }, models.map((m) => h('li', {}, h('strong', {}, MODELS[m].badge), ': ',
-      MODELS[m].local ? `free, about ${Math.max(1, Math.round((n * localSeconds(a, m)) / 60) + 1)} min of laptop time`
-        + (m === 'zimage' ? ' (from the seed\'s prompt: it can\'t take an image)' : '')
-        : m === 'cloudflare' ? (a.cloudflare?.connected ? `free, about ${a.cloudflare.images_left} left today` : 'connect Cloudflare first (New run)')
-          : `about ${pct(n * (a.week_per_image || 0.1))} of the Codex week`))));
 }
 
 // Connect once: account ID and an API token, kept on this laptop outside the repo (never shown again).

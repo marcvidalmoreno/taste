@@ -2,7 +2,6 @@
 // inside it, the page behind is inert, and Esc closes it.
 import { store, item, styleName, kindOf, onChange, changed, visible } from './store.js';
 import { toggleMark, setWhy, flushWhy, ignoreWithUndo, markButtons, setKept, keepButton, setPublished, publishButton } from './marks.js';
-import { openVariations } from './variations.js';
 import { openRemix } from './remix.js';
 import { openNote } from './notes.js';
 import { openStyleEdit } from './styleedit.js';
@@ -141,7 +140,7 @@ function drawPanel(im) {
     details(im),
     h('footer', { class: 'keys muted small' },
       h('kbd', {}, '←'), h('kbd', {}, '→'), ' move  ', h('kbd', {}, 'U'), h('kbd', {}, 'D'),
-      ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'R'), ' remix  ', h('kbd', {}, 'V'), ' variations  ',
+      ' up / down  ', h('kbd', {}, 'Enter'), ' why  ', h('kbd', {}, 'I'), ' ignore  ', h('kbd', {}, 'R'), ' or ', h('kbd', {}, 'V'), ' remix  ',
       h('kbd', {}, 'X'), ' keep as example  ', h('kbd', {}, 'P'), ' publish  ', h('kbd', {}, 'E'), ' change style  ', h('kbd', {}, 'C'), ' note  ', h('kbd', {}, '1'), ' real pixels  ',
       h('kbd', {}, 'F'), ' full screen  ', h('kbd', {}, 'Esc'), ' close'));
 }
@@ -178,8 +177,7 @@ function actions(im) {
   return h('section', { class: 'actions' },
     keepButton(im, () => keepOf(im)),
     publishButton(im, () => publishOf(im)),
-    h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'Say what should change; Codex rewrites the prompt' }, 'Remix… ', h('kbd', {}, 'R')),
-    h('button', { class: 'secondary outline', onClick: () => variationsOf(im) }, 'Variations… ', h('kbd', {}, 'V')),
+    h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'More images from this one, in its style: pick what changes, how close, how many' }, 'Remix… ', h('kbd', {}, 'R')),
     im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
     h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C')),
     !im.draft?.rating && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
@@ -189,7 +187,6 @@ function actions(im) {
 const keepOf = (im) => setKept(im, store.data.batch, !im.kept).then(() => drawPanel(im)).catch(() => {});
 // changed() redraws this panel and the grid tile underneath.
 const publishOf = (im) => setPublished(im, store.data.batch, !im.published).then(() => changed(im.name, 'publish')).catch(() => {});
-const variationsOf = (im) => openVariations({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style });
 const remixOf = (im) => openRemix({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style, prompt: im.prompt });
 const styleOf = (im) => im.style && openStyleEdit({ style: im.style, batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}` });
 const noteOn = (im) => openNote({ batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}`, style: im.style });
@@ -280,7 +277,7 @@ function onKey(e) {
   else if (key === 'i') { if (!im.draft?.rating) ignoreAndMove(im.name); }
   else if (key === '1') toggleFit();
   else if (key === 'f') toggleFullscreen();
-  else if (key === 'v') variationsOf(im);
+  else if (key === 'v') remixOf(im);   // V and R open the same dialog (habit)
   else if (key === 'r') remixOf(im);
   else if (key === 'c') noteOn(im);
   else if (key === 'e') styleOf(im);
