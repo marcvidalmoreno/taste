@@ -471,8 +471,13 @@ def gen_local(a, out, refs, ref):
             sent = f'{base} Change for this image: {a.prompt.split("Style notes")[0].strip()}' if base else a.prompt
             note = "Z-Image takes no image: sent the seed's prompt plus the change"
         seed = None
-    if seed and model == 'klein' and has_person(sent, seed):
-        sent += FLUX_ANATOMY
+    if model == 'klein':   # people on FLUX local, with or without a seed (25 Nov 2026: new images had no guard)
+        if note:   # a remix sent as FLUX_EDIT
+            if has_person(wish, seed):
+                sent += FLUX_ANATOMY
+        else:
+            sent, people = flux_people(a, sent, [seed] if seed else [], False)
+            note = f'sent as {people}' if people else note
     start = time.time()
     png = out / f'{a.name}.png'
     ok, why, text = local_run.make(model, sent, a.style, a.ratio, png, ref=seed)
