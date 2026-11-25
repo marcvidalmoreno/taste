@@ -462,6 +462,11 @@ def gen_local(a, out, refs, ref):
     seed = refs[0] if refs and not a.refs_kept else None
     sent, note = a.prompt, ''
     wish = (a.change or '').removeprefix('remix:').strip()
+    if model == 'klein' and not seed and has_person(sent):
+        # 25 Nov 2026: 8-image test, FLUX local drew an extra arm or hand in 2 of 4 people images, Z-Image in none.
+        # New images with a person go to Z-Image; seeded edits stay on FLUX local (Z-Image can't take an image).
+        sent = _drop_people_avoid(sent)
+        model, note = 'zimage', 'person in a new image: made with Z-Image instead of FLUX local (better bodies)'
     if seed and model == 'klein' and a.mode == 'remix' and wish and wish != 'prompt edited':
         sent, note = FLUX_EDIT.format(wish), 'sent as an edit of the seed (FLUX_EDIT)'
     elif seed and model == 'zimage':
