@@ -93,10 +93,10 @@ def prompts(model, style_key, st, subject):
     return f'{subject}. {pos.strip()}', neg
 
 
-def call(path, body=None):
+def call(path, body=None, timeout=60):
     req = urllib.request.Request(API + path, data=json.dumps(body).encode() if body is not None else None,
                                  headers={'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=60) as r:
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
 
 
@@ -167,6 +167,16 @@ def run(a):
                 print('two failures in a row: stopping', file=sys.stderr)
                 break
     prog.end()
+    free()
+
+
+def free():
+    """Ask ComfyUI to drop its loaded models, so it stops holding ~12-28 GB of RAM between runs."""
+    try:
+        call('/free', {'unload_models': True, 'free_memory': True}, timeout=300)  # slow when RAM is full
+        print('ComfyUI models unloaded')
+    except Exception as e:
+        print(f'could not unload ComfyUI models: {e}', file=sys.stderr)
 
 
 def blind(a):
@@ -212,5 +222,6 @@ if __name__ == '__main__':
     b = sub.add_parser('blind')
     b.add_argument('--match', nargs='*', default=['erotic', 'retro-future-rooms', 'dubuffet'])
     sub.add_parser('speed')
+    sub.add_parser('free')
     a = p.parse_args()
-    {'run': run, 'blind': blind, 'speed': speed}[a.cmd](a)
+    {'run': run, 'blind': blind, 'speed': speed, 'free': lambda _a: free()}[a.cmd](a)
