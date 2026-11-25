@@ -14,6 +14,9 @@ const MADE = {
   mood: 'Other time of day; subject and framing kept',
 };
 
+// What each local model does with the seed image (Made with, 25 Nov 2026).
+const SEED = { edit: 'edits the seed', img2img: 'starts from the seed', prompt: "from the seed's prompt: it can't take an image" };
+
 // src: {batch, file, label, style}  (label like "#3" or "the seed")
 export async function openVariations(src) {
   const all = await styles();
@@ -101,7 +104,6 @@ export async function openVariations(src) {
   }
 
   // Made with: one or more models, or All; each makes its own set, in its own batch.
-  const SEED = { edit: 'edits the seed', img2img: 'starts from the seed', prompt: "from the seed's prompt: it can't take an image" };
   function modelSection() {
     const keys = isLocalOnly() ? LOCAL : Object.keys(MODELS);
     state.models = state.models.filter((m) => keys.includes(m));
