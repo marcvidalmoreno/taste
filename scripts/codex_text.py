@@ -17,6 +17,10 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_text.py compose --text "<what Marc wants>" --palette "#112233,#aabbcc" --ratio "<sentence>"
         # palette only, no style (24 Nov 2026): Codex writes the whole prompt from Marc's text and the palette
   add --dry-run to any of them: no Codex call, a stand-in answer at once (for trying the web app)
+  add --local to subjects, rewrite (with --prompt) or compose: a local Ollama model writes it instead of Codex, no
+        tokens (the web app's "Local only", 25 Nov 2026). ComfyUI's models are unloaded first and Ollama is called with
+        keep_alive 0, so the two never hold the laptop's shared memory at once. Model: TASTE_TEXT_MODEL, else the
+        first of LOCAL_TEXT_MODELS that Ollama has.
 
 Prints one JSON object on stdout: {"subjects": [...]}, {"prompt": "...", "summary": "..."} or, for style,
 {"changes": {<field>: <new value>}, "summary": "..."}: a proposal only. This script never writes the style; the web
@@ -34,6 +38,9 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / 'generated' / 'codex'
 WORK = BASE / '.text'
 LOG = BASE / 'text-runs.csv'
+OLLAMA = 'http://127.0.0.1:11434'
+LOCAL_TEXT_MODELS = ['qwen3:8b', 'qwen2.5-coder:7b', 'qwen2.5-coder:14b']   # first one installed wins
+LOCAL = [False]   # --local: ask() goes to Ollama
 
 SUBJECTS = """You write subjects for image prompts. Do not run commands, do not read or write files. Answer with JSON only.
 
@@ -135,8 +142,69 @@ def recent_subjects(style, limit=40):
     return list(dict.fromkeys(reversed(out)))[:limit]
 
 
+def ollama(path, body=None, timeout=10):
+    import urllib.request
+    req = urllib.request.Request(OLLAMA + path, data=json.dumps(body).encode() if body is not None else None,
+                                 headers={'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read())
+
+
+def local_model():
+    """The Ollama model for text jobs; starts Ollama hidden if it isn't running."""
+    try:
+        have = [m['name'] for m in ollama('/api/tags')['models']]
+    except OSError:
+        subprocess.Popen(['ollama', 'serve'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         creationflags=0x08000000 if sys.platform == 'win32' else 0)
+        for _ in range(20):
+            time.sleep(1)
+            try:
+                have = [m['name'] for m in ollama('/api/tags')['models']]
+                break
+            except OSError:
+                continue
+        else:
+            sys.exit('Ollama is not running and did not start')
+    import os
+    want = os.environ.get('TASTE_TEXT_MODEL')
+    for m in ([want] if want else []) + LOCAL_TEXT_MODELS:
+        if m in have:
+            return m
+    sys.exit('no local text model in Ollama (wanted one of: ' + ', '.join(LOCAL_TEXT_MODELS) + ')')
+
+
+def ask_local(task, text):
+    """One Ollama call, JSON answer, keep_alive 0 (unloads right after). ComfyUI's models are unloaded first."""
+    try:
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        import local_run
+        local_run.free(quiet=True)
+    except Exception:
+        pass
+    model = local_model()
+    start = time.time()
+    try:
+        d = ollama('/api/generate', {'model': model, 'prompt': text, 'stream': False, 'format': 'json',
+                                     'keep_alive': 0, 'think': False, 'options': {'temperature': 0.8}}, timeout=300)
+    except OSError as e:
+        log(f'{task} (local)', round(time.time() - start), False)
+        sys.exit(f'the local model ({model}) gave no answer: {e}')
+    secs = round(time.time() - start)
+    answer = d.get('response', '')
+    log(f'{task} (local {model})', secs, bool(answer.strip()))
+    if not answer.strip():
+        sys.exit(f'the local model ({model}) gave no answer')
+    return answer, secs
+
+
 def ask(task, text, effort='low', images=()):
-    """One codex exec, read-only, empty folder, images attached if any. Returns (answer text, seconds)."""
+    """One codex exec, read-only, empty folder, images attached if any. Returns (answer text, seconds).
+    With --local (text only): the local Ollama model instead."""
+    if LOCAL[0]:
+        if images:
+            sys.exit('looking at an image uses ChatGPT tokens – turn off Local only')
+        return ask_local(task, text)
     WORK.mkdir(parents=True, exist_ok=True)
     out = WORK / f'answer-{int(time.time() * 1000)}.txt'
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'read-only',
@@ -509,7 +577,10 @@ if __name__ == '__main__':
     f.add_argument('--change', required=True)
     f.add_argument('--name', default='')
     f.add_argument('--dry-run', action='store_true')
+    for sp in (s, r, c):
+        sp.add_argument('--local', action='store_true', help='a local Ollama model writes it (no tokens)')
     a = ap.parse_args()
+    LOCAL[0] = bool(getattr(a, 'local', False))
     a.n = max(1, min(24, getattr(a, 'n', 4)))
     run = {'subjects': subjects, 'rewrite': rewrite, 'compose': compose, 'style': style_edit, 'distil': distil, 'new': new_style, 'fork': fork_style}[a.cmd]
     print(json.dumps(run(a), ensure_ascii=False))

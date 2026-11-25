@@ -11,6 +11,8 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_run.py read      # usage now, from the newest Codex session log
   gen --route cloudflare (or TASTE_ROUTE=cloudflare): the same prompt made by FLUX on Cloudflare (scripts/cf_run.py);
         the "route" column of runs.csv says which; for cloudflare, "tokens" holds the estimated neurons.
+  gen --route local --model klein|zimage|playground (or TASTE_ROUTE=local TASTE_MODEL=...): the same prompt made by
+        an open model on this laptop through ComfyUI (scripts/local_run.py); session "local:<model>", no tokens.
 
 One fresh `codex exec` per image. Codex only generates and copies the PNG into --out; it never views the
 result and never touches the taste files. Afterwards this script reads tokens and the five-hour / weekly
@@ -29,7 +31,8 @@ LOG = ROOT / 'generated' / 'codex' / 'runs.csv'
 CODEX = Path.home() / '.codex'
 HEADER = ['date', 'time', 'batch', 'name', 'mode', 'style', 'change', 'seed', 'ok', 'width', 'height',
           'tokens', 'five_hour_first', 'five_hour_last', 'weekly_first', 'weekly_last', 'seconds', 'session', 'prompt', 'route']
-ROUTES = ['codex', 'cloudflare']   # cloudflare: scripts/cf_run.py, FLUX on Workers AI's free allowance (23 Nov 2026)
+ROUTES = ['codex', 'cloudflare', 'local']   # cloudflare: scripts/cf_run.py, FLUX on Workers AI's free allowance (23 Nov 2026)
+LOCAL_MODELS = ['klein', 'zimage', 'playground']   # local: scripts/local_run.py, open models in ComfyUI (25 Nov 2026)
 
 JOB = """Image job. Use the image_gen tool exactly once. Do not write code to draw, do not view, open or describe the result, and do not create or edit any other file.
 {ref}Image prompt: {prompt}
@@ -216,6 +219,8 @@ def gen(a):
         note = REF.format(path=ref) if ref else ''
     if a.route == 'cloudflare':
         return gen_cloudflare(a, out, refs, ref)
+    if a.route == 'local':
+        return gen_local(a, out, refs, ref)
     job = JOB.format(ref=note, prompt=a.prompt, name=a.name)
     cmd = [shutil.which('codex') or 'codex', 'exec', '--skip-git-repo-check', '-s', 'workspace-write']
     for r in refs:
@@ -311,16 +316,20 @@ def _drop_people_avoid(prompt):
 
 
 def _seed_prompt(ref):
+    return ' '.join(_seed_prompts(ref))
+
+
+def _seed_prompts(ref):
     """The prompts behind the seed image, back along its chain of variations (runs.csv + each batch's run.json
     source, up to 6 steps), joined; '' if unknown. A variation's own prompt often says only "keep the subject"."""
     if not ref:
-        return ''
+        return []
     base = ROOT / 'generated' / 'codex'
     try:
         prompts = {(r.get('batch'), r.get('name')): r.get('prompt', '')
                    for r in csv.DictReader(open(base / 'runs.csv', encoding='utf-8'))}
     except OSError:
-        return ''
+        return []
     out, batch, name = [], ref.parent.name, ref.stem
     for _ in range(6):
         out.append(prompts.get((batch, name), ''))
@@ -333,7 +342,7 @@ def _seed_prompt(ref):
         if not (src.get('batch') and src.get('file')):
             break
         batch, name = src['batch'], Path(src['file']).stem
-    return ' '.join(p for p in out if p)
+    return [p for p in out if p]
 
 
 def has_person(prompt, ref=None):
@@ -439,6 +448,56 @@ def gen_cloudflare(a, out, refs, ref):
         sys.exit(2)
 
 
+def gen_local(a, out, refs, ref):
+    """The same prompt on an open model in ComfyUI (scripts/local_run.py). Logged like a Codex run, no tokens.
+    Kept examples (--refs-kept) are not sent: the local graphs take one seed image at most. With a seed: FLUX local
+    edits it (a remix gets Marc's change as an edit, as on Cloudflare), Playground starts from it, Z-Image can't take
+    an image, so it gets the seed's own prompt plus what this image changes."""
+    import local_run
+    model = a.model
+    prog = None
+    if not is_child():
+        prog = Progress(out, [a.name], a.mode)
+        prog.begin(a.name, a.subject or a.change)
+    seed = refs[0] if refs and not a.refs_kept else None
+    sent, note = a.prompt, ''
+    wish = (a.change or '').removeprefix('remix:').strip()
+    if seed and model == 'klein' and a.mode == 'remix' and wish and wish != 'prompt edited':
+        sent, note = FLUX_EDIT.format(wish), 'sent as an edit of the seed (FLUX_EDIT)'
+    elif seed and model == 'zimage':
+        found = _seed_prompts(seed)
+        base = max([p for p in found if 'Subject:' in p] or found, key=len, default='')
+        if a.mode == 'variations':   # "keep ... of the seed" means nothing without the image: give the seed's prompt
+            sent = f'{base} Change for this image: {a.prompt.split("Style notes")[0].strip()}' if base else a.prompt
+            note = "Z-Image takes no image: sent the seed's prompt plus the change"
+        seed = None
+    if seed and model == 'klein' and has_person(sent, seed):
+        sent += FLUX_ANATOMY
+    start = time.time()
+    png = out / f'{a.name}.png'
+    ok, why, text = local_run.make(model, sent, a.style, a.ratio, png, ref=seed)
+    secs = round(time.time() - start)
+    if a.refs_kept and refs:
+        text = 'kept examples not sent (local models take one seed image at most)\n' + text
+    (out / f'{a.name}.codex.log').write_text('\n'.join(x for x in (note, text, why) if x) + '\n', encoding='utf-8')
+    w = h = ''
+    if ok:
+        from PIL import Image
+        w, h = Image.open(png).size
+    now = datetime.datetime.now()
+    row = [now.date().isoformat(), now.strftime('%H:%M'), out.name, a.name, a.mode, a.style, a.change,
+           ('kept ' + ' + '.join(r.name for r in refs)) if (a.refs_kept and refs) else ref.name if ref else '',
+           'yes' if ok else 'no', w, h, '', '', '', '', '', secs, f'local:{model}', a.prompt, 'local']
+    log_row(row)
+    print(json.dumps(dict(zip(HEADER[:18], row[:18]))))
+    if prog:
+        prog.ok(a.name) if ok else prog.fail(a.name, why)
+        prog.end()
+    if not ok:
+        print(f'FAILED: no image. ComfyUI ({model}): {why}; see {a.name}.codex.log', file=sys.stderr)
+        sys.exit(2)
+
+
 def weekly_resets(path):
     """When Codex's weekly window resets (local time, ISO), from the last reading in a session log; None if absent.
     The web app counts "this Codex week" from it (23 Nov 2026)."""
@@ -490,7 +549,9 @@ if __name__ == '__main__':
     g.add_argument('--mode', default='test')
     g.add_argument('--change', default='')
     g.add_argument('--route', default=os.environ.get('TASTE_ROUTE') or 'codex', choices=ROUTES,
-                   help='codex (default) or cloudflare (FLUX on the free daily allowance, scripts/cf_run.py)')
+                   help='codex (default), cloudflare (FLUX on the free daily allowance, scripts/cf_run.py) or local (ComfyUI)')
+    g.add_argument('--model', default=os.environ.get('TASTE_MODEL') or 'klein', choices=LOCAL_MODELS,
+                   help='with --route local: klein (FLUX local), zimage (Z-Image Turbo) or playground (Playground v2.5)')
     sub.add_parser('read')
     a = ap.parse_args()
     gen(a) if a.cmd == 'gen' else read_now()
