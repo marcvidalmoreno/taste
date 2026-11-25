@@ -1,10 +1,15 @@
-"""Local model test (24 Nov 2026): the same prompts on three open models running on this laptop through ComfyUI,
+"""Local model test (24 Nov 2026): the same prompts on open models running on this laptop through ComfyUI,
 so Marc can compare them in the app before we decide whether a local route goes in. Test only, not a route yet.
 
 Models (ComfyUI on Intel Arc, C:\\Users\\mvidalmoreno\\ComfyUI, http://127.0.0.1:8188):
   klein      FLUX.2 [klein] 4B (Apache 2.0), 4 steps            - the model the Cloudflare route uses
   zimage     Z-Image Turbo 6B (Apache 2.0), 9 steps, weights loaded as fp8 (bf16 crashed the server: out of memory)
   playground Playground v2.5 (SDXL family, Playground licence), 30 steps, avoid list as negative prompt
+  SDXL community fine-tunes (25 Nov 2026, CreativeML Open RAIL++-M), same SDXL prompt handling as playground:
+  dreamshaper DreamShaper XL Lightning (Lykon), 6 steps    - all-rounder: painted, illustration, sci-fi
+  juggernaut  Juggernaut XL Lightning (RunDiffusion), 5 steps - photoreal, people
+  zavychroma  ZavyChroma XL v10 (Zavy), 30 steps           - vivid, painterly colour
+  animagine   Animagine XL 4.0 opt (Cagliostro Lab), 28 steps - anime; gets its quality tags added
 
 Per model, one batch generated/codex/<date>-local-<model>/: 2 images for every style (subjects 1 and 2 of the
 style) plus subjects 3 and 4 for the --match styles, so those get 4 matching prompts each (12 in all).
@@ -28,7 +33,14 @@ from progress import Progress  # noqa: E402
 API = 'http://127.0.0.1:8188'
 W = H = 1024
 # Tiled VAE decode (24 Nov 2026): a full 1024px decode ran out of the Arc 130V's shared memory.
-MODELS = ('klein', 'zimage', 'playground')
+# SDXL checkpoints: file, steps, cfg, sampler, scheduler (the creators' recommended settings).
+SDXL = {
+    'dreamshaper': ('DreamShaperXL_Lightning.safetensors', 6, 2.0, 'dpmpp_sde', 'karras'),
+    'juggernaut': ('Juggernaut_RunDiffusionPhoto2_Lightning_4Steps.safetensors', 5, 1.5, 'dpmpp_sde', 'karras'),
+    'zavychroma': ('zavychromaxl_v100.safetensors', 30, 5.0, 'dpmpp_2m', 'karras'),
+    'animagine': ('animagine-xl-4.0-opt.safetensors', 28, 5.0, 'euler_ancestral', 'normal'),
+}
+MODELS = ('klein', 'zimage', 'playground') + tuple(SDXL)
 DAY = datetime.date.today().isoformat()
 KEY = ROOT / 'generated' / 'codex' / 'local-blind-key.json'
 ADULTS = ' Every figure is an adult.'   # erotic style on a local model: limits in docs/local-route.md
@@ -64,6 +76,18 @@ def graph(model, prompt, negative, seed, prefix):
                                                        'positive': ['5', 0], 'negative': ['6', 0], 'latent_image': ['7', 0]}},
             '9': {'class_type': 'VAEDecodeTiled', 'inputs': {'samples': ['8', 0], 'vae': ['3', 0], 'tile_size': 512, 'overlap': 64, 'temporal_size': 64, 'temporal_overlap': 8}},
             '10': {'class_type': 'SaveImage', 'inputs': {'images': ['9', 0], 'filename_prefix': prefix}}}
+    if model in SDXL:
+        ckpt, steps, cfg, sampler, scheduler = SDXL[model]
+        return {
+            '1': {'class_type': 'CheckpointLoaderSimple', 'inputs': {'ckpt_name': ckpt}},
+            '3': {'class_type': 'CLIPTextEncode', 'inputs': {'text': prompt, 'clip': ['1', 1]}},
+            '4': {'class_type': 'CLIPTextEncode', 'inputs': {'text': negative, 'clip': ['1', 1]}},
+            '5': {'class_type': 'EmptyLatentImage', 'inputs': {'width': W, 'height': H, 'batch_size': 1}},
+            '6': {'class_type': 'KSampler', 'inputs': {'model': ['1', 0], 'seed': seed, 'steps': steps, 'cfg': cfg,
+                                                       'sampler_name': sampler, 'scheduler': scheduler, 'denoise': 1.0,
+                                                       'positive': ['3', 0], 'negative': ['4', 0], 'latent_image': ['5', 0]}},
+            '7': {'class_type': 'VAEDecodeTiled', 'inputs': {'samples': ['6', 0], 'vae': ['1', 2], 'tile_size': 512, 'overlap': 64, 'temporal_size': 64, 'temporal_overlap': 8}},
+            '8': {'class_type': 'SaveImage', 'inputs': {'images': ['7', 0], 'filename_prefix': prefix}}}
     return {
         '1': {'class_type': 'CheckpointLoaderSimple', 'inputs': {'ckpt_name': 'playground-v2.5-1024px-aesthetic.fp16.safetensors'}},
         '2': {'class_type': 'ModelSamplingContinuousEDM', 'inputs': {'model': ['1', 0], 'sampling': 'edm_playground_v2.5',
@@ -82,7 +106,7 @@ def prompts(model, style_key, st, subject):
     """(prompt, negative). FLUX and Z-Image get the same prompt as Codex; SDXL gets the style without the avoid
     list and hex palette (CLIP can't read either) and the avoid list as its negative prompt."""
     text = st['prompt'] + (ADULTS if style_key == 'erotic' else '')
-    if model != 'playground':
+    if model in ('klein', 'zimage'):
         return f"{RATIOS['square']} Subject: {subject}. {text}", ''
     avoid = re.search(r'Avoid:(.*?)(?:No text, no logos, no watermark\.|$)', text, re.S)
     pos = re.sub(r'Avoid:.*?(?=No text|$)', '', text, flags=re.S)
@@ -90,6 +114,9 @@ def prompts(model, style_key, st, subject):
     neg = (avoid.group(1).strip() if avoid else '') + '; text, logo, watermark, blurry, deformed hands'
     if style_key == 'erotic':
         neg += ', child, minor, explicit sex'
+    if model == 'animagine':   # its card: quality tags at the end, its own negative tags first
+        return (f'{subject}. {pos.strip()} masterpiece, high score, great score, absurdres',
+                'lowres, bad anatomy, bad hands, worst quality, low quality, ' + neg)
     return f'{subject}. {pos.strip()}', neg
 
 
