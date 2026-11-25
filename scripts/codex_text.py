@@ -128,6 +128,16 @@ def style_info(key):
     return json.load(open(p, encoding='utf-8'))
 
 
+def example_style(key='quiet-landscapes'):
+    """The worked example shown to Codex for a new style. It still works when that style is archived or deleted
+    (25 Nov 2026: archiving quiet-landscapes broke "Propose the style")."""
+    styles = ROOT / 'taste' / 'styles'
+    for p in (styles / f'{key}.json', styles / 'archived' / f'{key}.json', *sorted(styles.glob('*.json'))):
+        if p.exists():
+            return json.load(open(p, encoding='utf-8'))
+    sys.exit('no style to show Codex as an example')
+
+
 def recent_subjects(style, limit=40):
     """Subjects already used for this style, newest first (from the 'Subject: ...' part of logged prompts)."""
     runs = BASE / 'runs.csv'
@@ -393,7 +403,7 @@ def new_style(a):
             'texture_detail': 'clean flat shapes, faint grain', 'prefer': ['few elements'],
             'avoid': ['busy detail'], 'subjects': ['a lighthouse on a quiet headland at dusk (dry run)'],
             'use': ['desktop']}), 'summary': 'dry run: a stand-in style, Codex was not asked', 'seconds': 0, 'dry_run': True}
-    example = json.dumps({k: v for k, v in style_info('quiet-landscapes').items() if k != 'palettes'}, indent=1,
+    example = json.dumps({k: v for k, v in example_style().items() if k != 'palettes'}, indent=1,
                          ensure_ascii=False)
     text = NEW.format(name=a.name or 'none given', notes=a.notes or 'not said', example=example)
     answer, secs = ask('new', text, effort='medium', images=images)

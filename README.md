@@ -121,6 +121,7 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
 ## Changelog
+- **25 Nov 2026** – Fix: **Propose the style** (New style from images) failed with "unknown style" because the style it shows Codex as an example had been archived. The example is now read from the archive too, or falls back to any current style. Undo: `git revert` this commit.
 - **25 Nov 2026** – FLUX local now gets the people guard on every image with a person, not only on images made from a seed: the anatomy line is added and "people in frame" leaves the Avoid list, as on cloud FLUX. Before, new local FLUX images of people had no guard (extra arms, merged bodies). Undo: `git revert` this commit.
 - **25 Nov 2026** – `docs/local-route.md` now describes the local route as it runs: on this laptop (no longer "personal PC only"), ComfyUI with FLUX local, Z-Image and Playground, Local only with Ollama. Why and Limits unchanged. Undo: `git revert` this commit.
 - **25 Nov 2026** – Local only: runs already queued for ChatGPT or FLUX now wait in the queue while it is on (local runs go ahead of them); before, a run queued earlier still went out. Models page and Guide say so. Undo: `git revert` this commit.
