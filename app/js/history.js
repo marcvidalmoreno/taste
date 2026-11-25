@@ -3,8 +3,11 @@
 // version in the Gallery large view, stepping through the chain with ← →, so the changes can be flicked through
 // in place. An image with no earlier version gets one muted line instead (25 Nov 2026), so "no history" reads
 // differently from "feature missing".
+// The style's part of the story (25 Nov 2026): under the versions, how the image's style came to be what it was
+// when the image was made (created, your edits, distils), the image's place in that line, and what changed since,
+// with a link to the full history on the Styles page. Reads api/styles/history, the same data as that page.
 import { api, allStyles } from './api.js';
-import { h, thumbUrl, batchTitle, shortDate, RATING_LABELS } from './ui.js';
+import { h, thumbUrl, batchTitle, shortDate, plural, RATING_LABELS } from './ui.js';
 import { KIND } from './job.js';
 import { openLarge } from './gallery.js';
 
@@ -16,16 +19,18 @@ const CHANGE_WORDS = { palette: 'new palette and light', subject: 'new subject',
 export function historySection(im, batch) {
   const box = h('section', { class: 'lineage', 'aria-label': 'How it got here', hidden: true });
   const k = `${batch}/${im.name}`;
+  const styleBox = h('div', { class: 'lineage-style', hidden: true });
   const show = (steps, names) => {
-    if (steps.length < 2) { box.replaceChildren(freshLine(steps[0], names)); box.hidden = false; return; }
+    if (steps.length < 2) { box.replaceChildren(freshLine(steps[0], names), styleBox); box.hidden = false; return; }
     // The versions that open in the Gallery large view, this image last, so ← → walk the whole chain.
     const openable = steps.filter((s) => !s.given && !s.missing && !s.ignored);
     box.replaceChildren(
       h('div', { class: 'lineage-head' }, h('strong', {}, 'How it got here'),
         h('span', { class: 'muted small' }, steps.length === 2 ? '1 step' : `${steps.length - 1} steps, oldest first`)),
-      h('ol', { class: 'lineage-list' }, steps.map((s, i) => stepRow(s, i === steps.length - 1, openable, names))));
+      h('ol', { class: 'lineage-list' }, steps.map((s, i) => stepRow(s, i === steps.length - 1, openable, names))), styleBox);
     box.hidden = false;
   };
+  if (im.style) styleStory(im, batch, styleBox);
   if (cache.has(k)) allStyles().then((st) => show(cache.get(k), st));
   else {
     Promise.all([api(`history/${encodeURIComponent(batch)}/${encodeURIComponent(im.name)}`), allStyles()])
@@ -73,4 +78,42 @@ function stepRow(s, isMe, openable, names) {
   return h('li', { class: isMe ? 'me' : '' }, i < 0 || isMe ? h('div', { class: 'lineage-step' }, body)
     : h('button', { type: 'button', class: 'lineage-step', title: 'Open this version (← → step through the chain)',
         onClick: () => openLarge(i, openable) }, body));
+}
+
+// ---- the style's story, cut at the moment this image was made
+
+const EVENT = { created: 'Created', fork: 'Made from', commit: 'Edited with Claude', edit: 'Changed in your words',
+  distil: 'Distilled from your ratings', off: 'Switched off', on: 'Switched on' };
+const EARLIER_SHOWN = 3;   // the changes just before the image; older ones wait behind the full-history link
+const when = (at) => `${shortDate(at.slice(0, 10))} ${at.slice(11)}`;
+
+function styleStory(im, batch, box) {
+  api(`styles/history/${encodeURIComponent(im.style)}`).then((d) => {
+    const made = `${im.date || batch.slice(0, 10)} ${im.time || '23:59'}`;
+    const evs = d.events.filter((e) => !e.undone && e.kind !== 'fork-out' && EVENT[e.kind]);
+    const before = evs.filter((e) => e.at <= made), after = evs.filter((e) => e.at > made);
+    const hidden = Math.max(0, before.length - EARLIER_SHOWN);
+    const full = h('a', { href: `#/styles/${encodeURIComponent(im.style)}`, class: 'small' }, 'Full history');
+    const rows = [
+      hidden && h('li', { class: 'muted small' }, `${plural(hidden, 'earlier change')}…`),
+      ...before.slice(hidden).map((e) => eventRow(e)),
+      h('li', { class: 'lineage-now' }, h('strong', {}, 'This image'),
+        h('span', { class: 'muted small' }, ` ${when(made.replace(' 23:59', ''))}${before.length ? '' : ' · before any recorded change'}`)),
+      ...after.map((e) => eventRow(e, true))];
+    box.replaceChildren(
+      h('div', { class: 'lineage-head' }, h('strong', {}, `The style · ${d.name}`),
+        h('span', { class: 'muted small' }, after.length ? `${plural(after.length, 'change')} since this image` : 'unchanged since this image'), full),
+      h('ol', { class: 'lineage-events' }, rows.filter(Boolean)));
+    box.hidden = false;
+  }).catch(() => {});   // a style that's gone, or an older server: the versions above still stand on their own
+}
+
+function eventRow(e, later) {
+  // Only the edit log (it has an id) holds your words; a commit's subject is a note about many styles at once,
+  // so it stays in the tooltip.
+  const yours = e.id && !['commit', 'off', 'on'].includes(e.kind) ? e.title : '';
+  return h('li', { class: later ? 'later' : '', title: yours ? null : e.title || null },
+    h('span', {}, h('strong', {}, EVENT[e.kind], e.of ? ` ${e.of}` : ''), h('span', { class: 'muted small' }, ` ${when(e.at)}${later ? ' · after this image' : ''}`)),
+    yours && h('span', { class: 'lineage-asked', title: yours }, `“${yours}”`),
+    e.id && e.detail && h('span', { class: 'muted small lineage-detail', title: e.detail }, e.detail));
 }

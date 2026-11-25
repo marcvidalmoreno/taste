@@ -754,6 +754,16 @@ button.lineage-step:hover, button.lineage-step:focus-visible { background: var(-
 .lineage-asked { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #c8c8c8; }
 .lineage-mark { margin-left: .35rem; font-size: .8rem; }
 .lineage-mark.keep { color: var(--keep); } .lineage-mark.no { color: var(--no); } .lineage-mark.almost { color: var(--almost); }
+/* The style's story under the versions: a thin rail of dots, this image as a filled dot, later changes faded */
+.lineage-style { margin-top: .8rem; }
+.lineage-events { list-style: none; padding: 0 0 0 1rem; margin: 0; border-left: 1px solid #555; margin-left: .35rem; }
+.lineage-events li { list-style: none; position: relative; display: grid; gap: .1rem; margin: 0 0 .55rem; font-size: .85rem; line-height: 1.35; }
+.lineage-events li::before { content: ''; position: absolute; left: calc(-1rem - 4px); top: .45em; width: 7px; height: 7px;
+                             border-radius: 50%; background: var(--surface-2); border: 1px solid #777; }
+.lineage-events li.lineage-now { display: block; }
+.lineage-events li.lineage-now::before { background: var(--text); border-color: var(--text); }
+.lineage-events li.later { opacity: .6; }
+.lineage-detail { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* Styles page (23 Nov 2026): one row per style, an on / off switch, a history that opens under its row */
 .page-head:has(.find) { display: flex; gap: 1rem; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; }
