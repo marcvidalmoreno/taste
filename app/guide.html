@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 25 Nov 2026 (Models: people images on FLUX local go to Z-Image). This guide changes with the app.</p>
+<p class="muted small">Last updated 25 Nov 2026 (the ChatGPT model badge now reads Codex). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -169,7 +169,7 @@
       answer, or the finished image, where a retry sometimes passes), <strong>Codex hit its usage limit</strong>, or
       <strong>Codex timed out</strong> (over 15 minutes). Then <strong>Retry once</strong> or <strong>Copy prompt</strong>;
       a blocked image also offers <strong>Try with</strong> and a model menu (the same prompt with FLUX or a local model, free).</li>
-    <li>Every tile has a small badge for the model that made it: <strong>ChatGPT</strong>, <strong>FLUX</strong>,
+    <li>Every tile has a small badge for the model that made it: <strong>Codex</strong>, <strong>FLUX</strong>,
       <strong>FLUX local</strong>, <strong>Z-Image</strong> or <strong>Playground</strong>. Under the folder line,
       <strong>Made with</strong> names the batch's model in full.</li>
     <li>For variations, a <strong>Seed</strong> tile shows the original first.</li>
@@ -290,7 +290,7 @@
       to those examples; untick it for a fresh start. The preview shows which images go with which prompt.</li>
     <li>The cost block shows images, minutes and allowance (see Allowance).</li>
     <li><strong>Made with</strong>, at the top of the cost block (also in Remix, Variations and Try with): one of five
-      models. <strong>ChatGPT</strong> (best quality, closest to the style, uses the Codex allowance),
+      models. <strong>Codex</strong> (best quality, closest to the style, uses the Codex allowance),
       <strong>FLUX</strong> (free, about 80 images a day on Cloudflare; good for drafts and simpler scenes), and three
       on this laptop, free and with no tokens: <strong>FLUX local</strong>, <strong>Z-Image</strong> and
       <strong>Playground</strong> (see Models). The choice is remembered; a style with a default model (Models page)
@@ -398,7 +398,7 @@
       them. The rows reflow at once, and the app remembers your choice.</li>
     <li><strong>Style tags</strong> (under the filters): one tag per style with its colours and count. Press a tag to show
       that style, press more to add them, press again to take one away; <strong>All styles</strong> clears them.</li>
-    <li><strong>Model tags</strong> (under the style tags): the same for the model that made each image, ChatGPT, FLUX,
+    <li><strong>Model tags</strong> (under the style tags): the same for the model that made each image, Codex, FLUX,
       FLUX local, Z-Image, Playground (and Local for the blind test). Every tile has the model's badge.</li>
     <li>The filters and the words are in the address, so Back and reload keep them.</li>
   </ul>
@@ -465,7 +465,7 @@
     <li><strong>Local only</strong>: one switch. On, only FLUX local, Z-Image and Playground run, and a model on this
       laptop writes subjects and prompt rewrites, so no ChatGPT tokens are used. The things that need ChatGPT to look
       at images or rewrite a style (New style from images, Suggestions, Change the style and Fork with Codex) say
-      "Uses ChatGPT tokens – turn off Local only" and wait. Runs already queued for ChatGPT or FLUX stay in the queue until Local only is off; local runs go ahead of them. A chip in the header shows while it is on.</li>
+      "Uses ChatGPT tokens – turn off Local only" and wait. Runs already queued for Codex or FLUX stay in the queue until Local only is off; local runs go ahead of them. A chip in the header shows while it is on.</li>
     <li><strong>One card per model</strong>: what it is good at, its speed (median time per image, measured from your
       runs), how many images it made (a link to them in the Gallery), how often you liked them, and its usage: the
       Codex week for ChatGPT, free images left today for FLUX, laptop minutes for the local ones.</li>
@@ -478,7 +478,7 @@
   <table>
     <thead><tr><th>Badge</th><th>Model</th><th>Where</th></tr></thead>
     <tbody>
-      <tr><td>ChatGPT</td><td>Codex image tool</td><td>ChatGPT plan</td></tr>
+      <tr><td>Codex</td><td>Codex image tool</td><td>ChatGPT plan</td></tr>
       <tr><td>FLUX</td><td>FLUX.2 klein 4B</td><td>Cloudflare, free daily allowance</td></tr>
       <tr><td>FLUX local</td><td>FLUX.2 klein 4B</td><td>This laptop (ComfyUI)</td></tr>
       <tr><td>Z-Image</td><td>Z-Image Turbo 6B</td><td>This laptop (ComfyUI)</td></tr>

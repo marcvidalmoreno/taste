@@ -82,7 +82,7 @@ function weekLine(a, add, after, over) {
 // is remembered in this browser; a style's default model (Models page) is picked for you when the style comes up.
 // Local only (Models page) leaves only the three local models.
 export const MODELS = {
-  codex: { badge: 'ChatGPT', name: 'ChatGPT (Codex)', note: 'Best quality and closest to the style. Uses the Codex allowance.' },
+  codex: { badge: 'Codex', name: 'Codex image tool (ChatGPT plan)', note: 'Best quality and closest to the style. Uses the Codex allowance.' },
   cloudflare: { badge: 'FLUX', name: 'FLUX on Cloudflare', tag: 'free', note: 'Free, about 80 a day. Quick drafts; simpler scenes come out best.' },
   klein: { badge: 'FLUX local', name: 'FLUX klein on this laptop', local: true, seed: 'edit',
     note: 'Free, no tokens, no daily limit. The same FLUX, on this laptop. Edits a seed image.' },
@@ -93,8 +93,8 @@ export const MODELS = {
 };
 export const LOCAL = ['klein', 'zimage', 'playground'];
 const SPEED = { klein: 109, zimage: 185, playground: 75 };   // seconds per image, measured 24 Nov 2026 (until runs.csv says more)
-export const modelBadge = (k) => MODELS[k]?.badge || (k === 'local' ? 'Local' : 'ChatGPT');
-export const modelName = (k) => MODELS[k]?.name || (k === 'local' ? 'A local model (blind test)' : 'ChatGPT (Codex)');
+export const modelBadge = (k) => MODELS[k]?.badge || (k === 'local' ? 'Local' : 'Codex');
+export const modelName = (k) => MODELS[k]?.name || (k === 'local' ? 'A local model (blind test)' : 'Codex image tool (ChatGPT plan)');
 
 // Shown where a feature needs ChatGPT to look at images or edit a style, while Local only is on.
 export const LOCAL_NOTE = 'Uses ChatGPT tokens – turn off Local only.';

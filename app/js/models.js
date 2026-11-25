@@ -62,7 +62,7 @@ function localOnlyCard() {
       h('p', { class: 'small' }, on
         ? 'On. Only FLUX local, Z-Image and Playground run, and a model on this laptop writes subjects and prompt rewrites. No ChatGPT tokens.'
         : 'Off. Turn it on to use no ChatGPT tokens at all: only the models on this laptop, and a local model writes subjects and prompts.'),
-      h('p', { class: 'muted small' }, 'While it is on, New style from images, Suggestions (distil), Change the style and Fork with Codex wait: they need ChatGPT to read images or rewrite a style. Runs already queued for ChatGPT or FLUX wait in the queue until it is off.')),
+      h('p', { class: 'muted small' }, 'While it is on, New style from images, Suggestions (distil), Change the style and Fork with Codex wait: they need ChatGPT to read images or rewrite a style. Runs already queued for Codex or FLUX wait in the queue until it is off.')),
     h('button', { type: 'button', role: 'switch', 'aria-checked': String(on), class: 'switch-btn', onClick: (e) => flip(e.currentTarget) },
       h('span', { class: 'knob', 'aria-hidden': 'true' }), on ? 'On' : 'Off'));
 }

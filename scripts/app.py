@@ -166,7 +166,7 @@ def pick_refs(paths, i):
 # their session column ("local:<model>").
 
 MODELS = {
-    'codex': {'badge': 'ChatGPT', 'name': 'ChatGPT (Codex image tool)', 'route': 'codex',
+    'codex': {'badge': 'Codex', 'name': 'Codex image tool (ChatGPT plan)', 'route': 'codex',
               'good': 'Follows long prompts closely, best with people and fine detail. Uses your ChatGPT week.'},
     'cloudflare': {'badge': 'FLUX', 'name': 'FLUX.2 klein 4B on Cloudflare', 'route': 'cloudflare',
                    'good': 'Fast and free, about 95 images a day. Stays close to a style with its kept examples.'},
