@@ -9,8 +9,10 @@ messages. Images stay local (`generated/`, `taste/data/`), backed up by Google D
 ## How Marc works: the app is the interface (Marc, 21 Nov 2026)
 - Marc gives feedback in the web app, in the element where he feels it (thumbs, remix, change the style,
   suggestions). Claude and Codex do the rest behind the scenes. Motto: tech out of sight.
-- Never ask him in chat to decide image or style changes. A decision that is his goes into the app as a calm,
-  one-click element; no tech steps (marking, saving, running scripts) on his side.
+- Recurring taste feedback (ratings, remix, style changes) lives in the app, in the element where he feels it;
+  never give him tech steps (marking, saving, running scripts).
+- A one-off decision that blocks the work: one question in chat, with the images or options visible and my pick
+  as the first button. Build an app element only when the same decision will come back (Marc, 25 Nov 2026).
 - Start the app with /launch-localhost (own console window), never with preview_start: the server must outlive
   the session (Marc, 23 Nov 2026).
 
