@@ -819,3 +819,54 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
 .publish-btn { margin: 0; width: auto; padding: .4rem .8rem; font-size: .9rem; }
 .publish-btn[aria-pressed="true"] span { color: #7fd1b9; }
 .pub-filter { width: auto; margin: 0; border: 1px solid var(--line); border-radius: var(--pico-border-radius, .4rem); background: transparent; }
+
+/* Models (25 Nov 2026): five models, the Models page, Local only. Calm: text labels, one accent for "on". */
+.rseg-wrap { flex-wrap: wrap; }
+.rseg-wrap .rseg-btn { flex: 1 0 auto; }
+.rseg-wrap .rseg-btn + .rseg-btn { border-left: 1px solid var(--line); }
+.def-dot { opacity: .7; font-weight: 400; }
+.made-with { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .25rem 0 .5rem; }
+.try-row { display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.try-row select, select.try-with { margin: 0; width: auto; padding: .25rem 2rem .25rem .5rem; font-size: .85rem; height: auto; }
+.multi-cost { margin: .25rem 0 0; padding-left: 1.1rem; }
+.local-chip { font-size: .8rem; padding: .15rem .6rem; border: 1px solid var(--line); border-radius: 99px; color: var(--text); text-decoration: none; white-space: nowrap; }
+.local-note { margin: .5rem 0; }
+.models-page { max-width: 72rem; }
+.local-only { display: flex; gap: 1.5rem; align-items: flex-start; justify-content: space-between; padding: 1rem 1.25rem;
+  border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 1.5rem; }
+.local-only.is-on { border-color: var(--pico-primary-background); }
+.local-only h2 { font-size: 1.05rem; margin: 0 0 .35rem; }
+.local-only p { margin: 0 0 .35rem; }
+.switch-btn { display: inline-flex; align-items: center; gap: .5rem; width: auto; margin: 0; flex-shrink: 0; padding: .35rem .8rem .35rem .4rem;
+  border-radius: 99px; background: var(--surface-2, #222); color: var(--text); border: 1px solid var(--line); font-size: .9rem; }
+.switch-btn .knob { width: 1.1rem; height: 1.1rem; border-radius: 50%; background: #777; transition: background .15s; }
+.switch-btn[aria-checked="true"] { background: var(--pico-primary-background); color: var(--pico-primary-inverse); border-color: transparent; }
+.switch-btn[aria-checked="true"] .knob { background: var(--pico-primary-inverse); }
+.model-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.model-card { margin: 0; padding: 1rem; min-width: 0; }
+.model-card header { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .5rem; padding: 0; background: none; border: 0; }
+.model-card header strong { font-size: .95rem; min-width: 0; overflow-wrap: anywhere; }
+.model-facts { display: grid; grid-template-columns: auto 1fr; gap: .2rem .75rem; margin: 0; }
+.model-facts dt { color: var(--pico-muted-color); font-weight: 400; }
+.model-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.model-style-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.model-style-head h2 { margin: 0; font-size: 1.15rem; }
+.model-style-head select { width: auto; max-width: 100%; margin: 0; }
+.model-rows { display: grid; gap: 1rem; }
+.model-row { border-top: 1px solid var(--line); padding-top: .75rem; min-width: 0; }
+.model-row.is-default .route-badge { color: var(--text); border-color: var(--text); }
+.model-row-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; margin-bottom: .5rem; }
+.model-row-head .spacer { flex: 1; }
+.model-row-head button { margin: 0; width: auto; }
+.model-thumbs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .5rem; }
+.model-thumbs li { margin: 0; position: relative; }
+.model-thumbs a { display: block; text-decoration: none; line-height: 0; }
+.model-thumbs img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 4px; display: block; }
+.model-thumbs .mark { position: absolute; right: .3rem; top: .25rem; font-size: .8rem; }
+@media (max-width: 760px) { .local-only { flex-direction: column; gap: .75rem; } }
+/* Header at narrow widths (25 Nov 2026): with Models added, the links tighten so the row fits at 768 px with a chip. */
+@media (max-width: 1100px) {
+  .topbar nav li { padding-inline: .1rem; }
+  .topbar nav a[data-nav] { padding-inline: .3rem; margin-inline: 0; font-size: .88rem; }
+  .job-chip { max-width: min(34rem, 26vw); }
+}

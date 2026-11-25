@@ -7,7 +7,7 @@
 // The form survives leaving the page (sessionStorage), so a look at another batch never loses a half-made run.
 // Nothing spends until "Start": the preview prints the exact prompts for free, the cost is always in view.
 import { api, styles, refreshStyles } from './api.js';
-import { allowance, costBlock, route, routeBlocker } from './cost.js';
+import { allowance, costBlock, model, isLocalOnly, resetPreselect, routeBlocker } from './cost.js';
 import { job, enqueueRun, onJob } from './job.js';
 import { h, plural, toast, showError } from './ui.js';
 
@@ -49,6 +49,7 @@ export async function renderNewRun(el, query) {
   }
   if (!state.one.style) state.one.style = state.styles[0] || Object.keys(all)[0];
   document.title = 'New run · taste';
+  resetPreselect();
   kept = await api('kept').then((d) => d.counts).catch(() => ({}));
   draw();
   allowance().then((a) => { alw = a; }).catch((e) => { alw = { error: e.message }; }).finally(drawSummary);
@@ -384,11 +385,21 @@ function drawSummary() {
       : h('p', { class: 'small' }, state.one.palOnly
         ? `${plural(n, 'image')}, palette only${state.one.palFrom && all[state.one.palFrom] ? ` (${all[state.one.palFrom].name})` : ''}, ${state.one.ratio}.`
         : `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
-    costBlock(alw, n, { onRoute: drawSummary, extra: codexStyles ? `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.` : '' }),
-    h('p', { class: 'muted small' }, (route() === 'cloudflare' ? 'Images land in generated/codex/<date>-<name>-flux/' : 'Images land in generated/codex/<date>-<name>/') + ' (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.'),
+    costBlock(alw, n, { onRoute: drawSummary, style: runStyle(),
+      extra: codexStyles ? (isLocalOnly() ? `The local model writes the missing subjects first: about 20 s for each of ${plural(codexStyles, 'style')}, no tokens.`
+        : `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.`) : '' }),
+    h('p', { class: 'muted small' }, `Images land in generated/codex/<date>-<name>${FOLDER_END[model()] || ''}/ (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.`),
     h('div', { class: 'nr-actions' }, startBtn, state.mode === 'batch' && previewBtn),
     h('p', { class: 'muted small keys' }, h('kbd', {}, 'Ctrl'), ' + ', h('kbd', {}, 'Enter'), ' starts'));
   drawStart();
+}
+
+// Folder endings per model (scripts/app.py model_end), so a batch's model shows in Explorer too.
+const FOLDER_END = { cloudflare: '-flux', klein: '-flux-local', zimage: '-zimage', playground: '-playground' };
+// The style whose default model "Made with" picks: the one style of this run (none for several or palette only).
+function runStyle() {
+  if (state.mode === 'one') return state.one.palOnly ? '' : state.one.style;
+  return state.styles.length === 1 ? state.styles[0] : '';
 }
 
 function blocker() {
@@ -414,10 +425,10 @@ function drawStart() {
 function body() {
   if (state.mode === 'one') {
     const o = state.one;
-    if (o.palOnly) return { kind: 'single', route: route(), style: '', palette: o.palette, text: o.text, prompt: o.prompt, ratio: o.ratio, n: o.n };
-    return { kind: 'single', route: route(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
+    if (o.palOnly) return { kind: 'single', model: model(), style: '', palette: o.palette, text: o.text, prompt: o.prompt, ratio: o.ratio, n: o.n };
+    return { kind: 'single', model: model(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
   }
-  return { kind: 'batch', route: route(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, experimental: state.experimental, name: state.name, use_kept: state.useKept,
+  return { kind: 'batch', model: model(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, experimental: state.experimental, name: state.name, use_kept: state.useKept,
     subjects: Object.fromEntries(state.styles.map((k) => [k, lines(k)])), hints: state.hints };
 }
 

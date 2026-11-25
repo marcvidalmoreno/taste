@@ -13,6 +13,7 @@ let at = 0;
 // The allowance read costs a subprocess: share one answer for a minute.
 export async function allowance(fresh = false) {
   if (!fresh && cached && Date.now() - at < 60_000) return cached;
+  await modelInfo(fresh).catch(() => null);   // defaults per style and Local only, for the "Made with" choice
   cached = await api('allowance');
   at = Date.now();
   return cached;
@@ -30,12 +31,16 @@ export function meter(label, used) {
 
 // a: GET /api/allowance (or {error}), n: images this run would make, extra: e.g. 'Codex writes subjects first: ~15 s each'
 // onRoute: redraw callback; given, the block starts with the "Made with" choice (ChatGPT or FLUX on Cloudflare).
-export function costBlock(a, n, { extra = '', compact = false, onRoute = null } = {}) {
-  const pick = onRoute && routePicker(onRoute);
+// style: the style this run is for (its default model is picked once); seed: the run starts from an image.
+// picker: false leaves out the "Made with" choice (Variations has its own, for several models).
+export function costBlock(a, n, { extra = '', compact = false, onRoute = null, style = '', seed = false, picker = true } = {}) {
+  if (onRoute) preselect(style);
+  const pick = onRoute && picker && routePicker(onRoute, style);
   if (!a) return h('section', { class: 'cost', 'aria-busy': 'true' }, pick, 'Reading the allowance…');
   if (a.error) return h('section', { class: 'cost' }, pick, `Allowance unknown: ${a.error}`);
   const dry = a.dry_run && h('p', { class: 'notice' }, 'Dry run: the app was started with --dry-run. Nothing will be generated or spent.');
-  if (onRoute && route() === 'cloudflare') return h('section', { class: 'cost' }, pick, dry, cloudflareBlock(a, n, onRoute, extra));
+  if (onRoute && model() === 'cloudflare') return h('section', { class: 'cost' }, pick, dry, cloudflareBlock(a, n, onRoute, extra));
+  if (onRoute && MODELS[model()].local) return h('section', { class: 'cost' }, pick, dry, localBlock(a, n, model(), extra, seed));
   // The week is Codex's own window (since its weekly reset), counted in % of the week, not a fixed image budget.
   const per = a.week_per_image || 0.1;
   const used = a.now ? a.now.weekly : null;
@@ -72,33 +77,127 @@ function weekLine(a, add, after, over) {
 }
 
 // ---------------------------------------------------------------- which model makes the images (23 Nov 2026)
-// "Made with": ChatGPT through Codex (default) or FLUX on Cloudflare's free daily allowance (docs/cloudflare-route.md).
-// One choice for the whole app, remembered in this browser; every dialog that spends shows it in its cost box.
-const RKEY = 'taste-route';
-export const route = () => (localStorage.getItem(RKEY) === 'cloudflare' ? 'cloudflare' : 'codex');
-const ROUTE_NOTE = {
-  codex: 'Best quality and closest to the style. Uses the Codex allowance.',
-  cloudflare: 'Free, about 80 a day. Quick drafts; simpler scenes come out best.',
+// "Made with": five models since 25 Nov 2026. ChatGPT through Codex, FLUX on Cloudflare's free daily allowance
+// (docs/cloudflare-route.md) and three open models on this laptop through ComfyUI (docs/local-route.md). The choice
+// is remembered in this browser; a style's default model (Models page) is picked for you when the style comes up.
+// Local only (Models page) leaves only the three local models.
+export const MODELS = {
+  codex: { badge: 'ChatGPT', name: 'ChatGPT (Codex)', note: 'Best quality and closest to the style. Uses the Codex allowance.' },
+  cloudflare: { badge: 'FLUX', name: 'FLUX on Cloudflare', tag: 'free', note: 'Free, about 80 a day. Quick drafts; simpler scenes come out best.' },
+  klein: { badge: 'FLUX local', name: 'FLUX klein on this laptop', local: true, seed: 'edit',
+    note: 'Free, no tokens, no daily limit. The same FLUX, on this laptop. Edits a seed image.' },
+  zimage: { badge: 'Z-Image', name: 'Z-Image Turbo on this laptop', local: true, seed: 'prompt',
+    note: 'Free, no tokens. Rich, photographic detail; the slowest. Words only: it can\'t take an image.' },
+  playground: { badge: 'Playground', name: 'Playground v2.5 on this laptop', local: true, seed: 'img2img',
+    note: 'Free, no tokens. Painterly and colourful; the fastest local model. Starts from a seed image.' },
 };
+export const LOCAL = ['klein', 'zimage', 'playground'];
+const SPEED = { klein: 109, zimage: 185, playground: 75 };   // seconds per image, measured 24 Nov 2026 (until runs.csv says more)
+export const modelBadge = (k) => MODELS[k]?.badge || (k === 'local' ? 'Local' : 'ChatGPT');
+export const modelName = (k) => MODELS[k]?.name || (k === 'local' ? 'A local model (blind test)' : 'ChatGPT (Codex)');
 
-function routePicker(onRoute) {
-  const r = route();
-  const pick = (k) => { localStorage.setItem(RKEY, k); onRoute(); };
+// Shown where a feature needs ChatGPT to look at images or edit a style, while Local only is on.
+export const LOCAL_NOTE = 'Uses ChatGPT tokens – turn off Local only.';
+
+const MKEY = 'taste-model';
+const LKEY = 'taste-local-only';
+export const isLocalOnly = () => localStorage.getItem(LKEY) === '1';
+export function setLocalOnly(on) {
+  if (isLocalOnly() === !!on) return;
+  localStorage.setItem(LKEY, on ? '1' : '0');
+  document.dispatchEvent(new CustomEvent('taste-local-only'));
+}
+export function model() {
+  let m = localStorage.getItem(MKEY) || (localStorage.getItem('taste-route') === 'cloudflare' ? 'cloudflare' : 'codex');
+  if (!MODELS[m]) m = 'codex';
+  if (isLocalOnly() && !MODELS[m].local) m = 'klein';
+  return m;
+}
+export function setModel(m) { if (MODELS[m]) localStorage.setItem(MKEY, m); }
+// The route codex_run.py takes: codex, cloudflare or local (kept for older callers)
+export const route = () => (MODELS[model()].local ? 'local' : model());
+
+// The Models page's facts (defaults per style, Local only), shared for a minute like the allowance.
+let info = null;
+let infoAt = 0;
+export async function modelInfo(fresh = false) {
+  if (!fresh && info && Date.now() - infoAt < 60_000) return info;
+  info = await api('models');
+  infoAt = Date.now();
+  setLocalOnly(info.local_only);
+  return info;
+}
+export const styleDefault = (style) => (style && info?.defaults?.[style]) || '';
+
+// A style's default model is picked once each time that style comes up in a dialog; Marc's own pick then holds.
+let lastStyle = null;
+export function preselect(style) {
+  if (!style || style === lastStyle || !info) return;
+  lastStyle = style;
+  const d = info.defaults?.[style];
+  if (d && MODELS[d] && (!isLocalOnly() || MODELS[d].local)) setModel(d);
+}
+export const resetPreselect = () => { lastStyle = null; };
+
+function routePicker(onRoute, style) {
+  const m = model();
+  const keys = isLocalOnly() ? LOCAL : Object.keys(MODELS);
+  const def = styleDefault(style);
+  const pick = (k) => { setModel(k); onRoute(); };
   return h('div', { class: 'route-pick' },
     h('span', { class: 'nr-label' }, 'Made with'),
-    h('div', { class: 'rseg', role: 'group', 'aria-label': 'Made with' },
-      h('button', { type: 'button', class: 'rseg-btn', 'aria-pressed': String(r === 'codex'), onClick: () => pick('codex') }, 'ChatGPT'),
-      h('button', { type: 'button', class: 'rseg-btn', 'aria-pressed': String(r === 'cloudflare'), onClick: () => pick('cloudflare') },
-        'FLUX ', h('small', {}, 'free'))),
-    h('p', { class: 'muted small' }, ROUTE_NOTE[r]));
+    h('div', { class: 'rseg rseg-wrap', role: 'group', 'aria-label': 'Made with' },
+      keys.map((k) => h('button', { type: 'button', class: 'rseg-btn', 'aria-pressed': String(m === k), onClick: () => pick(k),
+        title: def === k ? 'Default model for this style' : MODELS[k].name },
+        MODELS[k].badge, MODELS[k].tag && h('small', {}, ' ' + MODELS[k].tag), def === k && h('small', { class: 'def-dot' }, ' · default')))),
+    h('p', { class: 'muted small' }, MODELS[m].note, isLocalOnly() ? ' Local only is on (Models page).' : ''));
 }
 
-// The make button: FLUX costs nothing, so it says "free" instead of "spend allowance".
-export const makeLabel = (n) => (route() === 'cloudflare' ? `Make ${plural(n, 'free image')}` : `Spend allowance: make ${plural(n, 'image')}`);
+// The make button: FLUX and the local models cost nothing, so it says so instead of "spend allowance".
+export function makeLabel(n) {
+  const m = model();
+  if (MODELS[m].local) return `Make ${plural(n, 'image')} on this laptop`;
+  return m === 'cloudflare' ? `Make ${plural(n, 'free image')}` : `Spend allowance: make ${plural(n, 'image')}`;
+}
 
-// Why Start can't go yet on this route ('' = it can).
+// Why Start can't go yet with this model ('' = it can).
 export function routeBlocker(a) {
-  return route() === 'cloudflare' && a && !a.error && !a.cloudflare?.connected ? 'Connect Cloudflare first.' : '';
+  return model() === 'cloudflare' && a && !a.error && !a.cloudflare?.connected ? 'Connect Cloudflare first.' : '';
+}
+
+// Seconds per image of a local model: measured from runs.csv, else the 24 Nov test.
+export const localSeconds = (a, m) => a?.local?.speed?.[m]?.median || SPEED[m] || 120;
+
+// A local model: no tokens, only laptop time. seed: this run starts from an image (what each model does with it).
+function localBlock(a, n, m, extra, seed) {
+  const secs = localSeconds(a, m);
+  const min = Math.max(1, Math.round((n * secs) / 60) + 1);
+  const seedLine = seed && {
+    edit: 'FLUX local edits the seed image.',
+    img2img: 'Playground starts from the seed image and redraws about half of it.',
+    prompt: 'Z-Image can\'t take an image: it works from the seed\'s prompt and the change.',
+  }[MODELS[m].seed];
+  return [
+    h('p', { class: 'cost-main' }, h('strong', {}, plural(n, 'image')),
+      h('span', { class: 'muted' }, ` · free, no tokens · about ${min} min of laptop time`)),
+    seedLine && h('p', { class: 'small' }, seedLine),
+    extra && h('p', { class: 'muted small' }, extra),
+    h('p', { class: 'muted small' }, `About ${Math.round(secs / 60 * 10) / 10} min per image here, plus a minute to load the model. `
+      + 'The laptop works hard meanwhile; ComfyUI starts by itself and lets go of the memory after the run.'),
+  ];
+}
+
+// Several models at once (Variations): one short line per model, what it costs.
+export function multiCost(a, n, models) {
+  if (!a) return h('section', { class: 'cost', 'aria-busy': 'true' }, 'Reading the allowance…');
+  return h('section', { class: 'cost' },
+    h('p', { class: 'cost-main' }, h('strong', {}, plural(n * models.length, 'image')),
+      h('span', { class: 'muted' }, ` · ${plural(models.length, 'set')} of ${n}, one per model, each in its own batch`)),
+    h('ul', { class: 'small multi-cost' }, models.map((m) => h('li', {}, h('strong', {}, MODELS[m].badge), ': ',
+      MODELS[m].local ? `free, about ${Math.max(1, Math.round((n * localSeconds(a, m)) / 60) + 1)} min of laptop time`
+        + (m === 'zimage' ? ' (from the seed\'s prompt: it can\'t take an image)' : '')
+        : m === 'cloudflare' ? (a.cloudflare?.connected ? `free, about ${a.cloudflare.images_left} left today` : 'connect Cloudflare first (New run)')
+          : `about ${pct(n * (a.week_per_image || 0.1))} of the Codex week`))));
 }
 
 // Connect once: account ID and an API token, kept on this laptop outside the repo (never shown again).
@@ -155,3 +254,20 @@ function cloudflareBlock(a, n, onRoute, extra) {
         'Disconnect')),
   ];
 }
+
+// "Try with" for images ChatGPT's filter blocked (25 Nov 2026): FLUX on Cloudflare or a local model, remembered here.
+const TKEY = 'taste-blocked-model';
+export function tryModel() {
+  const keys = isLocalOnly() ? LOCAL : ['cloudflare', ...LOCAL];
+  const m = localStorage.getItem(TKEY);
+  return keys.includes(m) ? m : keys[0];
+}
+export function tryPicker(onPick = () => {}) {
+  const keys = isLocalOnly() ? LOCAL : ['cloudflare', ...LOCAL];
+  return h('select', { class: 'try-with', 'aria-label': 'Try with which model',
+    onChange: (e) => { localStorage.setItem(TKEY, e.target.value); onPick(e.target.value); } },
+  keys.map((k) => h('option', { value: k, selected: tryModel() === k }, MODELS[k].badge + (MODELS[k].local ? ' (this laptop)' : ' (free)'))));
+}
+
+// A model's small label on a tile or in a details row.
+export const modelTag = (k, cls = 'route-badge') => k && h('span', { class: cls, title: `Made with ${modelName(k)}` }, modelBadge(k));

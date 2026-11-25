@@ -7,6 +7,7 @@
 //   #/gallery/<batch>/<image>?...     the same, with the large view open on one image
 //   #/styles[/<style>]          every style, on / off, its history, runs and 👍 rate
 //   #/taste[/<style>]           the styles with my images as examples
+//   #/models[/<style>]          the five models side by side, Local only, each style's default model
 //   #/guide[/<section>]         how to use the app, page by page, and use cases
 //   #/about[/<section>]         why the project exists
 //   #/new?mode=batch|one&style=a,b   start a run (batch with fresh subjects, or one image)
@@ -20,6 +21,8 @@ import { renderStyles } from './styles.js';
 import { renderAbout, renderGuide } from './about.js';
 import { renderNewRun } from './newrun.js';
 import { renderDistil } from './distil.js';
+import { renderModels } from './models.js';
+import { modelInfo, isLocalOnly } from './cost.js';
 import { closeViewer } from './viewer.js';
 import './job.js';   // picks up a run that may already be going
 
@@ -33,7 +36,7 @@ function parseHash() {
 
 async function route() {
   const { parts, query } = parseHash();
-  const pages = { overview: 'overview', b: 'batch', gallery: 'gallery', styles: 'styles', taste: 'taste', about: 'about', guide: 'guide', new: 'new', distil: 'overview', suggestions: 'overview' };
+  const pages = { overview: 'overview', b: 'batch', gallery: 'gallery', styles: 'styles', taste: 'taste', models: 'models', about: 'about', guide: 'guide', new: 'new', distil: 'overview', suggestions: 'overview' };
   const page = pages[parts[0]] || 'batches';
   for (const a of document.querySelectorAll('[data-nav]')) {
     a.toggleAttribute('aria-current', a.dataset.nav === page);
@@ -46,11 +49,19 @@ async function route() {
   if (page === 'gallery') return renderGallery(view, query, parts[1] && parts[2] ? `${parts[1]}/${parts[2]}` : '');
   if (page === 'styles') return renderStyles(view, parts[1]);
   if (page === 'taste') return renderTaste(view, parts[1]);
+  if (page === 'models') return renderModels(view, parts[1]);
   if (page === 'about') return renderAbout(view, parts[1]);
   if (page === 'guide') return renderGuide(view, parts[1]);
   if (page === 'new') return renderNewRun(view, query);
   await renderBatches(view);
 }
+
+// The header chip says when Local only is on (25 Nov 2026): no ChatGPT tokens, only the models on this laptop.
+const chip = document.getElementById('local-chip');
+const drawChip = () => { chip.hidden = !isLocalOnly(); };
+document.addEventListener('taste-local-only', drawChip);
+drawChip();
+modelInfo().then(drawChip).catch(() => {});
 
 window.addEventListener('hashchange', route);
 route();

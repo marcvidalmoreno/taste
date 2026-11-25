@@ -42,7 +42,7 @@ export const clock = (secs) => { const s = Math.max(0, Math.round(secs)); return
 export async function enqueueRun(body, { go } = {}) {
   askToNotify();
   const res = await api(body.kind === 'variations' ? 'variations' : 'run', { method: 'POST', body });
-  mine.add(res.queued_id);
+  (res.queued_ids || [res.queued_id]).forEach((id) => mine.add(id));   // Variations with several models: one run each
   if (go && location.hash !== go) location.hash = go;
   if (res.position <= 1) { followId = res.queued_id; followHash = location.hash; }
   job = res;

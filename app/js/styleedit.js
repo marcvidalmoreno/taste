@@ -7,6 +7,7 @@ import { api, styles, archivedStyles, refreshStyles } from './api.js';
 import { wordDiff } from './remix.js';
 import { openFork } from './forkstyle.js';
 import { h, thumbUrl, toast, showError } from './ui.js';
+import { isLocalOnly, LOCAL_NOTE } from './cost.js';
 
 export const FIELDS = { description: 'Description', light: 'Light', composition: 'Composition', camera_or_medium: 'Medium',
   mood: 'Mood', texture_detail: 'Detail', prefer: 'Lean towards', avoid: 'Avoid', subjects: 'Subjects' };
@@ -55,6 +56,7 @@ export async function openStyleEdit(ctx) {
       h('div', { class: 'quick', 'aria-label': 'Quick picks: add to the change' }, QUICK.map((q) => h('button', { type: 'button', class: 'chip-btn',
         onClick: () => { st.change = st.change.trim() ? `${st.change.trim().replace(/[,.]$/, '')}, ${q}` : q; draw('#se-change'); } }, '+ ', q))),
       h('p', { class: 'muted small' }, 'Codex reads the whole style and proposes the smallest edit that makes this felt in every image. You see it before anything changes.'),
+      isLocalOnly() && h('p', { class: 'notice small local-note' }, LOCAL_NOTE, ' ', h('a', { href: '#/models' }, 'Models page')),
       h('details', { class: 'small current' }, h('summary', {}, 'How the style reads now'), currentFacts()),
     ];
   }
@@ -77,7 +79,8 @@ export async function openStyleEdit(ctx) {
   function drawFoot() {
     if (st.step !== 1 || !mainBtn) return;
     const ready = !!st.change.trim();
-    mainBtn.disabled = !ready || !!st.busy;
+    mainBtn.disabled = !ready || !!st.busy || isLocalOnly();
+    mainBtn.title = isLocalOnly() ? LOCAL_NOTE : '';
     mainBtn.setAttribute('aria-busy', st.busy ? 'true' : 'false');
     mainBtn.textContent = st.busy ? `Codex is reading the style… ${st.busy} s` : 'Propose the edit';
     foot.querySelector('.secondary.outline').disabled = !ready || !!st.busy;

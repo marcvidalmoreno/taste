@@ -2,7 +2,7 @@
 // On top, "Now and next": the run being made and the queue, so a run started anywhere is never out of sight.
 import { api } from './api.js';
 import { job, onJob, KIND, runTitle, statusLine, stopButton, queueList, showLog, resumeAll } from './job.js';
-import { COST } from './cost.js';
+import { COST, MODELS, setModel, tryModel, tryPicker } from './cost.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, showError, toast } from './ui.js';
 
 // Filters live for the session: coming back from a batch finds the list as it was left.
@@ -124,19 +124,22 @@ async function drawBlocked() {
   blockedEl.replaceChildren(h('section', { class: 'finish-bar' },
     h('p', {},
       h('strong', {}, `${plural(n, 'image')} blocked by ChatGPT's safety filter.`), ` In ${d.runs.length} ${d.runs.length === 1 ? 'batch' : 'batches'}.`, h('br'),
-      h('span', { class: 'muted small' }, 'Same prompts made with FLUX instead: free, Cloudflare\'s own rules apply. Each lands in its own batch, where it failed.')),
-    d.connected
-      ? h('button', { class: 'small-btn', onClick: (e) => tryFlux(e.currentTarget) }, `Try with FLUX (${plural(n, 'image')})`)
-      : h('a', { href: '#/new?mode=one', role: 'button', class: 'secondary outline small-btn',
-          onClick: () => localStorage.setItem('taste-route', 'cloudflare') }, 'Connect Cloudflare first')));
+      h('span', { class: 'muted small' }, 'Same prompts made with another model instead: FLUX on Cloudflare or one on this laptop, free, its own rules. Each lands in its own batch, where it failed.')),
+    h('span', { class: 'try-row' },
+      tryPicker(() => drawBlocked()),
+      d.connected || MODELS[tryModel()].local
+        ? h('button', { class: 'small-btn', onClick: (e) => tryFlux(e.currentTarget) }, `Try with ${MODELS[tryModel()].badge} (${plural(n, 'image')})`)
+        : h('a', { href: '#/new?mode=one', role: 'button', class: 'secondary outline small-btn',
+          onClick: () => setModel('cloudflare') }, 'Connect Cloudflare first'))));
 }
 
 async function tryFlux(btn) {
   btn.disabled = true;
   btn.setAttribute('aria-busy', 'true');
   try {
-    const res = await api('blocked/flux', { method: 'POST', body: {} });
-    toast(`${plural(res.images, 'image')} queued for FLUX, in ${plural(res.runs, 'run')}`);
+    const m = tryModel();
+    const res = await api('blocked/flux', { method: 'POST', body: { model: m } });
+    toast(`${plural(res.images, 'image')} queued for ${MODELS[m].badge}, in ${plural(res.runs, 'run')}`);
     drawBlocked();
   } catch (err) {
     btn.disabled = false;

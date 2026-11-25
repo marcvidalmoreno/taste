@@ -8,6 +8,7 @@ import { api, styles, refreshStyles } from './api.js';
 import { fieldEditors, missingFields, createdBlock } from './newstyle.js';
 import { undoEdit } from './styleedit.js';
 import { h, showError } from './ui.js';
+import { isLocalOnly, LOCAL_NOTE } from './cost.js';
 
 const QUICK = ['at night', 'in winter', 'warmer colours', 'cooler colours', 'calmer, fewer elements', 'more playful', 'more melancholy'];
 
@@ -53,6 +54,7 @@ export async function openFork(ctx) {
       h('div', { class: 'quick', 'aria-label': 'Quick picks: add to the change' }, QUICK.map((q) => h('button', { type: 'button', class: 'chip-btn',
         onClick: () => { st.change = st.change.trim() ? `${st.change.trim().replace(/[,.]$/, '')}, ${q}` : q; draw('#fk-change'); } }, '+ ', q))),
       h('p', { class: 'muted small' }, 'Codex reads the whole style and writes the variant; you check every field before anything is made. The fork starts with no images or ratings.'),
+      isLocalOnly() && h('p', { class: 'notice small local-note' }, LOCAL_NOTE, ' Copy as it is still works. ', h('a', { href: '#/models' }, 'Models page')),
     ];
   }
 
@@ -66,7 +68,8 @@ export async function openFork(ctx) {
   function drawFoot() {
     if (st.step !== 1 || !mainBtn) return;
     const named = !!st.name.trim();
-    mainBtn.disabled = !named || !st.change.trim() || !!st.busy;
+    mainBtn.disabled = !named || !st.change.trim() || !!st.busy || isLocalOnly();
+    mainBtn.title = isLocalOnly() ? LOCAL_NOTE : '';
     mainBtn.setAttribute('aria-busy', st.busy ? 'true' : 'false');
     mainBtn.textContent = st.busy ? `Codex is writing the fork… ${st.busy} s` : 'Propose the fork';
     foot.querySelector('#fk-copy').disabled = !named || !!st.busy;

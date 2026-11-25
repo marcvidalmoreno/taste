@@ -8,6 +8,7 @@ import { openNote } from './notes.js';
 import { openStyleEdit } from './styleedit.js';
 import { similarRow } from './similar.js';
 import { historySection } from './history.js';
+import { modelName, modelTag } from './cost.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
@@ -208,6 +209,7 @@ function details(im) {
     ['Style', h('span', {}, styleName(im.style), st && h('span', { class: 'swatches', 'aria-hidden': 'true' },
       st.palette.map((c) => h('i', { style: { background: c } }))))],
     ['Change', im.change ? h('span', {}, h('strong', {}, im.change), h('br'), h('small', { class: 'muted' }, CHANGES[im.change] || '')) : '–'],
+    ['Made with', im.model ? h('span', {}, modelTag(im.model), ' ', modelName(im.model)) : '–'],
     ['Made as', im.mode || '–'],
     ['Made from this', madeFromThis(im)],
     ['Seed', im.seed ? h('span', { class: 'seed-cell' },

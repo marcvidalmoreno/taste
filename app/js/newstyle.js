@@ -7,6 +7,7 @@
 import { api, refreshStyles } from './api.js';
 import { undoEdit, diffValue } from './styleedit.js';
 import { h, toast, showError, plural } from './ui.js';
+import { isLocalOnly, LOCAL_NOTE } from './cost.js';
 
 const MAX = 4;
 const NL = String.fromCharCode(10);
@@ -125,6 +126,7 @@ export function openNewStyle({ onCreated } = {}) {
       h('label', { class: 'nr-label', for: 'ns-notes' }, 'What draws you to them? (optional)'),
       h('textarea', { id: 'ns-notes', rows: 2, maxlength: 400, placeholder: 'e.g. the muted dusk colours, flat shapes, one small figure in a big space',
         onInput: (e) => { st.notes = e.target.value; } }, st.notes),
+      isLocalOnly() && h('p', { class: 'notice small local-note' }, LOCAL_NOTE, ' ', h('a', { href: '#/models' }, 'Models page')),
     ];
   }
 
@@ -136,7 +138,8 @@ export function openNewStyle({ onCreated } = {}) {
 
   function drawFoot() {
     if (st.step !== 1 || !mainBtn) return;
-    mainBtn.disabled = !st.images.length || !!st.busy;
+    mainBtn.disabled = !st.images.length || !!st.busy || isLocalOnly();
+    mainBtn.title = isLocalOnly() ? LOCAL_NOTE : '';
     mainBtn.setAttribute('aria-busy', st.busy ? 'true' : 'false');
     mainBtn.textContent = st.busy ? `Codex is looking at the images… ${st.busy} s` : 'Propose the style';
   }

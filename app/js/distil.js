@@ -10,6 +10,7 @@
 import { api, styles, refreshStyles } from './api.js';
 import { FIELDS, diffValue, undoEdit } from './styleedit.js';
 import { h, thumbUrl, batchHref, shortDate, plural, toast, showError } from './ui.js';
+import { isLocalOnly, LOCAL_NOTE } from './cost.js';
 
 const STATUS = { waiting: 'Waiting', thinking: 'Codex is reading…', ready: 'Suggestion', nothing: 'Fine as it is',
   applied: 'Applied', skipped: 'Skipped', failed: 'Failed' };
@@ -55,6 +56,7 @@ function draw() {
           : waiting.length ? `${plural(waiting.length, 'suggestion')} from your latest ratings. Apply what you agree with.`
           : 'Nothing waiting for you.'))),
     state.dry_run && h('p', { class: 'notice' }, 'Dry run: Codex is not asked; each suggestion is a stand-in line.'),
+    isLocalOnly() && h('p', { class: 'notice small local-note' }, 'Codex reading your ratings: ', LOCAL_NOTE, ' ', h('a', { href: '#/models' }, 'Models page')),
     run?.running && h('p', { class: 'distil-progress', 'aria-live': 'polite' }, h('span', { class: 'pulse', 'aria-hidden': 'true' }),
       ' Suggestions appear here as they come; you can start with the first ones.'),
     waiting.length > 0 && h('div', { class: 'distil-cards' }, waiting.map(([k, c]) => card(k, c))),
@@ -68,7 +70,7 @@ function draw() {
     !run && h('p', { class: 'muted small distil-next' },
       `Codex looks at your styles by itself every ${state.due} ratings` + (toGo ? `: the next check comes after ${plural(toGo, 'more rating')}.` : '.'),
       ' Downs and a few “why” words give it the most to work with.',
-      eligible.length > 0 && toGo > 0 && [' ', h('button', { class: 'ghost small', 'data-focus': 'ask', onClick: ask }, 'Look now')])));
+      eligible.length > 0 && toGo > 0 && !isLocalOnly() && [' ', h('button', { class: 'ghost small', 'data-focus': 'ask', onClick: ask }, 'Look now')])));
   if (focusKey) view.querySelector(`[data-focus="${CSS.escape(focusKey)}"]`)?.focus();
   if (run?.running) timer = setTimeout(refresh, 2000);
 }

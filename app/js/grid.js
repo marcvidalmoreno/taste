@@ -6,7 +6,7 @@ import { openViewer, closeViewer, viewerHref } from './viewer.js';
 import { job, enqueueRun, KIND } from './job.js';
 import { api as call } from './api.js';
 import { openStyleEdit } from './styleedit.js';
-import { COST } from './cost.js';
+import { COST, modelName, modelTag, tryModel, tryPicker, MODELS } from './cost.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, ratingForKey, markBadge, isTyping, showError, toast, zipUrl } from './ui.js';
 
 let view;
@@ -136,6 +136,7 @@ function batchMeta(d) {
       styles.length === 1 && h('button', { class: 'ghost small', onClick: () => openStyleEdit({ style: styles[0] }) }, 'Change the style…'),
       styles.length > 0 && h('a', { class: 'small', href: '#/new?mode=batch&style=' + styles.map(encodeURIComponent).join(',') },
         styles.length > 1 ? 'New run with these styles' : 'New run with this style')),
+    madeWith(d),
     p && h('a', { class: 'made-from', href: parentHref },
       h('img', { src: thumbUrl(p.batch, p.file), alt: '' }),
       h('span', {}, 'Made from ', h('strong', {}, p.file.replace(/\.[^.]+$/, '')), ' in ', batchTitle(p.batch),
@@ -178,10 +179,17 @@ function downloadAll(d) {
     files ? `Download these ${list.length}` : 'Download all');
 }
 
+// "Made with" (25 Nov 2026): the model or models of this batch's images, by full name.
+function madeWith(d) {
+  const models = [...new Set(d.items.map((im) => im.model).filter(Boolean))];
+  if (!models.length) return null;
+  return h('p', { class: 'small made-with' }, h('span', { class: 'muted' }, 'Made with '), models.map((m, i) => [i ? ', ' : '', modelTag(m), ' ', modelName(m)]));
+}
+
 function runDetails(r) {
   const rows = [
     ['Started', r.started && `${shortDate(r.started.slice(0, 10))} ${r.started.slice(11)} · from the ${r.by || 'web app'}`],
-    ['Made with', r.route === 'cloudflare' ? 'FLUX on Cloudflare (free)' : 'ChatGPT (Codex)'],
+    ['Made with', modelName(r.model || r.route || 'codex')],
     ['Styles', r.styles?.map(styleName).join(', ')],
     ['Shape', r.ratio],
     ['Wildcard', r.kind === 'batch' ? (r.wildcards ? 'last image of each style' : 'none') : null],
@@ -261,9 +269,9 @@ function failedTiles() {
       h('div', { class: 'failed-actions' },
         queued.has(f.name) ? h('span', { class: 'small' }, 'Retry queued')
           : h('button', { class: 'secondary outline small-btn', onClick: (e) => retry(f, e.currentTarget) }, 'Retry once'),
-        !queued.has(f.name) && f.reason?.code === 'filter' && f.route !== 'cloudflare'
-          && h('button', { class: 'secondary outline small-btn', title: "The same prompt made with FLUX on Cloudflare: free, its own rules",
-            onClick: (e) => tryFlux(f, e.currentTarget) }, 'Try with FLUX'),
+        !queued.has(f.name) && f.reason?.code === 'filter' && f.route === 'codex'
+          && h('span', { class: 'try-row' }, h('button', { class: 'secondary outline small-btn', title: 'The same prompt made with another model: free, its own rules',
+            onClick: (e) => tryFlux(f, e.currentTarget) }, 'Try with'), tryPicker()),
         f.prompt && h('button', { class: 'ghost small', onClick: () => navigator.clipboard.writeText(f.prompt).then(() => toast('Prompt copied', { timeout: 2000 })) }, 'Copy prompt'))),
     h('div', { class: 'caption' }, h('span', { class: 'num' }, '–'), h('span', { class: 'style' }, styleName(f.style)),
       h('span', { class: 'kind' }, f.name))); });
@@ -273,8 +281,9 @@ async function tryFlux(f, btn) {
   btn.disabled = true;
   btn.setAttribute('aria-busy', 'true');
   try {
-    await call('blocked/flux', { method: 'POST', body: { batch: store.data.batch, name: f.name } });
-    toast(`Trying ${f.name} with FLUX`);
+    const m = tryModel();
+    await call('blocked/flux', { method: 'POST', body: { batch: store.data.batch, name: f.name, model: m } });
+    toast(`Trying ${f.name} with ${MODELS[m].badge}`);
   } catch (err) {
     btn.disabled = false;
     btn.removeAttribute('aria-busy');
@@ -316,7 +325,7 @@ function tile(im) {
       h('div', { class: 'caption' },
         h('span', { class: 'num' }, im.number),
         h('span', { class: 'style' }, styleName(im.style)),
-        im.route === 'cloudflare' && h('span', { class: 'route-badge', title: 'Made with FLUX on Cloudflare' }, 'FLUX'),
+        modelTag(im.model),
         h('span', { class: 'kind', title: kindOf(im) }, kindOf(im))),
       why && h('div', { class: 'why' }, why)),
     // Mark without opening the image. Saved ratings are read-only, ignored images can't be marked.

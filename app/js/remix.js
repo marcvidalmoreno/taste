@@ -4,7 +4,7 @@
 //   2. Read the new prompt, with the changed words marked against the old one, edit it if needed, then make 1-4.
 // The image itself can go along as a reference (closer result) or not (more freedom).
 import { api, allStyles } from './api.js';
-import { allowance, costBlock, makeLabel, route, routeBlocker } from './cost.js';
+import { allowance, costBlock, makeLabel, model, isLocalOnly, resetPreselect, routeBlocker } from './cost.js';
 import { job, enqueueRun } from './job.js';
 import { h, thumbUrl, plural, toast, showError } from './ui.js';
 
@@ -16,6 +16,7 @@ const LOCKS = { subject: 'Subject', palette: 'Palette', composition: 'Compositio
 export async function openRemix(src) {
   const all = await allStyles();
   const st = { step: 1, change: '', keep: [], ref: true, n: 1, prompt: src.prompt || '', summary: '', busy: 0, alw: null, edited: false, editing: false };
+  resetPreselect();
   const dlg = h('dialog', { class: 'variations remix' });
   const body = h('div');
   const foot = h('footer');
@@ -62,7 +63,9 @@ export async function openRemix(src) {
             onChange: (e) => { st.keep = e.target.checked ? [...st.keep, k] : st.keep.filter((x) => x !== k); } }),
           h('span', {}, label))))),
       refToggle(),
-      !src.prompt && h('p', { class: 'notice' }, 'This image has no prompt on record, so Codex will look at the image and write one with your change.'),
+      !src.prompt && h('p', { class: 'notice' }, isLocalOnly()
+        ? 'This image has no prompt on record, and looking at it uses ChatGPT tokens – turn off Local only, or edit the prompt yourself.'
+        : 'This image has no prompt on record, so Codex will look at the image and write one with your change.'),
     ];
   }
 
@@ -87,8 +90,11 @@ export async function openRemix(src) {
     const ready = st.change.trim();
     rewriteBtn.disabled = !ready || !!st.busy;
     rewriteBtn.setAttribute('aria-busy', st.busy ? 'true' : 'false');
-    rewriteBtn.textContent = st.busy ? `Codex is ${src.prompt ? 'rewriting' : 'looking at the image'}… ${st.busy} s` : 'Write the new prompt';
-    rewriteBtn.title = !st.change.trim() ? 'Say what should change first' : `About ${src.prompt ? 15 : 30} s, a small text job on the Codex allowance`;
+    const local = isLocalOnly();
+    if (local && !src.prompt) rewriteBtn.disabled = true;
+    rewriteBtn.textContent = st.busy ? `${local ? 'The local model' : 'Codex'} is ${src.prompt ? 'rewriting' : 'looking at the image'}… ${st.busy} s` : 'Write the new prompt';
+    rewriteBtn.title = !st.change.trim() ? 'Say what should change first' : local ? 'About 15 s, written by the local model: no tokens'
+      : `About ${src.prompt ? 15 : 30} s, a small text job on the Codex allowance`;
   }
 
   async function rewrite() {
@@ -118,7 +124,7 @@ export async function openRemix(src) {
     diffBox = h('div', { class: 'diff prompt', 'aria-label': 'Changes against the old prompt' });
     drawDiff();
     return [
-      st.summary && h('p', { class: 'remix-summary' }, h('strong', {}, 'Codex: '), st.summary),
+      st.summary && h('p', { class: 'remix-summary' }, h('strong', {}, isLocalOnly() ? 'Local model: ' : 'Codex: '), st.summary),
       // One copy of the prompt at a time: the marked changes to read, or the text to edit.
       h('div', { class: 'prompt-head' },
         h('span', {}, 'New prompt ', !st.editing && src.prompt && h('span', { class: 'muted' }, '· added words marked, removed ones struck through')),
@@ -133,7 +139,7 @@ export async function openRemix(src) {
           h('div', { class: 'rseg', role: 'group', 'aria-label': 'How many' }, [1, 2, 4].map((n) => h('button', {
             type: 'button', class: 'rseg-btn', 'aria-pressed': String(st.n === n), onClick: () => { st.n = n; draw(); } }, n)))),
         h('div', {}, refToggle())),
-      costBlock(st.alw, st.n, { compact: true, onRoute: () => draw() }),
+      costBlock(st.alw, st.n, { compact: true, onRoute: () => draw(), style: src.style, seed: st.ref }),
     ];
   }
 
@@ -163,7 +169,7 @@ export async function openRemix(src) {
     makeBtn.disabled = true;
     makeBtn.setAttribute('aria-busy', 'true');
     try {
-      const res = await enqueueRun({ kind: 'remix', route: route(), batch: src.batch, file: src.file, prompt: st.prompt, change: st.change.trim() || (st.edited ? 'prompt edited' : ''),
+      const res = await enqueueRun({ kind: 'remix', model: model(), batch: src.batch, file: src.file, prompt: st.prompt, change: st.change.trim() || (st.edited ? 'prompt edited' : ''),
         keep: st.keep, ref: st.ref, n: st.n });
       dlg.close();
       toast(res.position <= 1 ? `Remixing ${src.label}: about ${st.n} min` : `Remix of ${src.label} queued, number ${res.position}`);

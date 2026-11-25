@@ -3,7 +3,7 @@
 // Runs join the queue (one image run at a time), so a busy queue never blocks the button.
 import { api, styles } from './api.js';
 import { job, enqueueRun } from './job.js';
-import { allowance, costBlock, makeLabel, route, routeBlocker } from './cost.js';
+import { allowance, costBlock, makeLabel, model, setModel, MODELS, LOCAL, isLocalOnly, preselect, resetPreselect, multiCost } from './cost.js';
 import { h, thumbUrl, plural, showError, toast } from './ui.js';
 
 // What each variation keeps and changes (scripts/variations.py); any mix of them since 21 Nov 2026.
@@ -17,7 +17,9 @@ const MADE = {
 // src: {batch, file, label, style}  (label like "#3" or "the seed")
 export async function openVariations(src) {
   const all = await styles();
-  const state = { style: null, changes: ['palette', 'subject', 'composition'], subject: '', note: '', guess: null, allowance: null };
+  resetPreselect();
+  const state = { style: null, changes: ['palette', 'subject', 'composition'], subject: '', note: '', guess: null, allowance: null,
+    models: [model()], touched: false };   // models: one set of variations per model (25 Nov 2026)
   const dlg = h('dialog', { class: 'variations' });
   const body = h('div');
   const startBtn = h('button', { onClick: start });
@@ -39,14 +41,19 @@ export async function openVariations(src) {
 
   // Redraw the body; keep the focus on the control that caused it (keyboard users don't lose their place).
   function draw(focus) {
-    body.replaceChildren(styleSection(), changeSection(), costSection());
+    if (state.style && !state.touched) { preselect(state.style); state.models = [model()]; }   // the style's default model
+    body.replaceChildren(styleSection(), changeSection(), modelSection(), costSection());
     if (focus) body.querySelector(focus)?.focus();
     const a = state.allowance;
     const n = state.changes.length;
-    const blocked = !state.style ? 'Pick a style first.' : !n ? 'Pick at least one change.' : !a ? 'Reading the allowance…' : routeBlocker(a);
+    const k = state.models.length;
+    const blocked = !state.style ? 'Pick a style first.' : !n ? 'Pick at least one change.' : !k ? 'Pick at least one model.'
+      : !a ? 'Reading the allowance…'
+      : state.models.includes('cloudflare') && !a.error && !a.cloudflare?.connected ? 'Connect Cloudflare first (New run, Made with: FLUX).' : '';
     startBtn.disabled = !!blocked;
     startBtn.title = blocked;
-    startBtn.textContent = a?.dry_run ? `Dry run: make nothing (${n})`
+    startBtn.textContent = a?.dry_run ? `Dry run: make nothing (${n * k})`
+      : k > 1 ? `Make ${plural(k, 'set')} · ${plural(n * k, 'image')}`
       : job.running || job.queue?.length ? `Add to queue · ${plural(n, 'image')}` : makeLabel(n);
   }
 
@@ -93,18 +100,44 @@ export async function openVariations(src) {
           placeholder: 'e.g. no planet in the sky', onInput: (e) => { state.note = e.target.value; } })));
   }
 
+  // Made with: one or more models, or All; each makes its own set, in its own batch.
+  const SEED = { edit: 'edits the seed', img2img: 'starts from the seed', prompt: "from the seed's prompt: it can't take an image" };
+  function modelSection() {
+    const keys = isLocalOnly() ? LOCAL : Object.keys(MODELS);
+    state.models = state.models.filter((m) => keys.includes(m));
+    const allOn = keys.every((m) => state.models.includes(m));
+    const set = (list) => { state.models = keys.filter((m) => list.includes(m)); state.touched = true; if (state.models.length === 1) setModel(state.models[0]); };
+    return h('fieldset', {},
+      h('legend', {}, 'Made with ', h('span', { class: 'muted small' }, '· one set per model')),
+      h('div', { class: 'change-opts model-opts' },
+        h('label', { class: 'style-opt' + (allOn ? ' is-on' : '') },
+          h('input', { type: 'checkbox', value: 'all', checked: allOn, onChange: (e) => { set(e.target.checked ? keys : [model()]); draw('.model-opts input[value="all"]'); } }),
+          h('span', { class: 'style-name' }, 'All'), h('small', { class: 'muted' }, `${keys.length} sets, to compare`)),
+        keys.map((m) => h('label', { class: 'style-opt' + (state.models.includes(m) ? ' is-on' : '') },
+          h('input', { type: 'checkbox', value: m, checked: state.models.includes(m), onChange: (e) => {
+            set(e.target.checked ? [...state.models, m] : state.models.filter((x) => x !== m));
+            draw(`.model-opts input[value="${m}"]`);
+          } }),
+          h('span', { class: 'style-name' }, MODELS[m].badge),
+          h('small', { class: 'muted' }, MODELS[m].local ? `free, ${SEED[MODELS[m].seed]}` : m === 'cloudflare' ? 'free, edits the seed' : 'uses the seed as a reference')))),
+      isLocalOnly() && h('p', { class: 'muted small' }, 'Local only is on: only the models on this laptop.'));
+  }
+
   function costSection() {
-    return costBlock(state.allowance, state.changes.length, { onRoute: () => draw() });
+    if (state.models.length > 1) return multiCost(state.allowance, state.changes.length, state.models);
+    return costBlock(state.allowance, state.changes.length, { onRoute: () => draw(), seed: true, picker: false });
   }
 
   async function start() {
     startBtn.setAttribute('aria-busy', 'true');
     startBtn.disabled = true;
     try {
-      const res = await enqueueRun({ kind: 'variations', route: route(), batch: src.batch, file: src.file, style: state.style, changes: state.changes,
+      const k = state.models.length;
+      const res = await enqueueRun({ kind: 'variations', models: state.models, model: state.models[0], batch: src.batch, file: src.file, style: state.style, changes: state.changes,
         subject: state.changes.includes('subject') ? state.subject : '', note: state.note });
       dlg.close();
-      toast(res.position <= 1 ? `Making ${plural(state.changes.length, 'variation')} of ${src.label}` : `Variations of ${src.label} queued, number ${res.position}`);
+      toast(k > 1 ? `${plural(k, 'set')} of variations of ${src.label} queued, one per model`
+        : res.position <= 1 ? `Making ${plural(state.changes.length, 'variation')} of ${src.label}` : `Variations of ${src.label} queued, number ${res.position}`);
     } catch (err) {
       startBtn.removeAttribute('aria-busy');
       draw();

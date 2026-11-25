@@ -55,6 +55,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'scripts'))
 import rate  # noqa: E402  (shared paths and the one writer of ratings.csv)
 import cf_run  # noqa: E402  (the Cloudflare route: FLUX on the free daily allowance, docs/cloudflare-route.md)
+import local_run  # noqa: E402  (the local route: open models in ComfyUI on this laptop, docs/local-route.md)
 
 BASE = rate.BASE
 APP_DIR = ROOT / 'app'
@@ -159,6 +160,52 @@ def pick_refs(paths, i):
     return [paths[(i * REFS_PER_IMAGE + k) % len(paths)] for k in range(n)]
 
 
+# ---------------------------------------------------------------- models (25 Nov 2026)
+# Five ways to make an image. key -> badge (tiles), full name ("How it was made"), route for codex_run.py, and what
+# the Models page says it is good at. Rows of runs.csv with no route read as ChatGPT; local rows say which model in
+# their session column ("local:<model>").
+
+MODELS = {
+    'codex': {'badge': 'ChatGPT', 'name': 'ChatGPT (Codex image tool)', 'route': 'codex',
+              'good': 'Follows long prompts closely, best with people and fine detail. Uses your ChatGPT week.'},
+    'cloudflare': {'badge': 'FLUX', 'name': 'FLUX.2 klein 4B on Cloudflare', 'route': 'cloudflare',
+                   'good': 'Fast and free, about 95 images a day. Stays close to a style with its kept examples.'},
+    'klein': {'badge': 'FLUX local', 'name': 'FLUX.2 klein 4B in ComfyUI, on this laptop', 'route': 'local',
+              'good': 'The same FLUX on this laptop: no daily limit, no tokens. Edits a seed image.'},
+    'zimage': {'badge': 'Z-Image', 'name': 'Z-Image Turbo 6B, on this laptop', 'route': 'local',
+               'good': 'Rich, photographic detail; the slowest here. Works from words only, never from an image.'},
+    'playground': {'badge': 'Playground', 'name': 'Playground v2.5, on this laptop', 'route': 'local',
+                   'good': 'Painterly, colourful look; the fastest local model. Starts from a seed image.'},
+}
+LOCAL_MODELS = [k for k, m in MODELS.items() if m['route'] == 'local']
+MODEL_SETTINGS = BASE / 'app-models.json'    # {"local_only": bool}
+STYLE_MODELS = BASE / 'style-models.json'    # {style: model}: the model New run and the others preselect
+
+
+def model_of(row):
+    """Which of MODELS made a runs.csv row ('local' for the hidden blind test)."""
+    route = (row or {}).get('route') or 'codex'
+    if route == 'local':
+        m = (row.get('session') or '')[6:]
+        return m if m in MODELS else 'local'
+    return route if route in MODELS else 'codex'
+
+
+def local_only():
+    return bool(read_json(MODEL_SETTINGS, {}).get('local_only'))
+
+
+def style_models():
+    d = read_json(STYLE_MODELS, {})
+    return {k: v for k, v in d.items() if v in MODELS} if isinstance(d, dict) else {}
+
+
+def model_end(body):
+    """New FLUX runs get folders ending in -flux (23 Nov 2026); local ones -flux-local, -zimage, -playground."""
+    m = (body or {}).get('model') or (body or {}).get('route')
+    return {'cloudflare': '-flux', 'klein': '-flux-local', 'zimage': '-zimage', 'playground': '-playground'}.get(m, '')
+
+
 # ---------------------------------------------------------------- batches and images
 
 def is_batch(name):
@@ -204,6 +251,7 @@ def batch_images(batch, shared=None):
             'mtime': int((BASE / batch / f'{name}.png').stat().st_mtime),
             'style': run.get('style', ''), 'mode': run.get('mode', ''), 'change': run.get('change', ''),
             'seed': run.get('seed', ''), 'prompt': run.get('prompt', ''), 'route': run.get('route') or 'codex',
+            'model': model_of(run) if run else '',
             'width': run.get('width', ''), 'height': run.get('height', ''),
             'date': run.get('date', ''), 'time': run.get('time', ''), 'seconds': run.get('seconds', ''),
             'draft': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
@@ -221,7 +269,8 @@ def summary(batch, images):
             'newest': max((im['mtime'] for im in images), default=int((BASE / batch).stat().st_mtime)),
             'preview': [im['file'] for im in images if im['status'] != 'ignored'][:4],
             'seed': seed_file(batch), 'kind': kind_of_batch(batch, images, rec), 'title': (rec or {}).get('title', ''),
-            'styles': sorted({im['style'] for im in images if im['style']})}
+            'styles': sorted({im['style'] for im in images if im['style']}),
+            'models': sorted({im['model'] for im in images if im['model']})}
 
 
 def list_batches():
@@ -288,7 +337,7 @@ def allowance():
     week, last_week, last_pct = 0, 0, None
     if rate.RUNS.exists():
         for row in csv.DictReader(open(rate.RUNS, encoding='utf-8')):
-            if row['ok'] != 'yes' or (row.get('route') or 'codex') == 'cloudflare':
+            if row['ok'] != 'yes' or (row.get('route') or 'codex') != 'codex':   # FLUX and local models are free
                 continue
             try:
                 t = datetime.datetime.fromisoformat(f"{row['date']}T{row['time'] or '00:00'}")
@@ -311,7 +360,8 @@ def allowance():
     return {'now': now, 'unknown_reason': None if now else (r.stderr or r.stdout).strip()[-300:],
             'week_images': week, 'week_start': start.isoformat(timespec='minutes') if resets else None,
             'week_per_image': round(per, 3), 'dry_run': DRY_RUN, 'queued_images': queued,
-            'cloudflare': cf_run.today()}   # FLUX's free day: connected, images today and left (an estimate)
+            'cloudflare': cf_run.today(),   # FLUX's free day: connected, images today and left (an estimate)
+            'local': {'speed': local_run.speed(), 'local_only': local_only()}}   # seconds per image per local model
 
 
 def source_image(batch, file):
@@ -339,8 +389,8 @@ def slugify(text, fallback='run'):
 
 
 def flux_end(body):
-    """New FLUX runs get folders ending in -flux, so they stand out in Explorer and the batch list (23 Nov 2026)."""
-    return '-flux' if (body or {}).get('route') == 'cloudflare' else ''
+    """Folder ending for the model of a new run (see model_end)."""
+    return model_end(body)
 
 
 def free_slug(stem, end=''):
@@ -362,14 +412,24 @@ def style_file(key):
     return read_json(p, {})
 
 
+LOCAL_TEXT = ('subjects', 'rewrite', 'compose')   # the text jobs a local model can write (Local only, 25 Nov 2026)
+CHATGPT_ONLY = 'uses ChatGPT tokens – turn off Local only'
+
+
 def text_job(*args):
-    """scripts/codex_text.py (Codex writes subjects or a prompt; ~15 s). Raises ApiError with Codex's reason."""
+    """scripts/codex_text.py (Codex writes subjects or a prompt; ~15 s). Raises ApiError with Codex's reason.
+    Local only: subjects, rewrites and compose go to the local Ollama model (--local); the rest is refused."""
     import subprocess
-    cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_text.py'), *args] + (['--dry-run'] if DRY_RUN else [])
+    extra = ['--dry-run'] if DRY_RUN else []
+    if local_only():
+        if args[0] not in LOCAL_TEXT:
+            raise ApiError(409, CHATGPT_ONLY)
+        extra.append('--local')
+    cmd = [PY, '-I', str(ROOT / 'scripts' / 'codex_text.py'), *args] + extra
     r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=320)
     if r.returncode or not r.stdout.strip().startswith('{'):
         raise ApiError(502, (r.stderr or r.stdout).strip().splitlines()[-1][:300] if (r.stderr or r.stdout).strip()
-                       else 'Codex gave no answer')
+                       else ('The local model' if '--local' in extra else 'Codex') + ' gave no answer')
     return json.loads(r.stdout)
 
 
@@ -450,7 +510,7 @@ def failed_images(batch, have):
             rows[r['name']] = r
     return [{'name': n, 'style': r['style'], 'change': r['change'], 'mode': r['mode'], 'prompt': r['prompt'],
              'date': r['date'], 'time': r['time'], 'seed': r['seed'], 'reason': failure_reason(batch, n),
-             'route': r.get('route') or 'codex'}
+             'route': r.get('route') or 'codex', 'model': model_of(r)}
             for n, r in sorted(rows.items()) if r['ok'] != 'yes' and n not in have]
 
 
@@ -470,13 +530,15 @@ def all_blocked():
     return out
 
 
-def spec_blocked_flux(batch, names):
-    """One run per batch: its filter-blocked images again, same prompts and references, made by FLUX."""
+def spec_blocked_flux(batch, names, model='cloudflare'):
+    """One run per batch: its filter-blocked images again, same prompts and references, made by another model
+    (FLUX by default; any of MODELS but ChatGPT since 25 Nov 2026)."""
     specs = [spec_retry({'batch': batch, 'name': n}) for n in names]
     jobs = [j for s in specs for j in s['jobs']]
     styles = sorted({st for s in specs for st in s['styles']})
-    return {'kind': 'retry', 'title': f'Blocked → FLUX: {batch} ({len(jobs)})', 'batch': batch, 'jobs': jobs,
-            'styles': styles, 'n': len(jobs), 'expected': [j['name'] for j in jobs], 'route': 'cloudflare'}
+    return {'kind': 'retry', 'title': f'Blocked → {MODELS[model]["badge"]}: {batch} ({len(jobs)})', 'batch': batch,
+            'jobs': jobs, 'styles': styles, 'n': len(jobs), 'expected': [j['name'] for j in jobs],
+            'route': MODELS[model]['route'], 'model': model}
 
 
 def unmade_images(batch, have):
@@ -653,7 +715,7 @@ def worker():
 def launch(spec):
     import shutil, subprocess, time
     if spec['kind'] == 'variations' and not DRY_RUN:   # variations.py names its folder by today's date
-        end = '-flux' if spec.get('route') == 'cloudflare' else ''
+        end = model_end(spec)
         spec['slug'], spec['batch'] = free_slug(spec['slug'].removesuffix(end) if end else spec['slug'], end)
         CUR['batch'] = spec['batch']
     folder = SPECS / spec['id'] if DRY_RUN else BASE / spec['batch']
@@ -664,7 +726,7 @@ def launch(spec):
         for st in spec['styles']:
             have = [s for s in spec['subjects'].get(st, []) if s.strip()][:spec['n']]
             if len(have) < spec['n']:
-                CUR['phase'] = f'Codex is writing subjects for {style_file(st).get("name", st)}'
+                CUR['phase'] = f'{"The local model" if local_only() else "Codex"} is writing subjects for {style_file(st).get("name", st)}'
                 say(CUR['phase'])
                 have += text_job('subjects', '--style', st, '--n', str(spec['n'] - len(have)),
                                  '--hint', spec['hints'].get(st, ''), *(['--wild'] if spec.get('experimental') else []))['subjects']
@@ -731,22 +793,26 @@ def launch(spec):
             write_json(folder / 'run.json', rec)
     else:
         rec = {k: spec.get(k) for k in ('kind', 'title', 'source', 'styles', 'n', 'subjects', 'hints', 'ratio',
-                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'palette', 'note', 'change', 'keep', 'kept_refs', 'route')
+                                         'wildcards', 'experimental', 'style', 'changes', 'subject', 'palette', 'note', 'change', 'keep', 'kept_refs', 'route', 'model')
                if spec.get(k) not in (None, '', [], {})}
         rec.update(started=time.strftime('%Y-%m-%d %H:%M'), by='web app')
         write_json(folder / 'run.json', rec)
     if CUR.get('cancel'):
         raise RuntimeError('stopped before the first image')
-    CUR['phase'] = ('Making images' + (' with FLUX' if spec.get('route') == 'cloudflare' else '')) if not DRY_RUN else 'Dry run: printing the prompts'
+    badge = MODELS.get(spec.get('model') or 'codex', {}).get('badge', '')
+    CUR['phase'] = ('Making images' + (f' with {badge}' if spec.get('model') not in (None, 'codex') else '')) if not DRY_RUN else 'Dry run: printing the prompts'
     # the route reaches codex_run.py gen through batch.py / run_list.py / variations.py, which pass the environment on
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, encoding='utf-8', errors='replace',
-                            env={**os.environ, 'TASTE_ROUTE': spec.get('route') or 'codex'})
+                            env={**os.environ, 'TASTE_ROUTE': spec.get('route') or 'codex',
+                                 'TASTE_MODEL': spec.get('model') if spec.get('route') == 'local' else ''})
     PROC['p'] = proc
     for line in proc.stdout:
         CUR['log'] = (CUR['log'] + [line.rstrip()])[-200:]
     CUR.update(running=False, returncode=proc.wait(), finished=time.time(), phase='')
     PROC.clear()
+    if spec.get('route') == 'local' and not DRY_RUN and not (QUEUE and QUEUE[0].get('route') == 'local'):
+        threading.Thread(target=local_run.free, kwargs={'quiet': True}, daemon=True).start()   # give the memory back
     if not DRY_RUN and run_record(spec['batch']):   # remember the usage limit: a later retry overwrites the log
         logs = [folder / f'{n}.codex.log' for n in spec['expected']]
         if any(p.is_file() and 'usage limit' in p.read_text(encoding='utf-8', errors='replace') for p in logs):
@@ -1477,7 +1543,7 @@ def close_if_decided(run):
 
 def maybe_auto_distil():
     """Codex checks the styles by itself when DUE ratings have piled up since the last round (never in dry run)."""
-    if DRY_RUN or RESTARTING.is_set() or current_run() or not _AUTO.acquire(blocking=False):
+    if DRY_RUN or local_only() or RESTARTING.is_set() or current_run() or not _AUTO.acquire(blocking=False):
         return
     try:
         _auto_distil()
@@ -1717,6 +1783,26 @@ class ApiError(Exception):
         self.status = status
 
 
+def with_model(spec, body):
+    """Sets the spec's model and route (25 Nov 2026). Made with: body.model (one of MODELS), or the older body.route;
+    a finish, retry or resume keeps the model of the run it continues unless the page says otherwise; else ChatGPT.
+    Local only: anything but the 3 local models is refused."""
+    m = body.get('model') if body.get('model') in MODELS else body.get('route') if body.get('route') in ('codex', 'cloudflare') else None
+    if not m and body.get('kind') in ('finish', 'retry', 'resume'):
+        rec = run_record(spec.get('batch', '')) or {}
+        m = rec.get('model') if rec.get('model') in MODELS else rec.get('route') if rec.get('route') in MODELS else None
+    m = m or spec.get('model') or 'codex'
+    if local_only() and m not in LOCAL_MODELS:
+        raise ApiError(409, 'Local only is on: pick FLUX local, Z-Image or Playground (or turn Local only off on the Models page).')
+    if m == 'cloudflare' and not cf_run.creds():
+        raise ApiError(409, 'Connect Cloudflare first (New run, Made with: FLUX).')
+    spec.update(model=m, route=MODELS[m]['route'])
+    badge = MODELS[m]['badge']
+    if m != 'codex' and spec.get('title') and badge not in spec['title']:
+        spec['title'] += f' · {badge}'
+    return spec
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = 'taste-app'
 
@@ -1775,6 +1861,10 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/gallery'): 'get_gallery',
         ('GET', 'api/similar'): 'get_similar',
         ('GET', 'api/history'): 'get_history',
+        ('GET', 'api/models'): 'get_models',
+        ('GET', 'api/models/style'): 'get_models_style',
+        ('POST', 'api/models/default'): 'post_models_default',
+        ('POST', 'api/models/local-only'): 'post_models_local_only',
     }
 
     def log_message(self, fmt, *args):  # quiet: only errors reach the console
@@ -2055,8 +2145,20 @@ class Handler(BaseHTTPRequestHandler):
 
     def post_variations(self):
         """Variations of one image: {batch, file, style, changes: [palette, subject, composition, mood] (or n: 3|4),
-        subject, note}. Queued: spends Codex allowance when it runs (unless --dry-run)."""
-        return self.post_run({**self.read_body(), 'kind': 'variations'})
+        subject, note, models: [..] or model}. One set (its own folder) per model, 25 Nov 2026. Queued."""
+        body = {**self.read_body(), 'kind': 'variations'}
+        models = [m for m in dict.fromkeys(body.get('models') or []) if m in MODELS]
+        if len(models) <= 1:
+            return self.post_run({**body, 'model': models[0] if models else body.get('model')})
+        for m in models:   # check them all first, so a refusal queues nothing
+            with_model({}, {'model': m})
+        res, ids = None, []
+        for m in models:
+            with _QLOCK:
+                spec = spec_variations({**body, 'model': m})
+            res = enqueue(with_model(spec, {**body, 'model': m}))
+            ids.append(res['queued_id'])
+        return {**res, 'queued_ids': ids, 'runs': len(ids)}
 
     def post_run(self, body=None):
         """Queue one run. kind: batch | single | remix | retry | finish | resume | variations (see the spec_* helpers)."""
@@ -2068,17 +2170,7 @@ class Handler(BaseHTTPRequestHandler):
         with _QLOCK:
             spec = make(body)
         spec.pop('placeholders', None)
-        # Made with (23 Nov 2026): codex, or cloudflare (FLUX, scripts/cf_run.py). A finish, retry or resume keeps
-        # the route of the run it continues unless the page says otherwise.
-        route = body.get('route') if body.get('route') in ('codex', 'cloudflare') else \
-            (run_record(spec.get('batch', '')) or {}).get('route') if body.get('kind') in ('finish', 'retry', 'resume') else None
-        spec['route'] = route or 'codex'
-        if spec['route'] == 'cloudflare':
-            if not cf_run.creds():
-                raise ApiError(409, 'Connect Cloudflare first (New run, Made with: FLUX).')
-            if spec.get('title') and 'FLUX' not in spec['title']:
-                spec['title'] += ' · FLUX'
-        return enqueue(spec)
+        return enqueue(with_model(spec, body))   # Made with: see with_model
 
     def post_cloudflare_connect(self):
         """Save the Cloudflare account ID and API token (Connect Cloudflare), after Cloudflare's free verify call.
@@ -2100,10 +2192,11 @@ class Handler(BaseHTTPRequestHandler):
         return {'runs': runs, 'images': sum(len(r['names']) for r in runs), 'connected': bool(cf_run.creds())}
 
     def post_blocked_flux(self):
-        """Queue the blocked images again with FLUX, one run per batch: {} for all, or {batch, name} for one tile."""
+        """Queue the blocked images again with another model (FLUX unless {model}), one run per batch: {} for all,
+        or {batch, name} for one tile."""
         body = self.read_body()
-        if not cf_run.creds():
-            raise ApiError(409, 'Connect Cloudflare first (New run, Made with: FLUX).')
+        model = body.get('model') if body.get('model') in MODELS and body.get('model') != 'codex' else 'cloudflare'
+        with_model({}, {'model': model})   # Local only and Cloudflare checks
         with _QLOCK:
             runs = all_blocked()
         if body.get('batch'):
@@ -2115,13 +2208,13 @@ class Handler(BaseHTTPRequestHandler):
                 continue
             try:
                 with _QLOCK:
-                    spec = spec_blocked_flux(r['batch'], r['names'])
+                    spec = spec_blocked_flux(r['batch'], r['names'], model)
             except ApiError:
                 continue   # its state changed meanwhile
             res = enqueue(spec)
             queued, images = queued + 1, images + len(spec['expected'])
         if not queued:
-            raise ApiError(404, 'Nothing blocked is left to try with FLUX.')
+            raise ApiError(404, f'Nothing blocked is left to try with {MODELS[model]["badge"]}.')
         return {**res, 'runs': queued, 'images': images}
 
     def post_cloudflare_disconnect(self):
@@ -2380,6 +2473,8 @@ class Handler(BaseHTTPRequestHandler):
     def post_distil_run(self):
         """Ask Codex for proposals: {styles: [...]} or every style with DISTIL_MIN+ ratings since the last distil."""
         body = self.read_body()
+        if local_only():
+            raise ApiError(409, CHATGPT_ONLY)
         run = current_run()
         if run and run.get('running'):
             raise ApiError(409, 'Codex is still working on the last request')
@@ -2525,6 +2620,78 @@ class Handler(BaseHTTPRequestHandler):
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return out
 
+    # -- Models page (25 Nov 2026): compare the five models, set a default per style, Local only
+
+    def get_models(self):
+        """One card per model: what it is good at, images made, median seconds per image, thumbs-up rate; plus Local
+        only and the default model per style. Usage (ChatGPT week, FLUX today) comes from GET /api/allowance."""
+        import statistics
+        saved, local_speed = saved_ratings(), local_run.speed()
+        per = {k: {'n': 0, 'secs': [], 'up': 0, 'down': 0, 'last': ''} for k in MODELS}
+        for b, rows in all_runs().items():
+            for n, r in rows.items():
+                m = model_of(r)
+                if r['ok'] != 'yes' or m not in per:
+                    continue
+                d = per[m]
+                d['n'] += 1
+                if str(r.get('seconds', '')).isdigit():
+                    d['secs'].append(int(r['seconds']))
+                mark = (saved.get((b, n)) or {}).get('rating')
+                d['up'] += mark == 'keep'
+                d['down'] += mark == 'no'
+                d['last'] = max(d['last'], f"{r['date']} {r['time']}".strip())
+        cards = []
+        for k, m in MODELS.items():
+            d = per[k]
+            med = local_speed.get(k, {}).get('median') if k in LOCAL_MODELS else \
+                round(statistics.median(d['secs'])) if d['secs'] else None
+            cards.append({'key': k, **m, 'local': k in LOCAL_MODELS, 'images': d['n'], 'median_seconds': med,
+                          'last': d['last'], **rate_of(d['up'], d['down']),
+                          'seed': local_run.MODELS[k]['seed'] if k in LOCAL_MODELS else 'edit'})
+        return {'models': cards, 'local_only': local_only(), 'defaults': style_models()}
+
+    def get_models_style(self, style=''):
+        """One style across the models: each model's latest images of it (the 24 Nov test batches first, same
+        prompt and seed on every local model, so they line up), its thumbs-up rate for the style, the default."""
+        style_file(style)
+        imgs = [x for x in self.gallery_images() if x['style'] == style]
+        out = []
+        for k, m in MODELS.items():
+            mine = [x for x in imgs if x['model'] == k]
+            test = sorted((x for x in mine if x['batch'].endswith('-local-' + k)), key=lambda x: x['name'])
+            rest = [x for x in mine if x not in test]
+            up = sum(1 for x in mine if x['rating'] == 'keep')
+            down = sum(1 for x in mine if x['rating'] == 'no')
+            out.append({'key': k, 'badge': m['badge'], 'name': m['name'], 'images': (test + rest)[:6],
+                        'test': len(test), 'count': len(mine), **rate_of(up, down)})
+        return {'style': style, 'default': style_models().get(style, ''), 'models': out}
+
+    def post_models_default(self):
+        """The model a style's runs preselect: {style, model} ('' clears it). Kept in style-models.json."""
+        body = self.read_body()
+        style, model = str(body.get('style', '')), str(body.get('model') or '')
+        style_file(style)
+        if model and model not in MODELS:
+            raise ApiError(400, f'unknown model "{model}"')
+        with LOCK:
+            d = style_models()
+            if model:
+                d[style] = model
+            else:
+                d.pop(style, None)
+            write_json(STYLE_MODELS, d)
+        return {'defaults': d}
+
+    def post_models_local_only(self):
+        """Local only on or off: {on}. On: only the 3 local models run, text jobs go to the local model."""
+        on = bool(self.read_body().get('on'))
+        with LOCK:
+            d = read_json(MODEL_SETTINGS, {})
+            d['local_only'] = on
+            write_json(MODEL_SETTINGS, d)
+        return {'local_only': on}
+
     def get_history(self, batch='', name=''):
         """How an image got here (25 Nov 2026): the versions it came from, oldest first, ending with itself.
         Each step is in the Gallery's shape (so the page can open it there) plus 'kind' (how that version was
@@ -2561,7 +2728,7 @@ def gallery_item(b, im):
             'style': im['style'], 'mode': im['mode'], 'change': im['change'],
             'prompt': im['prompt'], 'width': im['width'], 'height': im['height'],
             'date': im['date'] or b[:10], 'number': im['number'], 'seed': im['seed'],
-            'time': im['time'], 'seconds': im['seconds'], 'route': im['route'],
+            'time': im['time'], 'seconds': im['seconds'], 'route': im['route'], 'model': im['model'],
             'rating': s['rating'] if s else None, 'why': s['why'] if s else '', 'kept': im['kept'],
             'published': im['published']}
 

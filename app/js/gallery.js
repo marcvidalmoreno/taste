@@ -2,7 +2,7 @@
 // The large view has the same thumbs as the batch view (21 Nov 2026): a mark is saved at once and counts
 // for the style's next runs; the same thumb again takes it back. Filters are not re-applied while you mark,
 // so nothing jumps away under the pointer.
-//   #/gallery?q=<words>&style=<key>[,<key>…]&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
+//   #/gallery?q=<words>&style=<key>[,<key>…]&model=<model>[,<model>…]&rating=keep|no|almost|none (keep = up, no = down, almost = older ratings)&batch=<batch>
 //   #/gallery/<batch>/<image>?...   the same, with the large view open on one image (23 Nov 2026): the address
 //   follows every step, so an image can be linked and reloaded; Back closes the view (one history entry per opening).
 // Find (23 Nov 2026): every word must appear in the prompt, the why, the style name, the batch or the variation.
@@ -13,6 +13,8 @@
 // rows without redrawing them; the choice is a view preference, kept in localStorage (not in the address).
 // Style tags (24 Nov 2026): one toggle chip per style instead of a dropdown; several can be on at once
 // (style=a,b in the address), none on = every style. Size sits at the end of the same filter row.
+// Model tags (25 Nov 2026): the same pattern for the model that made each image (model=a,b): ChatGPT, FLUX,
+// FLUX local, Z-Image, Playground.
 import { api, styles, archivedStyles, allStyles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton, setPublished, publishButton } from './marks.js';
@@ -21,6 +23,7 @@ import { openVariations } from './variations.js';
 import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
 import { historySection } from './history.js';
+import { MODELS, modelBadge, modelName, modelTag } from './cost.js';
 import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // Target row height in px; rows end up a little taller to fill the width. Large stays within the 640 px thumbnails.
@@ -53,7 +56,7 @@ export async function loadGallery() {
 
 // open: '<batch>/<image>' from the address, or '' for the grid alone.
 export async function renderGallery(view, query, open = '') {
-  const want = galleryHref(Object.fromEntries(['q', 'style', 'rating', 'batch', 'pub'].map((k) => [k, query.get(k) || ''])));
+  const want = galleryHref(Object.fromEntries(['q', 'style', 'model', 'rating', 'batch', 'pub'].map((k) => [k, query.get(k) || ''])));
   if (want !== pageKey || !view.querySelector('.jgrid')) await drawGallery(view, query);
   if (open) openFromUrl(open);
   else if (urlSync && dlg?.open) dlg.close();   // Back from an image: the grid stays as it was
@@ -69,11 +72,13 @@ async function drawGallery(view, query) {
     return showError(err);
   }
   document.title = 'Gallery · taste';
-  const f = { q: query.get('q') || '', style: query.get('style') || '', rating: query.get('rating') || '', batch: query.get('batch') || '', pub: query.get('pub') || '' };
+  const f = { q: query.get('q') || '', style: query.get('style') || '', model: query.get('model') || '', rating: query.get('rating') || '', batch: query.get('batch') || '', pub: query.get('pub') || '' };
   curF = f;
   const picked = new Set(f.style.split(',').filter(Boolean));
+  const pickedModels = new Set(f.model.split(',').filter(Boolean));
   const base = all.filter((im) =>
     (!picked.size || picked.has(im.style)) &&
+    (!pickedModels.size || pickedModels.has(im.model)) &&
     (!f.rating || (f.rating === 'none' ? !im.rating : im.rating === f.rating)) &&
     (!f.batch || im.batch === f.batch) &&
     (!f.pub || im.published));
@@ -102,7 +107,7 @@ async function drawGallery(view, query) {
   draw();
   pageKey = galleryHref(f);
   view.replaceChildren(h('hgroup', { class: 'page-head' }, h('h1', {}, 'Gallery'), count),
-    filters(f, onFind, sizeControl(grid)), styleTags(f, picked), grid);
+    filters(f, onFind, sizeControl(grid)), styleTags(f, picked), modelTags(f, pickedModels), grid);
 }
 
 // Words in any order, each one somewhere in the image's text; dashes count as spaces (batch names use them).
@@ -152,6 +157,19 @@ function styleTags(f, picked) {
       h('small', {}, ' ', all.filter((im) => im.style === k).length))));
 }
 
+// One chip per model that made images here, in the Models page's order; several can be on, "All models" clears.
+function modelTags(f, picked) {
+  const have = new Set(all.map((im) => im.model).filter(Boolean));
+  const keys = [...Object.keys(MODELS).filter((k) => have.has(k)), ...(have.has('local') ? ['local'] : [])];
+  if (keys.length < 2) return '';
+  const go = (next) => { location.hash = galleryHref({ ...f, model: [...next].join(',') }); };
+  const toggle = (k) => { const n = new Set(picked); n.has(k) ? n.delete(k) : n.add(k); go(n); };
+  return h('div', { role: 'group', class: 'style-tags model-tags', 'aria-label': 'Models' },
+    h('button', { class: 'tag', 'aria-pressed': String(!picked.size), onClick: () => go([]) }, 'All models'),
+    keys.map((k) => h('button', { class: 'tag', 'aria-pressed': String(picked.has(k)), onClick: () => toggle(k), title: modelName(k) },
+      modelBadge(k), h('small', {}, ' ', all.filter((im) => im.model === k).length))));
+}
+
 // Small / Medium / Large: more images at a glance, or bigger ones to judge. Reflows at once, no reload.
 function sizeControl(grid) {
   const pick = (k, px, group) => {
@@ -176,14 +194,14 @@ function tile(im, i) {
   const r = ratio(im);
   return h('button', {
     class: 'jtile', dataset: { key: keyOf(im), i: String(i) }, style: { flex: `${r} 1 calc(${r.toFixed(4)} * var(--row-h, 220px))`, aspectRatio: String(r) },
-    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.published ? ', in the public gallery' : ''}${im.route === 'cloudflare' ? ', made with FLUX' : ''}${im.why ? ': ' + im.why : ''}`,
+    'aria-label': `${styleMap[im.style]?.name || 'No style'}, ${ratingLabel(im.rating)}${im.kept ? ', kept as example' : ''}${im.published ? ', in the public gallery' : ''}${im.model ? ', made with ' + modelBadge(im.model) : ''}${im.why ? ': ' + im.why : ''}`,
     onClick: () => openLarge(i),
   },
   h('img', { src: thumbUrl(im.batch, im.file, im.mtime), alt: '', loading: 'lazy', decoding: 'async' }),
   im.rating && h('span', { class: `mark ${im.rating} saved`, 'aria-hidden': 'true' }, RATING_LABELS[im.rating].glyph),
   im.published && h('span', { class: 'pub-dot', title: 'In the public gallery', 'aria-hidden': 'true' }, '◉'),
   im.kept && h('span', { class: 'kept-star', title: 'Kept as an example', 'aria-hidden': 'true' }, '★'),
-  im.route === 'cloudflare' && h('span', { class: 'route-badge on-image', 'aria-hidden': 'true' }, 'FLUX'));
+  im.model && h('span', { class: 'route-badge on-image', 'aria-hidden': 'true' }, modelBadge(im.model)));
 }
 
 const keyOf = (im) => `${im.batch}/${im.name}`;
@@ -401,6 +419,7 @@ function details(im, st) {
       h('span', { class: 'swatches', 'aria-hidden': 'true' }, (st.palette || []).map((c) => h('i', { style: { background: c } })))) : '–'],
     ['Batch', h('a', { href: batchHref(im.batch), onClick: () => dlg.close() }, batchTitle(im.batch))],
     ['Change', im.change ? h('span', {}, h('strong', {}, im.change), h('br'), h('small', { class: 'muted' }, CHANGES[im.change] || '')) : '–'],
+    ['Made with', im.model ? h('span', {}, modelTag(im.model), ' ', modelName(im.model)) : '–'],
     ['Made as', im.mode || '–'],
     ['Seed', im.seed || '–'],
     ['Size', im.width ? `${im.width} × ${im.height}` : '–'],
