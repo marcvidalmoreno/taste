@@ -695,7 +695,11 @@ def worker():
                 HOLD.clear()          # fixed: go on by itself
             if HOLD:
                 continue
-            spec = QUEUE.pop(0)
+            # Local only (25 Nov 2026): runs queued for ChatGPT or FLUX wait until it is off; local runs go past them.
+            nxt = next((i for i, s in enumerate(QUEUE) if s.get('route') == 'local'), None) if local_only() else 0
+            if nxt is None:
+                continue
+            spec = QUEUE.pop(nxt)
             save_queue()
             CUR.clear()
             CUR.update(spec, running=True, phase='Starting', started=time.time(), finished=None, returncode=None,
