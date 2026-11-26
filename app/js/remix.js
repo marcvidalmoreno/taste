@@ -76,7 +76,8 @@ export async function openRemix(src) {
   const parts = () => st.extra.split(',').map((x) => x.trim()).filter(Boolean);
   const keys = () => (isLocalOnly() ? LOCAL : Object.keys(MODELS));
   const chosenPal = () => (st.pal !== 'random' && st.pals?.[st.pal]) || null;
-  const palLabel = () => (chosenPal() ? `palette: ${chosenPal().name}` : 'new palette, picked for you');
+  const liked = (p) => p.name.startsWith('Liked');   // liked-image palettes show swatches only, no label (Marc, 26 Nov 2026)
+  const palLabel = () => (chosenPal() ? (liked(chosenPal()) ? 'palette from a liked image' : `palette: ${chosenPal().name}`) : 'new palette, picked for you');
   const axisTitle = (a) => (a === 'palette' ? palLabel() : AXES[a][1]);
   const needsBase = () => !src.prompt && !st.base;
   const blockedLocal = () => !src.prompt && isLocalOnly() && !st.own;
@@ -184,7 +185,7 @@ export async function openRemix(src) {
 
   function drawFootOne(total) {
     const blocked = blocker();
-    foot.replaceChildren(h('button', { class: 'secondary', type: 'button', onClick: () => dlg.close() }, 'Cancel'), h('span', { class: 'spacer' }),
+    foot.replaceChildren(h('span', { class: 'spacer' }),
       h('span', { class: 'muted small keys' }, h('kbd', {}, 'Ctrl'), ' + ', h('kbd', {}, 'Enter')),
       h('button', { class: 'make', type: 'button', disabled: !!blocked || !!st.busy, title: blocked, 'aria-busy': st.busy ? 'true' : 'false', onClick: make },
         st.busy || (st.review ? 'Write the prompts' : st.own ? 'Next: write the prompt' : `Make ${plural(total ?? st.n * st.models.length, 'image')}`)));
@@ -220,10 +221,11 @@ export async function openRemix(src) {
           sw(['', '', '', '', '']), 'Surprise me'),
         st.palBusy && h('span', { class: 'muted small' }, 'Reading the style and the images you liked…'),
         pals.map((p, i) => h('button', { type: 'button', class: 'rx-pal', 'aria-pressed': String(st.pal === i), 'data-focus': `pal-${i}`, title: p.c.join(' '),
-          onClick: () => { st.pal = i; draw(`[data-focus="pal-${i}"]`); } }, sw(p.c), p.name))),
+          onClick: () => { st.pal = i; draw(`[data-focus="pal-${i}"]`); }, 'aria-label': liked(p) ? `Palette from a liked image (${p.c.join(' ')})` : null }, sw(p.c), liked(p) ? '' : p.name))),
       h('p', { class: 'rx-hint muted small' }, !chosenPal()
         ? 'A different palette per image, chosen to suit the style. Subject, framing and light stay.'
-        : `Every palette image uses ${chosenPal().name}. Offered from the style's other palettes and from images of it you liked.`));
+        : (liked(chosenPal()) ? 'Every palette image uses this palette, taken from an image of this style you liked.'
+          : `Every palette image uses ${chosenPal().name}, one of the style's other palettes.`)));
   }
 
   function combinePanel() {
