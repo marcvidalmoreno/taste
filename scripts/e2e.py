@@ -84,6 +84,17 @@ def fake_route(dest):
     f.write_text(t.replace("const pages = {", "const pages = { zzfake: 'zzfake',", 1), encoding='utf-8')
 
 
+def cut_local_models(copy):
+    """In the copy only: point the ComfyUI and Ollama addresses at a port nothing listens on, so even a call that slipped
+    past the dry-run guards could not reach (or start) a model on this laptop."""
+    for rel, old in (('scripts/local_run.py', "API = 'http://127.0.0.1:8188'"), ('scripts/codex_text.py', "OLLAMA = 'http://127.0.0.1:11434'")):
+        f = copy / rel
+        t = f.read_text(encoding='utf-8')
+        if old not in t:
+            log(f'WARNING: {rel} no longer has `{old}`: update cut_local_models() in scripts/e2e.py')
+        f.write_text(t.replace(old, old.split("'")[0] + "'http://127.0.0.1:9'"), encoding='utf-8')
+
+
 def start_server(copy, port):
     """The app in dry-run mode inside the copy, with a fake home folder (so ~/.taste, ~/.codex are not the real ones)."""
     home = copy / 'home'
@@ -126,6 +137,7 @@ def run(working=False, sabotaged=False, fake=False, keep=False, pytest_args=(), 
         sys.path.insert(0, str(copy / 'tests' / 'fixtures'))
         import make_fixtures
         make_fixtures.build(copy)
+        cut_local_models(copy)
         if sabotaged:
             sabotage(copy)
         if fake:

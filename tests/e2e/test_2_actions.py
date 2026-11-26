@@ -15,6 +15,12 @@ def wait_until(fn, what, timeout=20):
     raise AssertionError(f'timed out waiting for: {what}')
 
 
+def soft_api(page, path):
+    """A read that may fail while the server swaps the file in (a known race, see README "Regression check")."""
+    r = page.request.get(f'{URL}/api/{path}')
+    return r.json() if r.ok else {}
+
+
 def quiet(page):
     """Leave nothing queued or running so the next test starts clean."""
     for _ in range(3):
@@ -93,7 +99,7 @@ def test_leave_a_note(page, watch):
     page.click('dialog.viewer button:has-text("Note for Claude")')
     page.fill('dialog.note-dialog textarea', 'e2e check: a note about this image')
     page.click('dialog.note-dialog button:has-text("Leave the note")')
-    wait_until(lambda: any('e2e check' in n['text'] for n in api(page, 'notes')['notes']), 'the note to be saved')
+    wait_until(lambda: any('e2e check' in n['text'] for n in soft_api(page, 'notes').get('notes', [])), 'the note to be saved')
     watch.assert_clean('note')
 
 
