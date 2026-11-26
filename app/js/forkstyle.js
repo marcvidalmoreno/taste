@@ -62,7 +62,7 @@ export async function openFork(ctx) {
     mainBtn = h('button', { onClick: () => propose(false) });
     const copy = h('button', { id: 'fk-copy', class: 'secondary outline', title: 'No Codex: the same style under a new name, to edit yourself', onClick: () => propose(true) }, 'Copy as it is');
     queueMicrotask(drawFoot);
-    return [h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Cancel'), h('span', { class: 'spacer' }), copy, mainBtn];
+    return [h('span', { class: 'spacer' }), copy, mainBtn];
   }
 
   function drawFoot() {

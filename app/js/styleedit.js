@@ -73,7 +73,7 @@ export async function openStyleEdit(ctx) {
     queueMicrotask(drawFoot);
     const fork = h('button', { class: 'ghost small', title: `Make a new style from ${s.name} with this change, and leave ${s.name} as it is`,
       onClick: () => { dlg.close(); openFork({ style: ctx.style, change: st.change.trim(), onCreated: ctx.onForked }); } }, 'As a new style…');
-    return [h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Cancel'), fork, h('span', { class: 'spacer' }), words, mainBtn];
+    return [fork, h('span', { class: 'spacer' }), words, mainBtn];
   }
 
   function drawFoot() {

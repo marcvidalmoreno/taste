@@ -133,7 +133,7 @@ export function openNewStyle({ onCreated } = {}) {
   function footOne() {
     mainBtn = h('button', { onClick: propose });
     queueMicrotask(drawFoot);
-    return [h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Cancel'), h('span', { class: 'spacer' }), mainBtn];
+    return [h('span', { class: 'spacer' }), mainBtn];
   }
 
   function drawFoot() {

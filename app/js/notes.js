@@ -28,7 +28,7 @@ export async function openNote(ctx) {
     !ctx.name && h('p', { class: 'small' }, ctx.style ? `About the style: ${styleName}` : 'A general note, not about one style or image'),
     area,
     h('p', { class: 'muted small' }, 'Claude looks at what the note points at, proposes style edits as one set for your OK, then answers here (Overview page).'),
-    h('footer', {}, h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Cancel'), btn)));
+    h('footer', {}, h('span', { class: 'spacer' }), btn)));
   dlg.addEventListener('close', () => dlg.remove());
   dlg.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !btn.disabled) { e.preventDefault(); send(); } });
   document.body.append(dlg);

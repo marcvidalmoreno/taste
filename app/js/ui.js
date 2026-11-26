@@ -81,7 +81,33 @@ function placeToasts() {
   host.append(toastBox);   // moving it closes the popover: open it again if it holds toasts
   if (toastBox.children.length && !toastBox.matches(':popover-open')) toastBox.showPopover();
 }
-new MutationObserver(placeToasts).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
+new MutationObserver(() => { placeToasts(); addCloseButtons(); })
+  .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
+
+// Popups close the same way everywhere (26 Nov 2026): a × at the top right (one known place, instead of a
+// Cancel that moved between footers), Esc (the browser's own), and a click outside. The large views (.viewer)
+// are full-screen pages with their own Back, so they keep their own rules.
+// A click outside with text typed in the popup does not close it: a stray click should never lose writing;
+// a toast says how to close it on purpose.
+const POPUP = 'dialog:not(.viewer)';
+function addCloseButtons() {
+  for (const dlg of document.querySelectorAll(POPUP)) {
+    const art = dlg.querySelector(':scope > article');
+    if (!art || art.querySelector(':scope > .dlg-x')) continue;
+    art.prepend(h('button', { type: 'button', class: 'dlg-x', 'aria-label': 'Close', title: 'Close (Esc)', onClick: () => dlg.close() }, '×'));
+  }
+}
+document.addEventListener('input', (e) => { const d = e.target.closest?.(POPUP); if (d && isTyping(e)) d.dataset.typed = '1'; }, true);
+let downOn = null;   // a drag that starts inside (selecting text) and ends outside is not a click outside
+document.addEventListener('pointerdown', (e) => { downOn = e.target; }, true);
+document.addEventListener('click', (e) => {
+  const dlg = e.target;
+  if (!(dlg instanceof HTMLDialogElement) || !dlg.open || !dlg.matches(POPUP) || downOn !== dlg) return;
+  const box = dlg.querySelector(':scope > article')?.getBoundingClientRect();
+  if (box && e.clientX >= box.left && e.clientX <= box.right && e.clientY >= box.top && e.clientY <= box.bottom) return;
+  if (dlg.dataset.typed) return toast('Kept open so your text is not lost: × or Esc closes it.', { timeout: 3500 });
+  dlg.close();
+});
 
 // Toasts: one line, optional action button (e.g. Undo). Calm: most leave on their own; every one has a × to close it.
 // onClose runs however it closes (×, its button, timeout, or the close function this returns).

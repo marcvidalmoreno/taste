@@ -218,8 +218,7 @@ function showFailed(runs) {
       h('strong', {}, runTitle(r)), ' ',
       h('span', { class: 'muted small' }, `${r.made.length} of ${r.expected.length} made` + (!same && failReason(r) ? ` · ${failReason(r)}` : '')), ' ',
       r.made.length > 0 && h('a', { href: batchHref(r.batch), onClick: () => dlg.close() }, 'See them'), ' ',
-      h('button', { class: 'ghost small', onClick: () => showLog(r) }, 'Log')))),
-    h('footer', {}, h('button', { onClick: () => dlg.close() }, 'Close'))));
+      h('button', { class: 'ghost small', onClick: () => showLog(r) }, 'Log'))))));
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);
   dlg.showModal();
@@ -255,8 +254,7 @@ export function showLog(r = null) {
   const queue = h('div');
   const dlg = h('dialog', { class: 'review log-dialog' }, h('article', {},
     h('header', {}, head),
-    pre, queue,
-    h('footer', {}, h('button', { onClick: () => dlg.close() }, 'Close'))));
+    pre, queue));
   logBox = { pre, head, queue, fixed: r?.id && r.id !== job.id ? r : null };
   dlg.addEventListener('close', () => { dlg.remove(); logBox = null; });
   document.body.append(dlg);

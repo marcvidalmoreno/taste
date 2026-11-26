@@ -270,8 +270,8 @@ button.ghost[aria-pressed=true] { color: var(--text); background: var(--surface-
 /* Popup close (26 Nov 2026): a × at the top right of every popup; the large views keep their own Back. */
 /* Sticky, not absolute: a long popup (Remix) scrolls inside its article, and the × stays in the corner. */
 dialog:not(.viewer) > article > header { padding-right: 3rem; }
-dialog:not(.viewer) button.dlg-x { position: sticky; top: .55rem; float: right; z-index: 2; width: 2rem; height: 2rem;
-  margin: calc(.55rem - var(--pico-block-spacing-vertical)) calc(.55rem - var(--pico-block-spacing-horizontal)) -2rem 0;
+dialog:not(.viewer) button.dlg-x { position: sticky; top: -.4rem; float: right; z-index: 2; width: 2rem; height: 2rem;
+  margin: -.4rem -.4rem -2rem 0;
   padding: 0; display: grid; place-items: center; font-size: 1.35rem; line-height: 1; border: 0; border-radius: 999px;
   background: none; color: var(--pico-muted-color); }
 dialog:not(.viewer) button.dlg-x:hover, dialog:not(.viewer) button.dlg-x:focus-visible { color: var(--text); background: var(--surface-2); }

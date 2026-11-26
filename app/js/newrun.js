@@ -461,8 +461,7 @@ async function preview() {
   const dlg = h('dialog', { class: 'review preview-dialog' }, h('article', {},
     h('header', {}, h('hgroup', {}, h('h3', {}, 'The prompts this run would use'),
       h('p', { class: 'muted small' }, 'Printed by batch.py without running Codex: nothing spent.'))),
-    list,
-    h('footer', {}, h('button', { class: 'secondary', onClick: () => dlg.close() }, 'Close'))));
+    list));
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg);
   dlg.showModal();
