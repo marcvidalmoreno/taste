@@ -96,6 +96,32 @@ def saved_ratings():
     return {(r['batch'], r['name']): r for _, r in rate.latest(list(csv.DictReader(open(rate.RATINGS, encoding='utf-8'))))}
 
 
+# ---------------------------------------------------------------- blind tests (26 Nov 2026)
+# local_test.py blind copies model images into <date>-local-blind under shuffled names; the key is
+# local-blind-key-<date>.json ({blind name: {model, image, batch}}). The original is hidden wherever a blind copy
+# exists, so each picture shows once and the test stays blind. Once every image of a blind batch is rated,
+# its tiles show the real model (revealed) and its marks count for that model on the Models page.
+
+def blind_copies(saved=None):
+    """(by_source {(src batch, src name): (blind batch, blind name)}, revealed {(blind batch, blind name): model})."""
+    saved = saved_ratings() if saved is None else saved
+    by_source, revealed = {}, {}
+    for f in sorted(BASE.glob('local-blind-key-20??-??-??.json')):
+        blind = f'{f.stem[-10:]}-local-blind'
+        key = read_json(f, {})
+        if not is_batch(blind) or not isinstance(key, dict):
+            continue
+        for name, v in key.items():
+            src = v.get('batch') or next((d.name for d in sorted(BASE.glob(f"20??-??-??-local-{v.get('model')}"), reverse=True)
+                                          if d.name[:10] <= blind[:10] and (d / f"{v.get('image')}.png").exists()), None)
+            if src:
+                by_source[(src, v.get('image'))] = (blind, name)
+        names = rate.batch_images(blind)
+        if names and all((blind, n) in saved for n in names):
+            revealed.update({(blind, n): key[n]['model'] for n in names if n in key})
+    return by_source, revealed
+
+
 # ---------------------------------------------------------------- kept examples (21 Nov 2026)
 
 KEPT = BASE / 'kept.json'     # [{batch, name, style, at}]: images Marc keeps as examples of their style
@@ -243,13 +269,15 @@ def batch_images(batch, shared=None):
     shared: (runs by batch, saved ratings, ignored) read once by list_batches, so the home page does not
     parse runs.csv and ratings.csv once per batch (that took ~1.4 s with 120 batches; 21 Nov 2026)."""
     if shared:
-        runs_by_batch, saved, ignored_all, kept, pub = shared
+        runs_by_batch, saved, ignored_all, kept, pub, (by_source, revealed) = shared
         runs = runs_by_batch.get(batch, {})
     else:
         runs, saved, ignored_all, kept, pub = rate.batch_runs(batch), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set()
+        by_source, revealed = blind_copies(saved)
     ignored = set(ignored_all.get(batch, []))
     out = []
-    for i, name in enumerate(rate.batch_images(batch), 1):
+    names = [n for n in rate.batch_images(batch) if (batch, n) not in by_source]   # shown in the blind batch instead
+    for i, name in enumerate(names, 1):
         run = runs.get(name, {})
         s = saved.get((batch, name))
         # One mark per image, saved at once (21 Nov 2026): "draft" is the mark the page shows and changes,
@@ -260,7 +288,7 @@ def batch_images(batch, shared=None):
             'mtime': int((BASE / batch / f'{name}.png').stat().st_mtime),
             'style': run.get('style', ''), 'mode': run.get('mode', ''), 'change': run.get('change', ''),
             'seed': run.get('seed', ''), 'prompt': run.get('prompt', ''), 'route': run.get('route') or 'codex',
-            'model': model_of(run) if run else '',
+            'model': revealed.get((batch, name)) or (model_of(run) if run else ''),
             'width': run.get('width', ''), 'height': run.get('height', ''),
             'date': run.get('date', ''), 'time': run.get('time', ''), 'seconds': run.get('seconds', ''),
             'draft': {'rating': s['rating'], 'why': s['why'], 'date': s['date']} if s else None,
@@ -285,7 +313,8 @@ def summary(batch, images):
 def list_batches():
     """All batches, newest image first."""
     names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-    shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set())
+    saved = saved_ratings()
+    shared = (all_runs(), saved, read_json(IGNORED, {}), kept_set(), publish_set(), blind_copies(saved))
     out = [summary(b, batch_images(b, shared)) for b in names]
     return sorted(out, key=lambda s: s['newest'], reverse=True)
 
@@ -2816,7 +2845,8 @@ class Handler(BaseHTTPRequestHandler):
     def gallery_images(self):
         out = []
         names = [p.name for p in BASE.iterdir() if is_batch(p.name)] if BASE.exists() else []
-        shared = (all_runs(), saved_ratings(), read_json(IGNORED, {}), kept_set(), publish_set())
+        saved = saved_ratings()
+        shared = (all_runs(), saved, read_json(IGNORED, {}), kept_set(), publish_set(), blind_copies(saved))
         for b in names:
             for im in batch_images(b, shared):
                 if im['status'] != 'ignored':
@@ -2831,6 +2861,7 @@ class Handler(BaseHTTPRequestHandler):
         only and the default model per style. Usage (ChatGPT week, FLUX today) comes from GET /api/allowance."""
         import statistics
         saved, local_speed = saved_ratings(), local_run.speed()
+        by_source, revealed = blind_copies(saved)   # a revealed blind mark counts for its model
         per = {k: {'n': 0, 'secs': [], 'up': 0, 'down': 0, 'last': ''} for k in MODELS}
         for b, rows in all_runs().items():
             for n, r in rows.items():
@@ -2841,7 +2872,8 @@ class Handler(BaseHTTPRequestHandler):
                 d['n'] += 1
                 if str(r.get('seconds', '')).isdigit():
                     d['secs'].append(int(r['seconds']))
-                mark = (saved.get((b, n)) or {}).get('rating')
+                copy = by_source.get((b, n))
+                mark = (saved.get((b, n)) or (saved.get(copy) if copy in revealed else None) or {}).get('rating')
                 d['up'] += mark == 'keep'
                 d['down'] += mark == 'no'
                 d['last'] = max(d['last'], f"{r['date']} {r['time']}".strip())

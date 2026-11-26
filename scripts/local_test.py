@@ -16,7 +16,7 @@ style) plus subjects 3 and 4 for the --match styles, so those get 4 matching pro
 Same seed per style and subject on every model. Rows go to runs.csv with route "local" and session
 "local:<model>"; "seconds" is wall time (the first image of a model includes loading it).
 --blind copies the matching images of all models into <date>-local-blind with shuffled names; which model made
-which is in generated/codex/local-blind-key.json (git-ignored), read only after Marc has rated.
+which is in generated/codex/local-blind-key-<date>.json (git-ignored), read only after Marc has rated.
 
   .venv/Scripts/python -I scripts/local_test.py run --model klein [--only STYLE ...] [--match a b c] [--skip STYLE ...] [--limit N]
   .venv/Scripts/python -I scripts/local_test.py blind --match a b c [--models dreamshaper juggernaut ...]
@@ -36,7 +36,7 @@ W = H = 1024
 from local_run import SDXL  # noqa: E402  (file, steps, cfg, sampler, scheduler; one list for test and app)
 MODELS = ('klein', 'zimage', 'playground') + tuple(SDXL)
 DAY = datetime.date.today().isoformat()
-KEY = ROOT / 'generated' / 'codex' / 'local-blind-key.json'
+KEY = ROOT / 'generated' / 'codex' / f'local-blind-key-{DAY}.json'   # the app reads it (hides originals, reveals when rated)
 ADULTS = ' Every figure is an adult.'   # erotic style on a local model: limits in docs/local-route.md
 
 
