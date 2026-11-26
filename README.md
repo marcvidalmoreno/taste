@@ -133,6 +133,9 @@ A Playwright suite (pytest-playwright, `requirements-dev.txt`) tests the whole w
 - The post-commit hook (`scripts/gallery_sync.py --install-hooks` installs both hooks) runs `e2e.py --hook`: only for
   commits touching `app/`, `scripts/` or `tests/`; one run at a time, later commits are covered by one more run; results
   in `generated/e2e/` (git-ignored): `last.json`, `e2e.log`, screenshots of failures per run.
+- The check runs the app with its ComfyUI and Ollama addresses pointed at a dead port (in the copy only), so no model on
+  this laptop can be reached or started. It also ran into a real, small race: a read of a JSON file (for example the notes)
+  that lands while the app swaps that file in can answer 500 on Windows; the tests retry that read.
 - Reports: SessionStart hook (`.claude/settings.json`, `e2e.py --status`) for Claude; the chip in the app; an email
   through `send-mail.mjs` on a new break and on the fix.
 
