@@ -19,7 +19,7 @@ Same seed per style and subject on every model. Rows go to runs.csv with route "
 which is in generated/codex/local-blind-key.json (git-ignored), read only after Marc has rated.
 
   .venv/Scripts/python -I scripts/local_test.py run --model klein [--only STYLE ...] [--match a b c] [--skip STYLE ...] [--limit N]
-  .venv/Scripts/python -I scripts/local_test.py blind --match a b c
+  .venv/Scripts/python -I scripts/local_test.py blind --match a b c [--models dreamshaper juggernaut ...]
   .venv/Scripts/python -I scripts/local_test.py speed          # seconds per image, per model, from runs.csv
 """
 import argparse, csv, datetime, json, random, re, shutil, statistics, sys, time, urllib.parse, urllib.request, uuid, zlib
@@ -206,10 +206,17 @@ def free():
         print(f'could not unload ComfyUI models: {e}', file=sys.stderr)
 
 
+def latest(model):
+    """The model's newest full test batch (a run can cross midnight, so not always today's)."""
+    dirs = sorted((ROOT / 'generated' / 'codex').glob(f'20??-??-??-local-{model}'), key=lambda d: (len(list(d.glob('*.png'))) > 1, d.name))
+    return dirs[-1] if dirs else None
+
+
 def blind(a):
     rnd = random.Random(DAY)
-    items = [(m, f'{k}-{i}') for m in MODELS for k in a.match for i in range(1, 5)]
-    items = [(m, n) for m, n in items if (ROOT / 'generated' / 'codex' / f'{DAY}-local-{m}' / f'{n}.png').exists()]
+    src_dir = {m: latest(m) for m in (a.models or MODELS)}
+    items = [(m, f'{k}-{i}') for m in src_dir if src_dir[m] for k in a.match for i in range(1, 5)]
+    items = [(m, n) for m, n in items if (src_dir[m] / f'{n}.png').exists()]
     rnd.shuffle(items)
     out = ROOT / 'generated' / 'codex' / f'{DAY}-local-blind'
     out.mkdir(parents=True, exist_ok=True)
@@ -217,9 +224,9 @@ def blind(a):
     key = {}
     for j, (m, n) in enumerate(items, 1):
         new = f'{n.rsplit("-", 1)[0]}-{j:02d}'
-        shutil.copy2(ROOT / 'generated' / 'codex' / f'{DAY}-local-{m}' / f'{n}.png', out / f'{new}.png')
-        key[new] = {'model': m, 'image': n}
-        src = rows.get((f'{DAY}-local-{m}', n), {})
+        shutil.copy2(src_dir[m] / f'{n}.png', out / f'{new}.png')
+        key[new] = {'model': m, 'image': n, 'batch': src_dir[m].name}
+        src = rows.get((src_dir[m].name, n), {})
         now = datetime.datetime.now()
         log_row([now.date().isoformat(), now.strftime('%H:%M'), out.name, new, 'local-test', src.get('style', ''),
                  'local blind', src.get('seed', ''), 'yes', W, H, '', '', '', '', '', '', 'local:hidden', src.get('prompt', ''), 'local'])
@@ -248,6 +255,7 @@ if __name__ == '__main__':
     r.add_argument('--skip', nargs='*')
     b = sub.add_parser('blind')
     b.add_argument('--match', nargs='*', default=['erotic', 'retro-future-rooms', 'dubuffet'])
+    b.add_argument('--models', nargs='*', choices=MODELS, help='default: all; each from its newest full batch')
     sub.add_parser('speed')
     sub.add_parser('free')
     a = p.parse_args()
