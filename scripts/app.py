@@ -47,7 +47,7 @@ until it ends. Codex also writes subjects and rewrites prompts (codex_text.py, r
 Marks are saved at once (21 Nov 2026): each Up / Down / take-back appends a row to ratings.csv, the latest row per
 image wins (rate.latest). app-drafts.json is only read once, to save marks left from before.
 """
-import argparse, csv, io, json, os, re, sys, threading, webbrowser, zipfile
+import argparse, csv, io, json, os, re, sys, threading, time, webbrowser, zipfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, unquote, parse_qs
@@ -76,18 +76,38 @@ LOCK = threading.Lock()  # one writer at a time for the small JSON files and thu
 # ---------------------------------------------------------------- small file helpers
 
 def read_json(path, default):
-    try:
-        return json.load(open(path, encoding='utf-8'))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return default
+    # On Windows a read that meets os.replace in write_json can get PermissionError: retry briefly.
+    for wait in (0.05, 0.1, 0.2, None):
+        try:
+            with open(path, encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return default
+        except PermissionError:
+            if wait is None:
+                raise
+            time.sleep(wait)
+
+
+def swap_in(tmp, path):
+    """os.replace with a few short retries: on Windows the swap fails while another program
+    (Google Drive, antivirus, a reader) holds the file open for a moment."""
+    for wait in (0.05, 0.1, 0.2, 0.4, 0.8, 1.5):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            time.sleep(wait)
+    os.replace(tmp, path)
 
 
 def write_json(path, data):
-    """Write to a temporary file, then swap it in: a crash never leaves half a file."""
-    tmp = path.with_suffix('.tmp')
+    """Write to a temporary file, then swap it in: a crash never leaves half a file.
+    The temporary name is per thread, so two writers never share one."""
+    tmp = path.with_name(f'{path.stem}.{os.getpid()}.{threading.get_ident()}.tmp')
     with open(tmp, 'w', encoding='utf-8') as fh:
         json.dump(data, fh, indent=1, ensure_ascii=False)
-    os.replace(tmp, path)
+    swap_in(tmp, path)
 
 
 def saved_ratings():
@@ -1490,7 +1510,7 @@ def write_style(style, data):
     tmp = path.with_suffix('.tmp')
     with open(tmp, 'w', encoding='utf-8', newline='\r\n') as fh:
         fh.write(json.dumps(data, indent=2))
-    os.replace(tmp, path)
+    swap_in(tmp, path)
     r = subprocess.run([PY, '-I', str(ROOT / 'scripts' / 'build_taste.py'), str(ROOT)], cwd=ROOT,
                        capture_output=True, text=True, encoding='utf-8', errors='replace')
     if r.returncode:
