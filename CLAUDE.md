@@ -60,3 +60,4 @@ An undo line in the reply and a changelog entry in the README.
 A change to the web app that adds, removes or renames something Marc can see or do also updates the in-app
 Guide (`app/guide.html`, its section and "Last updated" date) in the same commit (Marc, 21 Nov 2026).
 `app/about.html` holds the why, not features.
+Run `.venv/Scripts/python -I scripts/e2e.py --working` (about 2 min, fake data, nothing real touched) before committing a change to `app/` or `scripts/`; the check also runs after each commit, and a failing result is printed when a session starts: fix it first.

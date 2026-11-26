@@ -2188,6 +2188,7 @@ class Handler(BaseHTTPRequestHandler):
         ('GET', 'api/gallery'): 'get_gallery',
         ('GET', 'api/similar'): 'get_similar',
         ('GET', 'api/history'): 'get_history',
+        ('GET', 'api/e2e'): 'get_e2e',
         ('GET', 'api/models'): 'get_models',
         ('GET', 'api/models/style'): 'get_models_style',
         ('POST', 'api/models/default'): 'post_models_default',
@@ -3004,6 +3005,13 @@ class Handler(BaseHTTPRequestHandler):
         return out
 
     # -- Models page (25 Nov 2026): compare the models, set a default per style, Local only
+
+    def get_e2e(self):
+        """The regression check's last result (26 Nov 2026): scripts/e2e.py --hook writes generated/e2e/last.json after
+        a commit. The page shows a calm chip while it says 'fail'; nothing else here, the details are in that file."""
+        last = read_json(ROOT / 'generated' / 'e2e' / 'last.json', {})
+        bad = last.get('status') == 'fail'
+        return {'failing': bad, 'sha': last.get('sha', '') if bad else '', 'tests': len(last.get('failing') or []) if bad else 0}
 
     def get_models(self):
         """One card per model: what it is good at, images made, median seconds per image, thumbs-up rate; plus Local

@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 26 Nov 2026 (New run with several models). This guide changes with the app.</p>
+<p class="muted small">Last updated 26 Nov 2026 (the regression-check chip). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -74,7 +74,7 @@
       <tr><td><strong>New run</strong></td><td>Start making images.</td></tr>
     </tbody>
   </table>
-  <p>Two chips appear next to the links only when something needs your eye:</p>
+  <p>A few chips appear next to the links only when something needs your eye:</p>
   <ul>
     <li><strong>Run chip</strong>, while images are being made: "Making 2 of 8", the image being made, the time so far
       and how many runs wait. Click it to open the batch; <strong>Log</strong> opens the live log and the queue.
@@ -83,6 +83,11 @@
       to read them.</li>
     <li><strong>Local only chip</strong>, while Local only is on (Models page): only the models on this laptop run and
       no ChatGPT tokens are used. Click it to open the Models page.</li>
+    <li><strong>Regression found · fix pending</strong>, while the automatic check of the app is failing. After each
+      commit that changes the app, a test run tries every page and the main actions on a copy with fake data (dry
+      runs, no Codex, nothing of yours is touched). If something broke, you get one email, Claude is told first thing
+      in its next session, and this chip shows until a later check passes. Nothing for you to do; hover it for the
+      commit.</li>
   </ul>
 </section>
 

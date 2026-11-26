@@ -935,3 +935,6 @@ dialog.remix footer .keys kbd { font-size: .75rem; }
 dialog.remix [role=group] > * { flex: 0 0 auto; }
 dialog.remix .rx-pals[role=group] > .rx-pal { flex: 1 1 5.5rem; }   /* chips share the row; liked-image chips have no label */
 dialog.remix .rx-chips[role=group], dialog.remix .rx-pals[role=group] { display: flex; flex-wrap: wrap; }
+
+/* The regression check found a break (26 Nov 2026): a calm chip, no alarm colour; it leaves when a check passes. */
+.e2e-chip { font-size: .8rem; padding: .15rem .6rem; border: 1px solid var(--line); border-radius: 99px; color: var(--text); white-space: nowrap; cursor: help; }

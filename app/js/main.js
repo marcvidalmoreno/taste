@@ -25,6 +25,7 @@ import { renderModels } from './models.js';
 import { modelInfo, isLocalOnly } from './cost.js';
 import { closeViewer } from './viewer.js';
 import './job.js';   // picks up a run that may already be going
+import './e2e.js';   // the chip that says the regression check found a break
 
 const view = document.getElementById('view');
 

@@ -1,0 +1,4 @@
+# Regression check (scripts/e2e.py). playwright 1.64.1 wants chromium 1248, already in ~/AppData/Local/ms-playwright: no download.
+pytest
+pytest-playwright==0.10.0
+playwright==1.64.1

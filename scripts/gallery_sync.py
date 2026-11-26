@@ -3,6 +3,7 @@
   .venv/Scripts/python -I scripts/gallery_sync.py                 # sync now (the app calls this ~5 min after the last Publish toggle)
   .venv/Scripts/python -I scripts/gallery_sync.py --hook <repo>   # from a post-commit hook: sync only after a major commit
   .venv/Scripts/python -I scripts/gallery_sync.py --install-hooks # (re)install the post-commit hooks in taste and taste/
+                                                                   # (they also start the regression check, scripts/e2e.py --hook)
 
 Major commit: touches styles or taste.json in the private repo taste/, or the README (its changelog feeds the site)
 in either repo. A commit that changes scripts/build_taste.py or scripts/pack.py also writes a note to
@@ -25,8 +26,11 @@ PY = ROOT / '.venv' / 'Scripts' / 'python.exe'
 HOOK = """#!/bin/sh
 # Installed by scripts/gallery_sync.py --install-hooks: keeps the public taste-gallery site in step after major commits.
 # Runs in the background so the commit returns at once; output goes to generated/codex/gallery-sync.log.
+# The second line (26 Nov 2026) starts the regression check of the web app (scripts/e2e.py): it acts only on commits
+# in this repo that touch app/, scripts/ or tests/, one run at a time; output goes to generated/e2e/.
 ROOT="{root}"
 nohup "$ROOT/.venv/Scripts/python.exe" -I "$ROOT/scripts/gallery_sync.py" --hook "$(git rev-parse --show-toplevel)" >/dev/null 2>&1 &
+nohup "$ROOT/.venv/Scripts/python.exe" -I "$ROOT/scripts/e2e.py" --hook "$(git rev-parse --show-toplevel)" >/dev/null 2>&1 </dev/null &
 exit 0
 """
 

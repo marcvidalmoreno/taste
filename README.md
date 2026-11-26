@@ -120,7 +120,24 @@ Codex's session log, never typed) and the real pixel size to `generated/codex/ru
   most). The cost block no longer uses a fixed image budget: it counts images since Codex's own weekly reset, measures
   % per image from `runs.csv`, and warns when a run may reach 100 %.
 
+## Regression check (26 Nov 2026)
+A Playwright suite (pytest-playwright, `requirements-dev.txt`) tests the whole web app after every commit, in the background.
+- `.venv/Scripts/python -I scripts/e2e.py` tests the last commit (HEAD); `--working` tests the files as they are now
+  (use it before committing a change to `app/` or `scripts/`); `--serve` starts the copy and prints its address so you
+  can look at it; `--sabotage` and `--fake-route` break the copy on purpose to prove the suite notices.
+- It unpacks `git archive HEAD app scripts tests` into a temp folder, writes invented styles, pictures, runs and ratings
+  there (`tests/fixtures/make_fixtures.py`, nothing copied from the real folders), and starts the app with `--dry-run` on
+  a free port from 8795 up, with a fake home folder (so `~/.taste` and `~/.codex` are not the real ones).
+- `tests/e2e/`: the route guard (reads the `pages` map in `app/js/main.js`), every page, the main actions, stale state,
+  widths. Takes about 2 minutes.
+- The post-commit hook (`scripts/gallery_sync.py --install-hooks` installs both hooks) runs `e2e.py --hook`: only for
+  commits touching `app/`, `scripts/` or `tests/`; one run at a time, later commits are covered by one more run; results
+  in `generated/e2e/` (git-ignored): `last.json`, `e2e.log`, screenshots of failures per run.
+- Reports: SessionStart hook (`.claude/settings.json`, `e2e.py --status`) for Claude; the chip in the app; an email
+  through `send-mail.mjs` on a new break and on the fix.
+
 ## Changelog
+- **26 Nov 2026** – Regression check: after every commit that touches `app/`, `scripts/` or `tests/`, Playwright tests the whole web app in the background on a throwaway copy (`git archive HEAD`, invented styles and pictures, the app started with `--dry-run` on a free port and a fake home folder, so nothing real is read or written and ComfyUI, Ollama, Cloudflare and Codex are never touched). Every route opens clean, the main actions work (marks, ignore, keep, note, history, New run in both modes with palette only and two models, Remix, Pause / Resume / Stop, popups), stale saved state still draws, no sideways scroll at 1920 and 768 px, and a page added to `app/js/main.js` without a test fails the check. A break is reported three ways: the next Claude session hears of it first (SessionStart hook), the app shows a calm chip **Regression found · fix pending** (`GET /api/e2e`), and one email goes out for a new break and one when it is fixed. Sessions run `scripts/e2e.py --working` before committing app or script changes. Guide updated. Undo: `git revert` this commit, then `scripts/gallery_sync.py --install-hooks` to drop the hook line, and delete `.claude/settings.json`'s SessionStart entry.
 - **26 Nov 2026** – New run, **Made with**: tick several models (as in Remix). Start queues the same run once per model, each its own batch (folder ending in the model), and Codex writes the missing subjects once so every model gets the same ones. The cost block shows each model's cost under its name; with one model it looks as before. A style's default model no longer replaces a hand-picked set. Guide updated. Undo: `git revert` this commit.
 - **26 Nov 2026** – Runs: **Pause** next to Stop (Batches card and Log). The image being made finishes, then the run stops; the images it had left wait at the top of the queue (same folder and prompts, as a Resume) and the queue holds until **Resume**, also after an app restart (`app-paused.json`). A second click, **Pause now**, stops at once and remakes that image on Resume. Pause only ever stops the app's own run, never one from chat. Guide updated. Undo: `git revert` this commit.
 - **26 Nov 2026** – Gallery large view: arrow keys (and the other shortcuts) work wherever the focus is. Clicking a mark redrew the panel, focus fell to the page and the keys went dead until a click on the image; keys are now heard on the whole window, as in the batch viewer, and a popup on top (Remix, note) still keeps them. Undo: `git revert` this commit.
