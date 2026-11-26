@@ -35,24 +35,30 @@ export function meter(label, used, add = 0) {
 // a: GET /api/allowance (or {error}), n: images this run would make, extra: e.g. 'Codex writes subjects first: ~15 s each'
 // onRoute: redraw callback; given, the block starts with the "Made with" choice (ChatGPT or FLUX on Cloudflare).
 // style: the style this run is for (its default model is picked once); seed: the run starts from an image.
-// picker: false leaves out the "Made with" choice.
-export function costBlock(a, n, { extra = '', compact = false, onRoute = null, style = '', seed = false, picker = true } = {}) {
-  if (onRoute) preselect(style);
-  const pick = onRoute && picker && routePicker(onRoute, style);
+// picker: false leaves out the "Made with" choice. multi: the chips toggle, several models make one run each (New batch).
+export function costBlock(a, n, { extra = '', compact = false, onRoute = null, style = '', seed = false, picker = true, multi = false } = {}) {
+  if (onRoute) preselect(style, multi);
+  const pick = onRoute && picker && routePicker(onRoute, style, multi);
   if (!a) return h('section', { class: 'cost', 'aria-busy': 'true' }, pick, 'Reading the allowance…');
   if (a.error) return h('section', { class: 'cost' }, pick, `Allowance unknown: ${a.error}`);
   const dry = a.dry_run && h('p', { class: 'notice' }, 'Dry run: the app was started with --dry-run. Nothing will be generated or spent.');
-  if (onRoute && model() === 'cloudflare') return h('section', { class: 'cost' }, pick, dry, cloudflareBlock(a, n, onRoute, extra));
-  if (onRoute && MODELS[model()].local) return h('section', { class: 'cost' }, pick, dry, localBlock(a, n, model(), extra, seed));
+  const list = multi ? models() : [model()];
+  if (!onRoute || list.length === 1) return h('section', { class: 'cost' }, pick, dry, costFor(a, n, onRoute ? list[0] : 'codex', { extra, compact, onRoute, seed }));
+  // Several models: each one's own block under its name (ChatGPT's allowance, FLUX's day, the laptop's minutes).
+  return h('section', { class: 'cost' }, pick, dry, list.map((m) => h('div', { class: 'cost-model' },
+    h('h3', { class: 'cost-model-name' }, MODELS[m].badge), costFor(a, n, m, { extra: m === list[0] ? extra : '', compact: true, onRoute, seed }))));
+}
+
+function costFor(a, n, m, { extra, compact, onRoute, seed }) {
+  if (onRoute && m === 'cloudflare') return cloudflareBlock(a, n, onRoute, extra);
+  if (onRoute && MODELS[m].local) return localBlock(a, n, m, extra, seed);
   // The week is Codex's own window (since its weekly reset), counted in % of the week, not a fixed image budget.
   const per = a.week_per_image || 0.1;
   const used = a.now ? a.now.weekly : null;
   const add = ((a.queued_images || 0) + n) * per;
   const after = used == null ? null : used + add;
   const over = after != null && after > 100;
-  return h('section', { class: 'cost' },
-    pick,
-    dry,
+  return [
     h('p', { class: 'cost-main' },
       h('strong', {}, plural(n, 'image')),
       h('span', { class: 'muted' }, ` · about ${n * COST.minutes} min · ≈ ${(n * COST.fiveLow).toFixed(1)}–${(n * COST.fiveHigh).toFixed(1)} % of the five-hour window`)),
@@ -61,7 +67,7 @@ export function costBlock(a, n, { extra = '', compact = false, onRoute = null, s
       meter('Five-hour window', a.now.five_hour), meter('This week', a.now.weekly),
       h('p', { class: 'muted small' }, `Used, from Codex's own log as of ${a.now.as_of.slice(11)} on ${a.now.as_of.slice(0, 10)}.`))
       : h('p', { class: 'small' }, `Allowance unknown: ${a.unknown_reason || 'no reading'}`)),
-    h('p', { class: 'small' + (over ? ' over' : ' muted') }, weekLine(a, add, after, over)));
+    h('p', { class: 'small' + (over ? ' over' : ' muted') }, weekLine(a, add, after, over))];
 }
 
 const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -198,6 +204,23 @@ export function model() {
   return m;
 }
 export function setModel(m) { if (MODELS[m]) localStorage.setItem(MKEY, m); }
+// New batch with several models (26 Nov 2026): the first is model(), the others are kept here, in pick order.
+const MOREKEY = 'taste-models-more';
+const more = () => { try { return JSON.parse(localStorage.getItem(MOREKEY)) || []; } catch { return []; } };
+const setMore = (list) => localStorage.setItem(MOREKEY, JSON.stringify(list));
+export function models() {
+  const m = model();
+  return [m, ...more().filter((k) => MODELS[k] && k !== m && (!isLocalOnly() || MODELS[k].local))];
+}
+// A chip in the several-models picker: on adds it, off drops it (the last one stays: a run needs a model).
+function toggleModel(k) {
+  const list = models();
+  if (!list.includes(k)) { setMore([...list.slice(1), k]); return; }
+  if (list.length === 1) return;
+  const rest = list.filter((x) => x !== k);
+  setModel(rest[0]);
+  setMore(rest.slice(1));
+}
 // The route codex_run.py takes: codex, cloudflare or local (kept for older callers)
 export const route = () => (MODELS[model()].local ? 'local' : model());
 
@@ -215,27 +238,33 @@ export const styleDefault = (style) => (style && info?.defaults?.[style]) || '';
 
 // A style's default model is picked once each time that style comes up in a dialog; Marc's own pick then holds.
 let lastStyle = null;
-export function preselect(style) {
+export function preselect(style, multi = false) {
   if (!style || style === lastStyle || !info) return;
   lastStyle = style;
+  if (multi && models().length > 1) return;   // several models picked by hand (New batch): that pick holds
   const d = info.defaults?.[style];
   if (d && MODELS[d] && (!isLocalOnly() || MODELS[d].local)) setModel(d);
 }
 export const resetPreselect = () => { lastStyle = null; };
 
-function routePicker(onRoute, style) {
+function routePicker(onRoute, style, multi = false) {
   const m = model();
+  const on = multi ? models() : [m];
   const keys = isLocalOnly() ? LOCAL : Object.keys(MODELS);
   const def = styleDefault(style);
-  const pick = (k) => { setModel(k); onRoute(); };
+  const pick = (k) => { if (multi) toggleModel(k); else setModel(k); onRoute(); };
+  const several = on.length > 1;
   return h('div', { class: 'route-pick' },
     h('span', { class: 'nr-label' }, 'Made with'),
     h('div', { class: 'rseg rseg-wrap', role: 'group', 'aria-label': 'Made with' },
-      keys.map((k) => h('button', { type: 'button', class: 'rseg-btn', 'aria-pressed': String(m === k), onClick: () => pick(k),
+      keys.map((k) => h('button', { type: 'button', class: 'rseg-btn', 'aria-pressed': String(on.includes(k)), onClick: () => pick(k),
         title: `${MODELS[k].name}${def === k ? ' (default for this style)' : ''}\n${aboutLine(k)}` },
         MODELS[k].badge, MODELS[k].tag && h('small', {}, ' ' + MODELS[k].tag), def === k && h('small', { class: 'def-dot' }, ' · default')))),
-    h('p', { class: 'muted small' }, MODELS[m].note, isLocalOnly() ? ' Local only is on (Models page).' : ''),
-    ABOUT[m] && h('p', { class: 'muted small model-about-line' }, aboutLine(m), ' · ',
+    multi && h('p', { class: 'muted small' }, several
+      ? `${on.length} models: one batch each, same settings and subjects, side by side. Click a model again to drop it.`
+      : 'Pick more models to compare them: one batch each, same settings and subjects.'),
+    !several && h('p', { class: 'muted small' }, MODELS[m].note, isLocalOnly() ? ' Local only is on (Models page).' : ''),
+    !several && ABOUT[m] && h('p', { class: 'muted small model-about-line' }, aboutLine(m), ' · ',
       h('a', { href: '#/models', target: '_blank', rel: 'noopener' }, 'More on the Models page')));
 }
 
@@ -247,8 +276,8 @@ export function makeLabel(n) {
 }
 
 // Why Start can't go yet with this model ('' = it can).
-export function routeBlocker(a) {
-  return model() === 'cloudflare' && a && !a.error && !a.cloudflare?.connected ? 'Connect Cloudflare first.' : '';
+export function routeBlocker(a, multi = false) {
+  return (multi ? models() : [model()]).includes('cloudflare') && a && !a.error && !a.cloudflare?.connected ? 'Connect Cloudflare first.' : '';
 }
 
 // Seconds per image of a local model: measured from runs.csv, else the 24 Nov test.

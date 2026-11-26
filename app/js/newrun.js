@@ -7,7 +7,7 @@
 // The form survives leaving the page (sessionStorage), so a look at another batch never loses a half-made run.
 // Nothing spends until "Start": the preview prints the exact prompts for free, the cost is always in view.
 import { api, styles, refreshStyles } from './api.js';
-import { allowance, costBlock, model, isLocalOnly, resetPreselect, routeBlocker } from './cost.js';
+import { allowance, costBlock, MODELS, model, models, isLocalOnly, resetPreselect, routeBlocker } from './cost.js';
 import { job, enqueueRun, onJob } from './job.js';
 import { h, plural, toast, showError } from './ui.js';
 
@@ -58,7 +58,10 @@ export async function renderNewRun(el, query) {
 }
 
 const save = () => sessionStorage.setItem(KEY, JSON.stringify(state));
-const total = () => (state.mode === 'one' ? state.one.n : state.styles.length * state.n);
+const total = () => (state.mode === 'one' ? state.one.n : state.styles.length * state.n);   // per model
+// Several models (26 Nov 2026): the same run once per model, each its own batch.
+const many = () => models().length;
+const modelsLine = () => (many() > 1 ? ` Made with ${many()} models: ${models().map((m) => MODELS[m].badge).join(', ')}, one batch each (${plural(total() * many(), 'image')} in all).` : '');
 const lines = (s) => (state.subjects[s] || '').split('\n').map((x) => x.trim()).filter(Boolean);
 
 // ---------------------------------------------------------------- layout
@@ -381,14 +384,14 @@ function drawSummary() {
     state.mode === 'batch'
       ? h('p', { class: 'small' }, state.styles.length
         ? `${state.experimental ? 'Experimental: ' : ''}${plural(state.styles.length, 'style')} × ${state.n} = ${plural(n, 'image')}, ${RATIOS[state.ratio].toLowerCase()} shapes${state.experimental ? ', new palettes, bolder subjects' : state.wildcards && state.n > 1 ? ', one wildcard each' : ''}.`
-        : 'Pick at least one style.')
+        : 'Pick at least one style.', state.styles.length ? modelsLine() : '')
       : h('p', { class: 'small' }, state.one.palOnly
         ? `${plural(n, 'image')}, palette only${state.one.palFrom && all[state.one.palFrom] ? ` (${all[state.one.palFrom].name})` : ''}, ${state.one.ratio}.`
-        : `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`),
-    costBlock(alw, n, { onRoute: drawSummary, style: runStyle(),
+        : `${plural(n, 'image')} in ${all[state.one.style]?.name || '…'}, ${state.one.ratio}.`, modelsLine()),
+    costBlock(alw, n, { onRoute: drawSummary, style: runStyle(), multi: true,
       extra: codexStyles ? (isLocalOnly() ? `The local model writes the missing subjects first: about 20 s for each of ${plural(codexStyles, 'style')}, no tokens.`
         : `Codex writes the missing subjects first: about 15 s for each of ${plural(codexStyles, 'style')}.`) : '' }),
-    h('p', { class: 'muted small' }, `Images land in generated/codex/<date>-<name>${FOLDER_END[model()] || ''}/ (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.`),
+    h('p', { class: 'muted small' }, `Images land in ${many() > 1 ? 'one folder per model, ' : ''}generated/codex/<date>-<name>${many() > 1 ? '-<model>' : FOLDER_END[model()] || ''}/ (kept off GitHub). You get a message here, and on your desktop if you allow it, when they are ready.`),
     h('div', { class: 'nr-actions' }, startBtn, state.mode === 'batch' && previewBtn),
     h('p', { class: 'muted small keys' }, h('kbd', {}, 'Ctrl'), ' + ', h('kbd', {}, 'Enter'), ' starts'));
   drawStart();
@@ -404,7 +407,7 @@ function runStyle() {
 }
 
 function blocker() {
-  if (routeBlocker(alw)) return routeBlocker(alw);
+  if (routeBlocker(alw, true)) return routeBlocker(alw, true);
   if (state.mode === 'batch') return !state.styles.length ? 'Pick at least one style.' : '';
   const o = state.one;
   if (o.palOnly) return composing ? 'Writing the prompt…' : !o.palette.length ? 'Pick a palette.' : !o.text.trim() && !o.prompt.trim() ? 'Write what you want.' : '';
@@ -414,7 +417,7 @@ function blocker() {
 function drawStart() {
   if (!startBtn) return;
   const why = blocker();
-  const n = total();
+  const n = total() * many();
   const busy = job.running || job.queue?.length;
   startBtn.disabled = !!why || startBtn.getAttribute('aria-busy') === 'true';
   startBtn.title = why;
@@ -426,10 +429,10 @@ function drawStart() {
 function body() {
   if (state.mode === 'one') {
     const o = state.one;
-    if (o.palOnly) return { kind: 'single', model: model(), style: '', palette: o.palette, text: o.text, prompt: o.prompt, ratio: o.ratio, n: o.n };
-    return { kind: 'single', model: model(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
+    if (o.palOnly) return { kind: 'single', model: model(), models: models(), style: '', palette: o.palette, text: o.text, prompt: o.prompt, ratio: o.ratio, n: o.n };
+    return { kind: 'single', model: model(), models: models(), style: o.style, subject: o.subject, ratio: o.ratio, n: o.n, use_kept: state.useKept && !!kept[o.style] };
   }
-  return { kind: 'batch', model: model(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, experimental: state.experimental, name: state.name, use_kept: state.useKept,
+  return { kind: 'batch', model: model(), models: models(), styles: state.styles, n: state.n, ratio: state.ratio, wildcards: state.wildcards, experimental: state.experimental, name: state.name, use_kept: state.useKept,
     subjects: Object.fromEntries(state.styles.map((k) => [k, lines(k)])), hints: state.hints };
 }
 
@@ -445,7 +448,8 @@ async function start() {
     }
     const res = await enqueueRun(body(), { go: '#/' });
     const title = res.queue?.find((q) => q.id === res.queued_id)?.title || res.title || 'the run';
-    toast(res.position <= 1 ? `Started: ${title}` : `Queued, number ${res.position} in line: ${title}`);
+    toast(res.runs > 1 ? `Queued ${res.runs} batches, one per model: ${title.replace(/ · .*$/, '')}`
+      : res.position <= 1 ? `Started: ${title}` : `Queued, number ${res.position} in line: ${title}`);
     // The subjects and name were for this run: clear them, keep the styles and settings for the next one.
     if (state.mode === 'batch') { state.subjects = {}; state.name = ''; } else { state.one.subject = ''; state.one.text = ''; state.one.prompt = ''; state.one.summary = ''; }
     save();

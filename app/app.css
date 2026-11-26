@@ -305,6 +305,8 @@ dialog.variations legend { font-weight: 600; margin-bottom: .25rem; }
               padding-bottom: .7rem; border-bottom: 1px solid var(--line); }
 .route-pick .nr-label { margin: 0; }
 .route-pick p { flex-basis: 100%; margin: 0; }
+.cost-model + .cost-model { margin-top: .6rem; padding-top: .5rem; border-top: 1px solid var(--line); }
+.cost-model-name { font-size: .8rem; font-weight: 600; margin: 0 0 .2rem; color: var(--pico-muted-color); }
 .cost .meter { margin-bottom: .4rem; }
 .cf-connect ol { margin: .2rem 0 .6rem 1.2rem; padding: 0; }
 .cf-connect ol li { margin-bottom: .2rem; }
@@ -844,7 +846,7 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
 .model-facts { display: grid; grid-template-columns: auto 1fr; gap: .2rem .75rem; margin: 0; }
 .model-facts dt { color: var(--pico-muted-color); font-weight: 400; }
 .model-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.model-about { margin-top: .75rem; padding-top: .6rem; border-top: 1px solid var(--pico-muted-border-color); }
+.model-about { margin-top: .75rem; padding-top: .6rem; border-top: 1px solid var(--line); }
 .model-about details { margin: .5rem 0 0; }
 .model-about details p, .model-sources { margin: .4rem 0 0; }
 .model-sources { padding-left: 1.1rem; }

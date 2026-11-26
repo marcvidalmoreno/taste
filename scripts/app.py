@@ -353,6 +353,7 @@ RECENT = []               # the last finished app runs, newest last: the page re
                           # the next queued run starts at once
 HOLD = {}                 # the queue is on hold: {'reason', 'since', 'auto'} (23 Nov 2026), see broken_scripts()
 _QLOCK = threading.Lock()
+SHARED_SUBJECTS = {}      # share id -> {style: [subjects]}: one New batch made with several models (post_runs)
 _WAKE = threading.Event()
 RESTART = 3                   # exit code: "start me again", for the supervisor (scripts/ changed, 23 Nov 2026)
 BORN = [0.0]               # code_stamp() when this server started (set in main): a newer page may call a route it lacks
@@ -775,6 +776,10 @@ def launch(spec):
         subjects = {}
         for st in spec['styles']:
             have = [s for s in spec['subjects'].get(st, []) if s.strip()][:spec['n']]
+            shared = SHARED_SUBJECTS.get(spec.get('share') or '', {}).get(st, [])
+            if len(have) < spec['n'] and len(shared) >= spec['n']:   # another model of the same New batch wrote them
+                have = shared[:spec['n']]
+                say(f'same subjects as the other models of this batch: {style_file(st).get("name", st)}')
             if len(have) < spec['n']:
                 CUR['phase'] = f'{"The local model" if local_only() else "Codex"} is writing subjects for {style_file(st).get("name", st)}'
                 say(CUR['phase'])
@@ -786,6 +791,8 @@ def launch(spec):
             for s in have:
                 say(f'subject {st}: {s}')
         spec['subjects'] = CUR['subjects'] = subjects
+        if spec.get('share'):
+            SHARED_SUBJECTS[spec['share']] = subjects
         write_json(folder / 'subjects.json', subjects)
         if spec.get('use_kept'):
             spec['kept_refs'] = {st: kept_paths(st) for st in spec['styles'] if kept_paths(st)}
@@ -2515,6 +2522,9 @@ class Handler(BaseHTTPRequestHandler):
     def post_run(self, body=None):
         """Queue one run. kind: batch | single | remix | retry | finish | resume | variations (see the spec_* helpers)."""
         body = body or self.read_body()
+        models = [m for m in dict.fromkeys(body.get('models') or []) if m in MODELS]
+        if body.get('kind') in ('batch', 'single') and len(models) > 1:
+            return self.post_runs(body, models)
         make = {'batch': spec_batch, 'single': spec_single, 'remix': spec_remix, 'retry': spec_retry,
                 'finish': spec_finish, 'resume': spec_resume, 'variations': spec_variations}.get(body.get('kind'))
         if not make:
@@ -2523,6 +2533,21 @@ class Handler(BaseHTTPRequestHandler):
             spec = make(body)
         spec.pop('placeholders', None)
         return enqueue(with_model(spec, body))   # Made with: see with_model
+
+    def post_runs(self, body, models):
+        """New batch with several models (26 Nov 2026): the same settings, one queued run per model, each in its own
+        folder. They share one set of written subjects (SHARED_SUBJECTS), so the models are compared like for like."""
+        for m in models:   # check them all first, so a refusal queues nothing
+            with_model({}, {**body, 'model': m})
+        share = os.urandom(4).hex()
+        res, ids = None, []
+        for m in models:
+            with _QLOCK:
+                spec = (spec_batch if body['kind'] == 'batch' else spec_single)({**body, 'model': m})
+            spec.pop('placeholders', None)
+            res = enqueue(with_model({**spec, 'share': share}, {**body, 'model': m}))
+            ids.append(res['queued_id'])
+        return {**res, 'queued_ids': ids, 'runs': len(ids)}
 
     def post_cloudflare_connect(self):
         """Save the Cloudflare account ID and API token (Connect Cloudflare), after Cloudflare's free verify call.
