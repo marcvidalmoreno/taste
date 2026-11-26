@@ -283,7 +283,9 @@ let trail = [];          // where "More like this" came from: Back (button, Esc,
 function ensureDialog() {
   if (dlg) return;
   dlg = h('dialog', { class: 'viewer glarge', 'aria-label': 'Large view', tabindex: '-1' });
-  dlg.addEventListener('keydown', onKey);
+  // Keys are heard on the whole window while the view is open (26 Nov 2026): a redraw can remove the focused
+  // button (a mark, say), focus falls to the page body and a dialog-only listener went deaf until a click.
+  window.addEventListener('keydown', (e) => { if (dlg.open) onKey(e); });
   dlg.addEventListener('cancel', (e) => {
     if (skipCancel) { e.preventDefault(); skipCancel = false; }
     else if (trail.length) { e.preventDefault(); back(); }
@@ -443,6 +445,7 @@ function toggleFit() {
 
 function onKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if ([...document.querySelectorAll('dialog[open]')].some((d) => d !== dlg && !d.matches('.viewer'))) return;   // a popup on top (remix, note…) has the keys; the batch viewer below doesn't
   if (isTyping(e)) {
     if (e.key === 'Escape') { skipCancel = true; e.target.blur(); setTimeout(() => { skipCancel = false; }, 0); }
     return;
