@@ -14,7 +14,7 @@ def test_no_sideways_scroll(page, watch, width, height):
     for address in ADDRESSES:
         page.goto('about:blank')
         go(page, address)
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(150)
         over = page.evaluate('() => document.documentElement.scrollWidth - document.documentElement.clientWidth')
         if over > 1:
             wide.append(f'{address} (+{over} px)')

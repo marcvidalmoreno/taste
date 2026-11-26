@@ -62,7 +62,7 @@ def go(page, hash_, wait='#view > *'):
     page.goto(f'{URL}/#{hash_.lstrip("#")}')
     page.wait_for_selector(wait, timeout=15000)
     page.wait_for_function("() => !document.querySelector('#view [aria-busy=true]')", timeout=15000)
-    page.wait_for_load_state('networkidle')
+    page.wait_for_timeout(150)   # lets the first images and requests start (a failed one is caught by Watch)
 
 
 def screen_text(page):

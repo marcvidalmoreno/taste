@@ -154,7 +154,7 @@ def run(working=False, sabotaged=False, fake=False, keep=False, pytest_args=(), 
             return {'status': 'pass', 'failing': [], 'duration': 0, 'passed': 0, 'total': 0, 'out': str(outdir)}
         xml = outdir / 'junit.xml'
         cmd = [sys.executable, '-I', '-m', 'pytest', 'tests/e2e', '-q', '-p', 'no:cacheprovider', f'--junitxml={xml}',
-               '--screenshot=only-on-failure', f'--output={outdir / "screens"}', *pytest_args]
+               '--screenshot=only-on-failure', '--durations=10', f'--output={outdir / "screens"}', *pytest_args]
         env = {**os.environ, 'TASTE_E2E_URL': url, 'TASTE_E2E_COPY': str(copy), 'PYTHONDONTWRITEBYTECODE': '1'}
         r = subprocess.run(cmd, cwd=copy, env=env, capture_output=True, text=True, encoding='utf-8', errors='replace')
         (outdir / 'pytest.txt').write_text(r.stdout + r.stderr, encoding='utf-8')

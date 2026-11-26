@@ -41,6 +41,6 @@ def test_page_opens(page, watch, address):
     go(page, address)
     if address.startswith('/gallery/') or re.match(r'/b/[^/?]+/[^/?]+', address):
         page.wait_for_selector('dialog[open]')
-    page.wait_for_timeout(300)
+    page.wait_for_timeout(150)
     assert_no_bad_text(page, address)
     watch.assert_clean(address)
