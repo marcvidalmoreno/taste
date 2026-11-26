@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 26 Nov 2026 (popups close with ×, Esc or a click outside). This guide changes with the app.</p>
+<p class="muted small">Last updated 26 Nov 2026 (Pause and Resume for runs). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -96,7 +96,7 @@
     <li>A card with <strong>Now</strong> or <strong>Just finished</strong>, the kind of run, its name, a progress bar
       and the subject being made.</li>
     <li>Buttons: <strong>Open</strong> (or <strong>Rate them</strong> when done), <strong>Log</strong>, and
-      <strong>Stop</strong> while running.</li>
+      <strong>Pause</strong> and <strong>Stop</strong> while running.</li>
     <li><strong>Next</strong>: the runs waiting in the queue, each with <strong>↑ / ↓</strong> to change the order and <strong>Remove</strong>.</li>
   </ul>
   <h3>Runs the usage limit cut short</h3>
@@ -335,6 +335,10 @@
     <li>Watch progress in the header chip, the tab title, the Now and next card, and the placeholder tiles in the
       batch.</li>
     <li><strong>Log</strong>: the live output of the run and the queue below it.</li>
+    <li><strong>Pause</strong>: the image being made finishes, then the run waits. What it has left goes to the top
+      of the queue, and nothing starts until you press <strong>Resume</strong> (in the header chip or under Next),
+      even after the app restarts. While it waits for that image the button reads <strong>Pause now</strong>: it stops
+      at once, and that image is made again on Resume. Not for runs started from chat.</li>
     <li><strong>Stop</strong>: asks first; the image being made is lost, the ones already made stay.</li>
     <li><strong>↑ / ↓</strong>: moves a waiting run earlier or later in the queue.</li>
     <li><strong>Remove</strong>: takes a waiting run out of the queue.</li>

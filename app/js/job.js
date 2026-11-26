@@ -66,6 +66,12 @@ export async function stopRun() {
   try { job = await api('stop', { method: 'POST', body: {} }); poll(); } catch (err) { showError(err); }
 }
 
+// Pause (26 Nov 2026): the image being made finishes, then what is left waits at the top of the queue until
+// Resume. A second click ("Pause now") stops at once; that image is made again on Resume.
+async function pauseRun(now) {
+  try { job = await api('pause', { method: 'POST', body: { now } }); poll(); } catch (err) { showError(err); }
+}
+
 export async function cancelQueued(id, title) {
   try {
     job = await api('queue/cancel', { method: 'POST', body: { id } });
@@ -147,6 +153,9 @@ function report(job) {
   } else if (job.error) {
     text = `${title} could not start: ${job.error}`;
     toast(text, { action: 'Details', onAction: () => showLog(job), tone: 'error', timeout: 0 });
+  } else if (job.paused && missing) {
+    text = `${title} paused: ${made} of ${total} made. The rest waits at the top of the queue.`;
+    toast(text, { action: 'Resume', onAction: resumeQueue, timeout: 0 });
   } else if (job.stopped) {
     text = `${title} stopped: ${made} of ${total} made.`;
     toast(text, { action: made ? 'See them' : 'Details', onAction: made ? open : () => showLog(job), timeout: 0 });
@@ -269,7 +278,7 @@ function drawLog() {
   head.replaceChildren(...[
     h('hgroup', {}, h('h3', {}, r.batch ? runTitle(r) : 'Nothing running'),
       h('p', { class: 'muted small' }, r.batch ? statusLine(r) : 'Runs you start show their progress here.')),
-    !fixed && r.running && stopButton()].filter(Boolean));
+    !fixed && r.running && pauseButton(), !fixed && r.running && stopButton()].filter(Boolean));
   const atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 8;
   const lines = [...(r.log || [])];
   if (r.running && r.current) lines.push(`          … ${r.current.name}, ${clock(Date.now() / 1000 - r.current.since)} so far`);
@@ -282,13 +291,13 @@ export function statusLine(r) {
   if (r.running) {
     if (r.phase && r.phase !== 'Making images') return `${r.phase}…`;
     const doing = Math.min(r.made.length + 1, r.expected.length);
-    return `Making ${doing} of ${r.expected.length}` + (r.failed?.length ? ` · ${r.failed.length} failed` : '')
+    return (r.pausing ? 'Pausing after this image · ' : '') + `Making ${doing} of ${r.expected.length}` + (r.failed?.length ? ` · ${r.failed.length} failed` : '')
       + ` · ${clock(Date.now() / 1000 - r.started)}` + (r.dry_run ? ' · dry run' : '');
   }
   if (r.dry_run) return 'Dry run finished: nothing made, nothing spent';
   if (r.error) return `Could not start: ${r.error}`;
   const missing = r.expected.length - r.made.length;
-  return (r.stopped ? 'Stopped · ' : 'Finished · ') + `${r.made.length} of ${r.expected.length} made`
+  return (r.paused && missing ? 'Paused · ' : r.stopped ? 'Stopped · ' : 'Finished · ') + `${r.made.length} of ${r.expected.length} made`
     + (missing && !r.stopped ? ` · ${missing} failed` : '');
 }
 
@@ -300,12 +309,21 @@ export function stopButton() {
   } }, 'Stop');
 }
 
+// Pause: no confirmation, nothing is lost. Runs started from chat have no pause (the app can only stop them).
+export function pauseButton() {
+  if (job.from_chat) return null;
+  return h('button', { class: 'secondary outline small-btn',
+    title: job.pausing ? 'Stop now: the image being made is made again on Resume' : 'Finish the image being made, then wait until Resume',
+    onClick: () => pauseRun(!!job.pausing) }, job.pausing ? 'Pause now' : 'Pause');
+}
+
 export function queueList(queue) {
+  const paused = job.hold?.paused;
   return h('section', { class: 'queue' },
-    h('h4', {}, `Next (${queue.length})` + (job.hold ? ' · on hold' : '')),
-    job.hold && h('p', { class: 'muted small' }, `${job.hold.reason}. `,
+    h('h4', {}, `Next (${queue.length})` + (paused ? ' · paused' : job.hold ? ' · on hold' : '')),
+    job.hold && h('p', { class: 'muted small' }, paused ? 'Nothing starts until you resume. ' : `${job.hold.reason}. `,
       job.hold.auto ? 'Nothing starts until the script compiles again; then the queue goes on by itself.'
-        : h('button', { class: 'ghost small', onClick: resumeQueue }, 'Continue')),
+        : h('button', { class: 'ghost small', onClick: resumeQueue }, paused ? 'Resume' : 'Continue')),
     h('ol', {}, queue.map((q, i) => h('li', { 'data-id': q.id },
       h('span', {}, h('strong', {}, q.title), ' ', h('span', { class: 'muted small' }, `${KIND[q.kind]?.label || q.kind} · ${noun(q.kind, q.expected.length)}`)),
       h('span', { class: 'queue-actions' },
@@ -339,7 +357,11 @@ function drawChip() {
     link.title = runTitle(job) + (job.current?.subject ? `\nNow: ${job.current.subject}` : '');
     link.querySelector('.label').replaceChildren(
       job.dry_run ? 'Dry run…' : busy ? 'Writing subjects…' : `Making ${doing} of ${job.expected.length}`,
-      h('span', { class: 'muted' }, `${busy ? '' : now}${failed} · ${clock(Date.now() / 1000 - job.started)}${queued}`));
+      h('span', { class: 'muted' }, `${busy ? '' : now}${failed} · ${clock(Date.now() / 1000 - job.started)}${queued}${job.pausing ? ' · pausing' : ''}`));
+  } else if (job.hold?.paused) {
+    link.href = '#/';
+    link.title = 'Paused: nothing starts until you resume';
+    link.querySelector('.label').replaceChildren('Paused', h('span', { class: 'muted' }, ` · ${plural(job.queue.length, 'run')} waiting`));
   } else if (job.hold) {
     // On hold (23 Nov 2026): a script error would fail every queued run in turn. Auto holds lift by themselves.
     link.href = '#/';
@@ -356,9 +378,10 @@ function drawChip() {
   let go = chip.querySelector('.chip-continue');
   const wantGo = !job.running && job.hold && !job.hold.auto;
   if (wantGo && !go) {
-    go = h('button', { class: 'chip-log chip-continue', title: 'Start the queue again', onClick: resumeQueue }, 'Continue');
+    go = h('button', { class: 'chip-log chip-continue', title: 'Start the queue again', onClick: resumeQueue });
     chip.querySelector('.job-chip').append(go);
   } else if (!wantGo && go) go.remove();
+  if (wantGo) go.textContent = job.hold.paused ? 'Resume' : 'Continue';
 }
 
 async function resumeQueue() {

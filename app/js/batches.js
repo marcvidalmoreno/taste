@@ -1,7 +1,7 @@
 // Batches view: every folder in generated/codex/, newest first, grouped by day, with what is left to rate.
 // On top, "Now and next": the run being made and the queue, so a run started anywhere is never out of sight.
 import { api } from './api.js';
-import { job, onJob, KIND, runTitle, statusLine, stopButton, queueList, showLog, resumeAll } from './job.js';
+import { job, onJob, KIND, runTitle, statusLine, pauseButton, stopButton, queueList, showLog, resumeAll } from './job.js';
 import { COST, MODELS, setModel, tryModel, tryPicker } from './cost.js';
 import { h, thumbUrl, batchHref, batchTitle, shortDate, plural, showError, toast } from './ui.js';
 
@@ -73,6 +73,7 @@ function drawNow(j) {
         j.exists && h('a', { href: batchHref(j.batch), role: 'button', class: j.running ? 'secondary outline' : '' },
           j.running ? 'Open' : j.made.length ? 'Rate them' : 'Open'),
         h('button', { class: 'secondary outline', onClick: showLog }, 'Log'),
+        j.running && pauseButton(),
         j.running && stopButton())),
     j.queue?.length > 0 && queueList(j.queue)].filter(Boolean));
 }

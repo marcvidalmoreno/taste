@@ -27,6 +27,7 @@ Files this server reads or writes (all in generated/codex/)
   distil-state.json    where the last distil stopped (read only: --mark stays a command-line step)
   <batch>/run.json     what a run started here was, where it came from and how it was set (written)
   app-queue.json       runs waiting (written; app-queue.dry.json with --dry-run, so a test never runs for real)
+  app-paused.json      the queue is paused until Resume (written by Pause, deleted by Resume; .dry.json in a dry run)
   claude-notes.json    notes for Claude Code (written here, answered with scripts/notes.py)
   distil-run.json      the current distil round: Codex's proposal per style and what Marc decided (written)
   style-edits.json     style edits made here: before / after of each, for Undo (written; the style file itself is
@@ -341,11 +342,13 @@ RATIO_CHOICES = ('mixed', 'wide', 'portrait', 'square')
 WEEK_RATE = 0.1           # weekly % per image when the log can't measure it yet (README "Allowance", 23 Nov 2026)
 DRY_RUN = False           # --dry-run: every run and text job is a dry run (no Codex, no allowance)
 QUEUE_FILE = BASE / 'app-queue.json'    # runs waiting: a restart of the app keeps them
+PAUSE_FILE = BASE / 'app-paused.json'   # Pause (26 Nov 2026): a restart keeps the queue paused (.dry.json in a dry run)
 NOTES = BASE / 'claude-notes.json'      # notes for Claude Code (scripts/notes.py reads and answers them)
 SPECS = BASE / '.app'                   # files of dry runs (subjects, jobs), deleted when the run ends
 QUEUE = []                # specs waiting, first = next
 CUR = {}                  # the run the app started last (running or finished); read by GET /api/job
 PROC = {}                 # its process: {'p': Popen}
+RUN_SPEC = {}             # the spec being run: {'spec': ...}, so Pause can queue what it has left
 RECENT = []               # the last finished app runs, newest last: the page reports each one once, even when
                           # the next queued run starts at once
 HOLD = {}                 # the queue is on hold: {'reason', 'since', 'auto'} (23 Nov 2026), see broken_scripts()
@@ -717,8 +720,8 @@ def worker():
         _WAKE.wait(3)
         _WAKE.clear()
         with _QLOCK:
-            if not QUEUE:
-                HOLD.clear()          # a hold is about the runs waiting: none left, none to hold
+            if not QUEUE and not CUR.get('pausing'):
+                lift_hold()           # a hold is about the runs waiting: none left, none to hold
             # a dry run spends nothing and writes no progress file: it never waits for a real run
             if RESTARTING.is_set() or CUR.get('running') or not QUEUE or (not DRY_RUN and (chat_run() or {}).get('running')):
                 continue
@@ -741,7 +744,8 @@ def worker():
             save_queue()
             CUR.clear()
             CUR.update(spec, running=True, phase='Starting', started=time.time(), finished=None, returncode=None,
-                       log=[], stopped=False, cancel=False, dry_run=DRY_RUN, error=None)
+                       log=[], stopped=False, cancel=False, dry_run=DRY_RUN, error=None, pausing=False, paused=False)
+            RUN_SPEC['spec'] = spec
         try:
             launch(spec)
         except Exception as e:  # report it on the page; the queue goes on
@@ -874,7 +878,7 @@ def launch(spec):
 def remember_finished():
     """Keep a short record of the run that just ended (CUR), for GET /api/job."""
     folder = BASE / CUR['batch']
-    rec = {**public(CUR), **{k: CUR.get(k) for k in ('started', 'finished', 'stopped', 'dry_run', 'error', 'returncode')},
+    rec = {**public(CUR), **{k: CUR.get(k) for k in ('started', 'finished', 'stopped', 'paused', 'dry_run', 'error', 'returncode')},
            'made': [] if CUR.get('dry_run') else [n for n in CUR['expected'] if (folder / f'{n}.png').exists()],
            'exists': is_batch(CUR['batch']), 'log': CUR['log'][-80:]}
     RECENT.append(rec)
@@ -907,6 +911,120 @@ def stop_current():
             write_json(BASE / '.progress.json', d)
 
 
+# -- Pause (26 Nov 2026): the image being made finishes, then the run stops and what it has left waits at the
+# top of the queue, which holds until Resume (POST /api/queue/resume). "Pause now" (a second click) stops at once:
+# the image being made is made again on Resume. Nothing made is lost, nothing is paid for twice.
+_PLOCK = threading.Lock()
+
+
+def lift_hold():
+    if HOLD.get('paused'):   # only its own pause: a second server (a dry-run copy) shares the file
+        PAUSE_FILE.unlink(missing_ok=True)
+    HOLD.clear()
+
+
+def hold_paused():
+    import time
+    HOLD.clear()
+    HOLD.update(reason='Paused', since=time.time(), auto=False, paused=True)
+    write_json(PAUSE_FILE, {'since': HOLD['since']})
+
+
+def _pause_count():
+    """Images the current run has finished (made or failed): one more = the image being made is done."""
+    folder = BASE / (CUR.get('batch') or '')
+    made = sum((folder / f'{n}.png').exists() for n in CUR.get('expected') or [])
+    prog = chat_run() or {}
+    return made + (len(prog.get('failed') or []) if prog.get('batch') == CUR.get('batch') else 0)
+
+
+def pause_current(now=False):
+    if not CUR.get('running'):
+        raise ApiError(409, 'nothing the app started is running')
+    run_id = CUR.get('id')
+    with _QLOCK:
+        first = not CUR.get('pausing')
+        CUR['pausing'] = True
+        hold_paused()             # nothing else starts meanwhile
+    if now or DRY_RUN:            # a dry run makes no files to wait for
+        finish_pause(run_id, cut=True)
+    elif first:
+        threading.Thread(target=_pause_watch, args=(run_id, _pause_count()), daemon=True).start()
+
+
+def _pause_watch(run_id, base):
+    import time
+    while CUR.get('id') == run_id and CUR.get('running') and not CUR.get('paused'):
+        if _pause_count() > base:
+            return finish_pause(run_id, cut=True)
+        time.sleep(1)
+    finish_pause(run_id, cut=False)   # it ended by itself: nothing to queue again
+
+
+def finish_pause(run_id, cut):
+    import time
+    with _PLOCK:
+        if CUR.get('id') != run_id or CUR.get('paused') or not CUR.get('pausing'):
+            return
+        CUR['paused'] = True
+    import subprocess
+    spec = RUN_SPEC.get('spec') or {}
+    proc = PROC.get('p')
+    killed = cut and bool(CUR.get('running'))
+    if killed:   # only the app's own run: never stop_current(), which falls back to a run from chat
+        CUR['cancel'] = CUR['stopped'] = True
+        if proc:
+            subprocess.run(['taskkill', '/PID', str(proc.pid), '/T', '/F'], capture_output=True)
+            with LOCK:   # as stop_current: the killed run can't write its last line, so Resume needn't wait 45 s
+                d = read_json(BASE / '.progress.json', None)
+                if isinstance(d, dict) and d.get('pid') == proc.pid and d.get('finished') is None:
+                    d.update(finished=time.time(), current=None, log=(d.get('log') or []) + [f'{time.strftime("%H:%M:%S")}  PAUSED from the web app'])
+                    write_json(BASE / '.progress.json', d)
+        for _ in range(300):          # until launch() has seen the process end
+            if not CUR.get('running'):
+                break
+            time.sleep(0.1)
+    rest = None
+    started = bool(proc)
+    if killed and spec.get('id') == run_id:   # a run that ended by itself has nothing to queue again
+        folder = BASE / (spec.get('batch') or '')
+        failed = set((chat_run() or {}).get('failed') or []) if not DRY_RUN else set()
+        names = [n for n in spec.get('expected') or [] if not (folder / f'{n}.png').exists() and n not in failed]
+        if names:
+            rest = rest_of(spec, names, started)
+    with _QLOCK:
+        if rest:
+            rest.update(id=f'{int(time.time() * 1000)}', created=time.time())
+            QUEUE.insert(0, rest)
+            save_queue()
+        if QUEUE:
+            hold_paused()
+        else:
+            lift_hold()               # nothing left anywhere: nothing to pause
+        CUR['pausing'] = False
+    _WAKE.set()
+
+
+def rest_of(spec, names, started):
+    """The spec that makes {names}, the images a paused run had left, in the same folder and with the same prompts."""
+    keep = {k: v for k, v in spec.items() if k not in ('id', 'created')}
+    if DRY_RUN or not started:        # paused before the first image: the same run again
+        return keep
+    kind = spec['kind']
+    if spec.get('jobs') is not None:  # remix, single, retry, resume: one job per image
+        jobs = [j for j in spec['jobs'] if j['name'] in names]
+        return {**keep, 'kind': 'retry' if kind == 'retry' else 'resume', 'jobs': jobs, 'n': len(jobs), 'expected': names}
+    if kind in ('batch', 'finish'):
+        if not (BASE / spec['batch'] / 'subjects.json').is_file():
+            return None
+        alls = spec.get('all_styles') or spec['styles']
+        styles = [st for st in alls if any(n.startswith(st + '-') and n[len(st) + 1:].isdigit() for n in names)]
+        return {**keep, 'kind': 'finish', 'all_styles': alls, 'styles': styles or alls, 'expected': names}
+    if not seed_file(spec['batch']):  # variations: resume needs the seed copied into the folder
+        return None
+    return {**keep, 'kind': 'resume', 'n': len(names), 'expected': names}
+
+
 def chat_run():
     """A run's live progress: scripts/progress.py writes generated/codex/.progress.json as it goes (batch.py,
     variations.py, run_list.py, a lone codex_run.py). No heartbeat for 45 s = the run was stopped."""
@@ -937,7 +1055,7 @@ def _job_state(cur, queue):
     # a live run from chat, or one that started after the app's run ended, takes over once the app's run is done
     if cur and (cur['running'] or not (prog and (prog['running'] or prog['started'] > (cur['finished'] or 0)))):
         run = {**public(cur), **{k: cur.get(k) for k in ('running', 'phase', 'started', 'finished', 'returncode',
-                                                         'stopped', 'dry_run', 'error', 'log', 'subjects')},
+                                                         'stopped', 'pausing', 'paused', 'dry_run', 'error', 'log', 'subjects')},
                'failed': [], 'current': None, 'from_chat': False}
         if prog and prog['batch'] == cur['batch'] and prog['started'] >= cur['started'] - 1:
             run.update(expected=prog['expected'], failed=prog['failed'], current=prog['current'],
@@ -2034,6 +2152,7 @@ class Handler(BaseHTTPRequestHandler):
         ('POST', 'api/resume-all'): 'post_resume_all',
         ('POST', 'api/preview'): 'post_preview',
         ('POST', 'api/stop'): 'post_stop',
+        ('POST', 'api/pause'): 'post_pause',
         ('POST', 'api/queue/cancel'): 'post_queue_cancel',
         ('POST', 'api/queue/resume'): 'post_queue_resume',
         ('POST', 'api/queue/move'): 'post_queue_move',
@@ -2513,6 +2632,11 @@ class Handler(BaseHTTPRequestHandler):
         stop_current()
         return job_state()
 
+    def post_pause(self):
+        """Pause the app's run after the image being made ({now: true}: at once); Resume = POST /api/queue/resume."""
+        pause_current(bool(self.read_body().get('now')))
+        return job_state()
+
     def post_queue_cancel(self):
         qid = str(self.read_body().get('id', ''))
         with _QLOCK:
@@ -2543,7 +2667,7 @@ class Handler(BaseHTTPRequestHandler):
         """Continue: lift a hold on the queue (a script-error hold that still doesn't compile comes back)."""
         self.read_body()
         with _QLOCK:
-            HOLD.clear()
+            lift_hold()
         _WAKE.set()
         return job_state()
 
@@ -3116,11 +3240,14 @@ def main():
     if not httpd:
         sys.exit(f'no free port between {a.port} and {a.port + 9}')
     migrate_drafts()
-    global QUEUE_FILE, DISTIL_RUN
+    global QUEUE_FILE, DISTIL_RUN, PAUSE_FILE
     if DRY_RUN:   # its own queue and distil round: a dry-run item must never become real after a restart
         QUEUE_FILE = BASE / 'app-queue.dry.json'
         DISTIL_RUN = BASE / 'distil-run.dry.json'
+        PAUSE_FILE = BASE / 'app-paused.dry.json'
     QUEUE[:] = [q for q in read_json(QUEUE_FILE, []) if isinstance(q, dict) and q.get('id')]
+    if PAUSE_FILE.is_file() and QUEUE:   # paused before the restart: stays paused until Resume
+        hold_paused()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=maybe_auto_distil, daemon=True).start()
     threading.Thread(target=restart_when_idle, args=(httpd, state_file), daemon=True).start()
