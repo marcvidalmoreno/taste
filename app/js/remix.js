@@ -218,12 +218,12 @@ export async function openRemix(src) {
       h('div', { class: 'rx-pals', role: 'group', 'aria-label': 'Palette' },
         h('button', { type: 'button', class: 'rx-pal random', 'aria-pressed': String(st.pal === 'random'), 'data-focus': 'pal-random', onClick: () => { st.pal = 'random'; draw('[data-focus="pal-random"]'); } },
           sw(['', '', '', '', '']), 'Surprise me'),
-        st.palBusy && h('span', { class: 'muted small' }, 'Reading the style and your 👍 images…'),
+        st.palBusy && h('span', { class: 'muted small' }, 'Reading the style and the images you liked…'),
         pals.map((p, i) => h('button', { type: 'button', class: 'rx-pal', 'aria-pressed': String(st.pal === i), 'data-focus': `pal-${i}`, title: p.c.join(' '),
           onClick: () => { st.pal = i; draw(`[data-focus="pal-${i}"]`); } }, sw(p.c), p.name))),
       h('p', { class: 'rx-hint muted small' }, !chosenPal()
         ? 'A different palette per image, chosen to suit the style. Subject, framing and light stay.'
-        : `Every palette image uses ${chosenPal().name}. Proposed from the style and from images you gave 👍.`));
+        : `Every palette image uses ${chosenPal().name}. Offered from the style's other palettes and from images of it you liked.`));
   }
 
   function combinePanel() {

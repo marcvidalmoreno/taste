@@ -1155,7 +1155,7 @@ _PAL_CACHE = {}
 
 
 def remix_palettes(batch, file, style=''):
-    """Up to 5 palettes to offer in Remix: the style's own, then ones measured from images of that style marked 👍.
+    """Up to 5 palettes to offer in Remix: the style's alternatives (not its main one, the image already has it), then ones measured from images of that style marked 👍.
     Free: reads files (the measuring needs numpy and scikit-learn; without them only the style's palettes show)."""
     src = source_image(batch, file)
     style = style or rate.batch_runs(batch).get(src.stem, {}).get('style', '')
@@ -1163,14 +1163,17 @@ def remix_palettes(batch, file, style=''):
         return {'style': '', 'palettes': []}
     info = style_file(style)
     out = []
+    # The style's main palette is what the image already wears, so it is not offered (no change); it still
+    # filters out liked images whose palette matches it.
+    seen = [remix_hex(info.get('palette'))[:3]]
 
     def add(name, colours):
         c = remix_hex(colours)[:5]
-        if len(c) >= 3 and all(x['c'][:3] != c[:3] for x in out):
+        if len(c) >= 3 and c[:3] not in seen:
+            seen.append(c[:3])
             out.append({'name': name, 'c': c})
-    add('Style palette', info.get('palette'))
-    for i, p in enumerate(info.get('palettes') or [], 2):
-        add(f'Style palette {i}', p if isinstance(p, list) else [])
+    for p in info.get('palettes') or []:
+        add(f'Style option {len(out) + 1}', p if isinstance(p, list) else [])
     runs = all_runs()
     liked = [(b, n) for (b, n), r in saved_ratings().items() if r['rating'] == 'keep' and runs.get(b, {}).get(n, {}).get('style') == style]
     for b, n in reversed(liked):
@@ -1182,7 +1185,7 @@ def remix_palettes(batch, file, style=''):
         key = (str(path), int(path.stat().st_mtime))
         if key not in _PAL_CACHE:
             _PAL_CACHE[key] = measured_palette([path])
-        add('From a 👍 image', _PAL_CACHE[key])
+        add(f'Liked image {sum(x["name"].startswith("Liked") for x in out) + 1}', _PAL_CACHE[key])
     return {'style': style, 'palettes': out[:5]}
 
 
