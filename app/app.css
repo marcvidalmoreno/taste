@@ -836,6 +836,11 @@ button.switch:focus-visible { outline: 2px solid var(--pico-primary); outline-of
 .model-facts { display: grid; grid-template-columns: auto 1fr; gap: .2rem .75rem; margin: 0; }
 .model-facts dt { color: var(--pico-muted-color); font-weight: 400; }
 .model-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.model-about { margin-top: .75rem; padding-top: .6rem; border-top: 1px solid var(--pico-muted-border-color); }
+.model-about details { margin: .5rem 0 0; }
+.model-about details p, .model-sources { margin: .4rem 0 0; }
+.model-sources { padding-left: 1.1rem; }
+.model-sources li { list-style: disc; margin: 0; }
 .model-style-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
 .model-style-head h2 { margin: 0; font-size: 1.15rem; }
 .model-style-head select { width: auto; max-width: 100%; margin: 0; }

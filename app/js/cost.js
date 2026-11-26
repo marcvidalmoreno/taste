@@ -103,6 +103,77 @@ export const MODELS = {
   animagine: { badge: 'Animagine', name: 'Animagine XL on this laptop', local: true, seed: 'img2img',
     note: 'Free, no tokens. Anime look; often drifts from the subject. Starts from a seed image.' },
 };
+// Who made each model and on what terms (26 Nov 2026), from the makers' own pages only (model cards, licences,
+// announcements); each entry lists its sources. "Open weights": the files can be downloaded and run; the licence
+// says what else is allowed. Not confirmed by the maker is said in the text, never filled in.
+const SDXL_LINE = 'Stability AI\'s SDXL 1.0 (July 2023) is the open base model behind it.';
+export const ABOUT = {
+  codex: { by: 'OpenAI (USA)', released: 'GPT Image 2: Apr 2026 · Images 2.5: Sep 2026', open: 'Closed',
+    licence: 'OpenAI\'s terms; no weights to download',
+    history: 'OpenAI\'s GPT Image line, built into ChatGPT and Codex. ChatGPT Images 2.0 came in April 2026, '
+      + 'Images 2.5 in September 2026. OpenAI does not say which version Codex\'s image tool runs.',
+    good: 'Precise control, text in many languages, posters and infographics (OpenAI\'s examples).',
+    sources: [['OpenAI: ChatGPT Images 2.0', 'https://openai.com/index/introducing-chatgpt-images-2-0/'],
+      ['OpenAI: GPT Image 2 model page', 'https://developers.openai.com/api/docs/models/gpt-image-2']] },
+  cloudflare: { by: 'Black Forest Labs (made it) · Cloudflare (hosts it)', released: 'Jan 2026', open: 'Open weights',
+    licence: 'Apache 2.0 weights; the hosted service runs on Cloudflare\'s and Black Forest Labs\' terms',
+    history: 'FLUX.2 [klein] 4B, the smallest and fastest model of FLUX.2, Black Forest Labs\' second FLUX '
+      + 'generation. Cloudflare runs it on Workers AI.',
+    good: 'Quick, interactive work: previews, drafts, making and editing in one model (Cloudflare).',
+    sources: [['Cloudflare: FLUX.2 klein 4B', 'https://developers.cloudflare.com/workers-ai/models/flux-2-klein-4b/'],
+      ['Black Forest Labs: FLUX.2 klein', 'https://bfl.ai/blog/flux2-klein-towards-interactive-visual-intelligence']] },
+  klein: { by: 'Black Forest Labs', released: 'Jan 2026', open: 'Open weights',
+    licence: 'Apache 2.0 (commercial use allowed; the bigger 9B klein is non-commercial)',
+    history: 'FLUX.2 [klein] 4B: the smallest, distilled model of FLUX.2, Black Forest Labs\' second FLUX '
+      + 'generation. Its own design, not built on SDXL.',
+    good: 'Fast text-to-image and editing on ordinary graphics cards (Black Forest Labs).',
+    sources: [['Hugging Face: FLUX.2-klein-4B', 'https://huggingface.co/black-forest-labs/FLUX.2-klein-4B'],
+      ['Black Forest Labs: FLUX.2 klein', 'https://bfl.ai/blog/flux2-klein-towards-interactive-visual-intelligence']] },
+  zimage: { by: 'Tongyi-MAI, Z-Image team (Alibaba, from its contact address)', released: 'Nov 2025', open: 'Open weights',
+    licence: 'Apache 2.0 (commercial use allowed)',
+    history: 'Z-Image Turbo is the quick, distilled version of the 6-billion-parameter Z-Image model: '
+      + 'about 8 steps per image instead of dozens. Its own design, not built on SDXL.',
+    good: 'Photorealism, text in English and Chinese, following instructions (Tongyi-MAI).',
+    sources: [['Hugging Face: Z-Image-Turbo', 'https://huggingface.co/Tongyi-MAI/Z-Image-Turbo'],
+      ['GitHub: Tongyi-MAI/Z-Image', 'https://github.com/Tongyi-MAI/Z-Image']] },
+  playground: { by: 'Playground (Playground AI, USA)', released: 'Feb 2024', open: 'Open weights',
+    licence: 'Playground v2.5 Community License: commercial use free up to 1 million monthly users; '
+      + 'images may not train other image models',
+    history: 'Successor to Playground v2, trained by Playground on the SDXL design (about 3 billion parameters), '
+      + 'tuned for aesthetic quality.',
+    good: 'Good-looking images in many aspect ratios, people included (Playground).',
+    sources: [['Hugging Face: Playground v2.5', 'https://huggingface.co/playgroundai/playground-v2.5-1024px-aesthetic'],
+      ['Licence', 'https://huggingface.co/playgroundai/playground-v2.5-1024px-aesthetic/blob/main/LICENSE.md']] },
+  dreamshaper: { by: 'Lykon (independent creator)', released: 'Feb 2024', open: 'Open weights',
+    licence: 'OpenRAIL++ (use limits; commercial use allowed per its Civitai page)',
+    history: 'A community fine-tune: DreamShaper XL began in July 2023 on SDXL. '
+      + 'This Lightning build is tuned to draw in about 4–6 steps. ' + SDXL_LINE,
+    good: 'An all-rounder in few steps: art, illustration and photo looks (Lykon).',
+    sources: [['Hugging Face: dreamshaper-xl-lightning', 'https://huggingface.co/Lykon/dreamshaper-xl-lightning'],
+      ['Civitai: DreamShaper XL', 'https://civitai.com/models/112902']] },
+  juggernaut: { by: 'KandooAI, with RunDiffusion', released: 'Feb 2024', open: 'Open weights',
+    licence: 'CreativeML Open RAIL-M; paid API use needs a licence from RunDiffusion',
+    history: 'Juggernaut XL is a long-running photographic fine-tune of SDXL. This build is version 9 + RDPhoto2 '
+      + '(its Civitai name), made with SDXL Lightning to draw in 4–6 steps. ' + SDXL_LINE,
+    good: 'Photorealism, fast enough for live iteration on modest hardware (KandooAI).',
+    sources: [['Hugging Face: Juggernaut-XL-Lightning', 'https://huggingface.co/RunDiffusion/Juggernaut-XL-Lightning'],
+      ['Civitai: Juggernaut XL', 'https://civitai.com/models/133005']] },
+  zavychroma: { by: 'Zavy (independent creator)', released: 'Oct 2024', open: 'Open weights',
+    licence: 'Creator\'s own terms on Civitai: images may be sold, image services need a licence from Zavy, no derivatives',
+    history: 'A community fine-tune of SDXL. Version 10 brings back the variety of styles of earlier versions, '
+      + 'a little less steady than v9 (Zavy). ' + SDXL_LINE,
+    good: 'Photographic quality with a wide range of styles (Zavy).',
+    sources: [['Civitai: ZavyChromaXL', 'https://civitai.com/models/119229']] },
+  animagine: { by: 'Cagliostro Research Lab', released: 'Jan 2025 (Opt: Feb 2025)', open: 'Open weights',
+    licence: 'CreativeML Open RAIL++-M, same as SDXL (use limits; commercial use allowed)',
+    history: 'The latest Animagine XL, retrained from SDXL 1.0 on about 8.4 million anime images. '
+      + 'The Opt version improves stability, anatomy and colour. ' + SDXL_LINE,
+    good: 'Anime-style images from tag prompts (Cagliostro).',
+    sources: [['Hugging Face: animagine-xl-4.0', 'https://huggingface.co/cagliostrolab/animagine-xl-4.0']] },
+};
+// "Black Forest Labs · Open weights · Jan 2026": the short line under the picker and on hover.
+export const aboutLine = (k) => { const a = ABOUT[k]; return a ? `${a.by} · ${a.open} · ${a.released}` : ''; };
+
 export const LOCAL = ['klein', 'zimage', 'playground', 'dreamshaper', 'juggernaut', 'zavychroma', 'animagine'];
 // seconds per image, measured 24-26 Nov 2026 (until runs.csv says more)
 const SPEED = { klein: 109, zimage: 185, playground: 75, dreamshaper: 40, juggernaut: 30, zavychroma: 81, animagine: 70 };
@@ -161,9 +232,11 @@ function routePicker(onRoute, style) {
     h('span', { class: 'nr-label' }, 'Made with'),
     h('div', { class: 'rseg rseg-wrap', role: 'group', 'aria-label': 'Made with' },
       keys.map((k) => h('button', { type: 'button', class: 'rseg-btn', 'aria-pressed': String(m === k), onClick: () => pick(k),
-        title: def === k ? 'Default model for this style' : MODELS[k].name },
+        title: `${MODELS[k].name}${def === k ? ' (default for this style)' : ''}\n${aboutLine(k)}` },
         MODELS[k].badge, MODELS[k].tag && h('small', {}, ' ' + MODELS[k].tag), def === k && h('small', { class: 'def-dot' }, ' · default')))),
-    h('p', { class: 'muted small' }, MODELS[m].note, isLocalOnly() ? ' Local only is on (Models page).' : ''));
+    h('p', { class: 'muted small' }, MODELS[m].note, isLocalOnly() ? ' Local only is on (Models page).' : ''),
+    ABOUT[m] && h('p', { class: 'muted small model-about-line' }, aboutLine(m), ' · ',
+      h('a', { href: '#/models', target: '_blank', rel: 'noopener' }, 'More on the Models page')));
 }
 
 // The make button: FLUX and the local models cost nothing, so it says so instead of "spend allowance".

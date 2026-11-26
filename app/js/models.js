@@ -7,7 +7,7 @@
 // model, so the columns line up), its thumbs-up rate for the style, and one click to make it the default.
 // The default lives in generated/codex/style-models.json; New run, One image, Remix and Variations preselect it.
 import { api, styles } from './api.js';
-import { allowance, modelInfo, MODELS, LOCAL, isLocalOnly, setLocalOnly, localSeconds } from './cost.js';
+import { allowance, modelInfo, MODELS, LOCAL, ABOUT, isLocalOnly, setLocalOnly, localSeconds } from './cost.js';
 import { galleryHref } from './gallery.js';
 import { h, thumbUrl, plural, showError, toast } from './ui.js';
 
@@ -92,7 +92,26 @@ function drawCards() {
       h('dt', {}, 'Speed'), h('dd', {}, secsText(m.median_seconds)),
       h('dt', {}, 'Made'), h('dd', {}, m.images ? h('a', { href: galleryHref({ model: m.key }) }, plural(m.images, 'image')) : 'none yet'),
       h('dt', {}, 'Liked'), h('dd', {}, pctText(m.rate), m.n ? h('span', { class: 'muted' }, ` of ${m.n} rated`) : ''),
-      h('dt', {}, 'Usage'), h('dd', {}, usage(m.key))))));
+      h('dt', {}, 'Usage'), h('dd', {}, usage(m.key))),
+    about(m.key))));
+}
+
+// Who made it and on what terms: three facts always in view, the story and sources one click away.
+function about(k) {
+  const a = ABOUT[k];
+  if (!a) return null;
+  return h('div', { class: 'model-about' },
+    h('dl', { class: 'model-facts small' },
+      h('dt', {}, 'By'), h('dd', {}, a.by),
+      h('dt', {}, 'Released'), h('dd', {}, a.released),
+      h('dt', {}, 'Weights'), h('dd', {}, h('strong', {}, a.open), ' · ', a.licence)),
+    h('details', { class: 'small' },
+      h('summary', {}, 'History and sources'),
+      h('p', {}, a.history),
+      h('p', {}, h('span', { class: 'muted' }, 'Good for, per its makers: '), a.good),
+      h('ul', { class: 'model-sources' }, a.sources.map(([label, url]) =>
+        h('li', {}, h('a', { href: url, target: '_blank', rel: 'noopener' }, label)))),
+      h('p', { class: 'muted' }, 'From the makers\' own pages, checked 26 Nov 2026.')));
 }
 
 async function drawStyle() {
