@@ -44,7 +44,8 @@ const CLOSE = {
 };
 const CLOSE_WORD = { close: 'close to the original', balanced: 'near the original, free to move', loose: 'from the prompt only, more freedom', wild: 'a wild, experimental take: expect misses' };
 const COUNTS = [1, 2, 3, 4, 6, 8, 12];
-const NOTE = { codex: 'best, uses tokens', cloudflare: 'free, daily limit', klein: 'free, laptop', zimage: 'free, laptop', playground: 'free, laptop' };
+const NOTE = { codex: 'best, uses tokens', cloudflare: 'free, daily limit', klein: 'free, laptop', zimage: 'free, laptop', playground: 'free, laptop',
+  dreamshaper: 'free, laptop', juggernaut: 'free, laptop', zavychroma: 'free, laptop', animagine: 'free, laptop' };
 const KEEPABLE = ['subject', 'palette', 'composition', 'light'];
 const USE_KEY = 'taste-remix-ideas';   // {idea: times picked}: the groups you use most come first
 

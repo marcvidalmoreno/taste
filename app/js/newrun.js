@@ -395,7 +395,8 @@ function drawSummary() {
 }
 
 // Folder endings per model (scripts/app.py model_end), so a batch's model shows in Explorer too.
-const FOLDER_END = { cloudflare: '-flux', klein: '-flux-local', zimage: '-zimage', playground: '-playground' };
+const FOLDER_END = { cloudflare: '-flux', klein: '-flux-local', zimage: '-zimage', playground: '-playground',
+  dreamshaper: '-dreamshaper', juggernaut: '-juggernaut', zavychroma: '-zavychroma', animagine: '-animagine' };
 // The style whose default model "Made with" picks: the one style of this run (none for several or palette only).
 function runStyle() {
   if (state.mode === 'one') return state.one.palOnly ? '' : state.one.style;

@@ -7,7 +7,7 @@
   <p>Everything you can do in the app, page by page, and how to do the common things.</p>
 </hgroup>
 
-<p class="muted small">Last updated 25 Nov 2026 (Remix and Variations are one Remix dialog). This guide changes with the app.</p>
+<p class="muted small">Last updated 26 Nov 2026 (four more models on this laptop: DreamShaper, Juggernaut, ZavyChroma, Animagine). This guide changes with the app.</p>
 
 <nav class="about-toc" aria-label="On this page">
   <a href="#/guide/start">Start here</a>
@@ -65,7 +65,7 @@
       <tr><td><strong>Gallery</strong></td><td>Every image ever made, to browse.</td></tr>
       <tr><td><strong>Styles</strong></td><td>Every style with an on / off switch, its history, runs and how often you liked it.</td></tr>
       <tr><td><strong>Taste</strong></td><td>The styles themselves, with your images as examples.</td></tr>
-      <tr><td><strong>Models</strong></td><td>The five models that make images, side by side; each style's default model; Local only.</td></tr>
+      <tr><td><strong>Models</strong></td><td>The nine models that make images, side by side; each style's default model; Local only.</td></tr>
       <tr><td><strong>Guide</strong></td><td>This page.</td></tr>
       <tr><td><strong>About</strong></td><td>Why the project exists.</td></tr>
       <tr><td><strong>New run</strong></td><td>Start making images.</td></tr>
@@ -103,7 +103,7 @@
     filter are not counted: they would only fail again. The line hides once nothing waits.</p>
   <h3>Images the safety filter blocked</h3>
   <p>A second line counts the images ChatGPT's safety filter blocked that no other model has tried yet. Pick a model
-    in the small menu (FLUX on Cloudflare, or FLUX local, Z-Image or Playground on this laptop; the app remembers it)
+    in the small menu (FLUX on Cloudflare, or one of the models on this laptop; the app remembers it)
     and press <strong>Try with …</strong>: the same prompts, one run per batch; each image lands in its own batch, where
     it failed. Each model has its own rules, so some may be refused again. With FLUX, until Cloudflare is connected
     the button reads <strong>Connect Cloudflare first</strong> and opens New run.</p>
@@ -169,7 +169,8 @@
       <strong>Codex timed out</strong> (over 15 minutes). Then <strong>Retry once</strong> or <strong>Copy prompt</strong>;
       a blocked image also offers <strong>Try with</strong> and a model menu (the same prompt with FLUX or a local model, free).</li>
     <li>Every tile has a small badge for the model that made it: <strong>Codex</strong>, <strong>FLUX</strong>,
-      <strong>FLUX local</strong>, <strong>Z-Image</strong> or <strong>Playground</strong>. Under the folder line,
+      <strong>FLUX local</strong>, <strong>Z-Image</strong>, <strong>Playground</strong>, <strong>DreamShaper</strong>,
+      <strong>Juggernaut</strong>, <strong>ZavyChroma</strong> or <strong>Animagine</strong>. Under the folder line,
       <strong>Made with</strong> names the batch's model in full.</li>
     <li>For variations, a <strong>Seed</strong> tile shows the original first.</li>
   </ul>
@@ -291,13 +292,13 @@
     <li><strong>Made with</strong>, at the top of the cost block (also in Remix and Try with): one of five
       models. <strong>Codex</strong> (best quality, closest to the style, uses the Codex allowance),
       <strong>FLUX</strong> (free, about 80 images a day on Cloudflare; good for drafts and simpler scenes), and three
-      on this laptop, free and with no tokens: <strong>FLUX local</strong>, <strong>Z-Image</strong> and
-      <strong>Playground</strong> (see Models). The choice is remembered; a style with a default model (Models page)
+      on this laptop, free and with no tokens: <strong>FLUX local</strong>, <strong>Z-Image</strong>,
+      <strong>Playground</strong>, <strong>DreamShaper</strong>, <strong>Juggernaut</strong>, <strong>ZavyChroma</strong> and <strong>Animagine</strong> (see Models). The choice is remembered; a style with a default model (Models page)
       starts on it, marked "default", and your own pick holds after that.
       <ul>
         <li>With a local model the block shows the laptop time instead (about 1–3 minutes an image, plus a minute to load
           the model). ComfyUI starts by itself, hidden, and lets go of the memory after the run. New local runs get
-          folders ending in <code>-flux-local</code>, <code>-zimage</code> or <code>-playground</code>.</li>
+          folders ending in <code>-flux-local</code> or the model's name (<code>-zimage</code>, <code>-dreamshaper</code> …).</li>
         <li>The first time you pick FLUX, <strong>Connect Cloudflare</strong> asks for a free Cloudflare account, an
           API token (from the "Workers AI" template) and your account ID: paste the two and Save. They stay on this
           laptop; <strong>Disconnect</strong> forgets them.</li>
@@ -389,7 +390,7 @@
     <li><strong>Style tags</strong> (under the filters): one tag per style with its colours and count. Press a tag to show
       that style, press more to add them, press again to take one away; <strong>All styles</strong> clears them.</li>
     <li><strong>Model tags</strong> (under the style tags): the same for the model that made each image, Codex, FLUX,
-      FLUX local, Z-Image, Playground (and Local for the blind test). Every tile has the model's badge.</li>
+      FLUX local, Z-Image, Playground, DreamShaper, Juggernaut, ZavyChroma, Animagine (and Local for the blind test). Every tile has the model's badge.</li>
     <li>The filters and the words are in the address, so Back and reload keep them.</li>
   </ul>
   <p>Click an image for the large view. It is the same as the batch large view (see Large view): thumbs and a
@@ -450,9 +451,9 @@
 
 <section id="guide-models">
   <h2>Models</h2>
-  <p>Five ways to make an image, side by side. Header → <strong>Models</strong>.</p>
+  <p>Nine ways to make an image, side by side. Header → <strong>Models</strong>.</p>
   <ul>
-    <li><strong>Local only</strong>: one switch. On, only FLUX local, Z-Image and Playground run, and a model on this
+    <li><strong>Local only</strong>: one switch. On, only the models on this laptop run, and a model on this
       laptop writes subjects and prompt rewrites, so no ChatGPT tokens are used. The things that need ChatGPT to look
       at images or rewrite a style (New style from images, Suggestions, Change the style and Fork with Codex) say
       "Uses ChatGPT tokens – turn off Local only" and wait. Runs already queued for Codex or FLUX stay in the queue until Local only is off; local runs go ahead of them. A chip in the header shows while it is on.</li>
@@ -473,6 +474,10 @@
       <tr><td>FLUX local</td><td>FLUX.2 klein 4B</td><td>This laptop (ComfyUI)</td></tr>
       <tr><td>Z-Image</td><td>Z-Image Turbo 6B</td><td>This laptop (ComfyUI)</td></tr>
       <tr><td>Playground</td><td>Playground v2.5</td><td>This laptop (ComfyUI)</td></tr>
+      <tr><td>DreamShaper</td><td>DreamShaper XL Lightning</td><td>This laptop (ComfyUI)</td></tr>
+      <tr><td>Juggernaut</td><td>Juggernaut XL Lightning</td><td>This laptop (ComfyUI)</td></tr>
+      <tr><td>ZavyChroma</td><td>ZavyChroma XL v10</td><td>This laptop (ComfyUI)</td></tr>
+      <tr><td>Animagine</td><td>Animagine XL 4.0</td><td>This laptop (ComfyUI)</td></tr>
     </tbody>
   </table>
   <p>A new image with a person, asked of <strong>FLUX local</strong>, is made with <strong>Z-Image</strong> instead and carries its badge: in a test FLUX local drew extra arms or hands, Z-Image did not. A remix or variation of a seed image stays on FLUX local, since Z-Image cannot take an image.</p>

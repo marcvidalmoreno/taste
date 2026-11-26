@@ -7,7 +7,7 @@
 //   #/gallery/<batch>/<image>?...     the same, with the large view open on one image
 //   #/styles[/<style>]          every style, on / off, its history, runs and 👍 rate
 //   #/taste[/<style>]           the styles with my images as examples
-//   #/models[/<style>]          the five models side by side, Local only, each style's default model
+//   #/models[/<style>]          the models side by side, Local only, each style's default model
 //   #/guide[/<section>]         how to use the app, page by page, and use cases
 //   #/about[/<section>]         why the project exists
 //   #/new?mode=batch|one&style=a,b   start a run (batch with fresh subjects, or one image)

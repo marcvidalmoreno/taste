@@ -11,7 +11,7 @@ Usage (from the project root):
   .venv/Scripts/python -I scripts/codex_run.py read      # usage now, from the newest Codex session log
   gen --route cloudflare (or TASTE_ROUTE=cloudflare): the same prompt made by FLUX on Cloudflare (scripts/cf_run.py);
         the "route" column of runs.csv says which; for cloudflare, "tokens" holds the estimated neurons.
-  gen --route local --model klein|zimage|playground (or TASTE_ROUTE=local TASTE_MODEL=...): the same prompt made by
+  gen --route local --model klein|zimage|playground|dreamshaper|juggernaut|zavychroma|animagine (or TASTE_ROUTE=local TASTE_MODEL=...): the same prompt made by
         an open model on this laptop through ComfyUI (scripts/local_run.py); session "local:<model>", no tokens.
 
 One fresh `codex exec` per image. Codex only generates and copies the PNG into --out; it never views the
@@ -32,7 +32,7 @@ CODEX = Path.home() / '.codex'
 HEADER = ['date', 'time', 'batch', 'name', 'mode', 'style', 'change', 'seed', 'ok', 'width', 'height',
           'tokens', 'five_hour_first', 'five_hour_last', 'weekly_first', 'weekly_last', 'seconds', 'session', 'prompt', 'route']
 ROUTES = ['codex', 'cloudflare', 'local']   # cloudflare: scripts/cf_run.py, FLUX on Workers AI's free allowance (23 Nov 2026)
-LOCAL_MODELS = ['klein', 'zimage', 'playground']   # local: scripts/local_run.py, open models in ComfyUI (25 Nov 2026)
+LOCAL_MODELS = ['klein', 'zimage', 'playground', 'dreamshaper', 'juggernaut', 'zavychroma', 'animagine']   # local: scripts/local_run.py, open models in ComfyUI (25 Nov 2026)
 
 JOB = """Image job. Use the image_gen tool exactly once. Do not write code to draw, do not view, open or describe the result, and do not create or edit any other file.
 {ref}Image prompt: {prompt}
@@ -451,7 +451,7 @@ def gen_cloudflare(a, out, refs, ref):
 def gen_local(a, out, refs, ref):
     """The same prompt on an open model in ComfyUI (scripts/local_run.py). Logged like a Codex run, no tokens.
     Kept examples (--refs-kept) are not sent: the local graphs take one seed image at most. With a seed: FLUX local
-    edits it (a remix gets Marc's change as an edit, as on Cloudflare), Playground starts from it, Z-Image can't take
+    edits it (a remix gets Marc's change as an edit, as on Cloudflare), Playground and the SDXL fine-tunes start from it, Z-Image can't take
     an image, so it gets the seed's own prompt plus what this image changes."""
     import local_run
     model = a.model
@@ -561,7 +561,7 @@ if __name__ == '__main__':
     g.add_argument('--route', default=os.environ.get('TASTE_ROUTE') or 'codex', choices=ROUTES,
                    help='codex (default), cloudflare (FLUX on the free daily allowance, scripts/cf_run.py) or local (ComfyUI)')
     g.add_argument('--model', default=os.environ.get('TASTE_MODEL') or 'klein', choices=LOCAL_MODELS,
-                   help='with --route local: klein (FLUX local), zimage (Z-Image Turbo) or playground (Playground v2.5)')
+                   help='with --route local: klein (FLUX local), zimage (Z-Image Turbo), playground (Playground v2.5) or an SDXL fine-tune (dreamshaper, juggernaut, zavychroma, animagine)')
     sub.add_parser('read')
     a = ap.parse_args()
     gen(a) if a.cmd == 'gen' else read_now()

@@ -35,7 +35,7 @@ function draw() {
   styleEl = h('section', { class: 'model-style' });
   view.replaceChildren(h('div', { class: 'models-page' },
     h('hgroup', { class: 'page-head' }, h('h1', {}, 'Models'),
-      h('p', {}, 'Five ways to make an image. Compare them here, and pick the model each style starts with.')),
+      h('p', {}, 'Nine ways to make an image. Compare them here, and pick the model each style starts with.')),
     localOnlyCard(),
     cardsEl,
     styleEl));
@@ -43,7 +43,7 @@ function draw() {
   drawStyle();
 }
 
-// Local only: one switch. On: only the three models on this laptop run, and a local model writes subjects and prompts.
+// Local only: one switch. On: only the models on this laptop run, and a local model writes subjects and prompts.
 function localOnlyCard() {
   const on = isLocalOnly();
   const flip = async (btn) => {
@@ -60,7 +60,7 @@ function localOnlyCard() {
     h('div', {},
       h('h2', {}, 'Local only'),
       h('p', { class: 'small' }, on
-        ? 'On. Only FLUX local, Z-Image and Playground run, and a model on this laptop writes subjects and prompt rewrites. No ChatGPT tokens.'
+        ? 'On. Only the models on this laptop run, and a model on this laptop writes subjects and prompt rewrites. No ChatGPT tokens.'
         : 'Off. Turn it on to use no ChatGPT tokens at all: only the models on this laptop, and a local model writes subjects and prompts.'),
       h('p', { class: 'muted small' }, 'While it is on, New style from images, Suggestions (distil), Change the style and Fork with Codex wait: they need ChatGPT to read images or rewrite a style. Runs already queued for Codex or FLUX wait in the queue until it is off.')),
     h('button', { type: 'button', role: 'switch', 'aria-checked': String(on), class: 'switch-btn', onClick: (e) => flip(e.currentTarget) },

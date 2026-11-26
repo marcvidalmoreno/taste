@@ -80,10 +80,10 @@ function weekLine(a, add, after, over) {
 }
 
 // ---------------------------------------------------------------- which model makes the images (23 Nov 2026)
-// "Made with": five models since 25 Nov 2026. ChatGPT through Codex, FLUX on Cloudflare's free daily allowance
-// (docs/cloudflare-route.md) and three open models on this laptop through ComfyUI (docs/local-route.md). The choice
+// "Made with": nine models since 26 Nov 2026. ChatGPT through Codex, FLUX on Cloudflare's free daily allowance
+// (docs/cloudflare-route.md) and seven open models on this laptop through ComfyUI (docs/local-route.md). The choice
 // is remembered in this browser; a style's default model (Models page) is picked for you when the style comes up.
-// Local only (Models page) leaves only the three local models.
+// Local only (Models page) leaves only the local models.
 export const MODELS = {
   codex: { badge: 'Codex', name: 'Codex image tool (ChatGPT plan)', note: 'Best quality and closest to the style. Uses the Codex allowance.' },
   cloudflare: { badge: 'FLUX', name: 'FLUX on Cloudflare', tag: 'free', note: 'Free, about 80 a day. Quick drafts; simpler scenes come out best.' },
@@ -92,10 +92,20 @@ export const MODELS = {
   zimage: { badge: 'Z-Image', name: 'Z-Image Turbo on this laptop', local: true, seed: 'prompt',
     note: 'Free, no tokens. Rich, photographic detail; the slowest. Words only: it can\'t take an image.' },
   playground: { badge: 'Playground', name: 'Playground v2.5 on this laptop', local: true, seed: 'img2img',
-    note: 'Free, no tokens. Painterly and colourful; the fastest local model. Starts from a seed image.' },
+    note: 'Free, no tokens. Painterly and colourful. Starts from a seed image.' },
+  // SDXL community fine-tunes (26 Nov 2026)
+  dreamshaper: { badge: 'DreamShaper', name: 'DreamShaper XL on this laptop', local: true, seed: 'img2img',
+    note: 'Free, no tokens. All-rounder: painted, poster and print styles; fast. Starts from a seed image.' },
+  juggernaut: { badge: 'Juggernaut', name: 'Juggernaut XL on this laptop', local: true, seed: 'img2img',
+    note: 'Free, no tokens. Photographic and calm, good with people; the fastest. Starts from a seed image.' },
+  zavychroma: { badge: 'ZavyChroma', name: 'ZavyChroma XL on this laptop', local: true, seed: 'img2img',
+    note: 'Free, no tokens. Rich, saturated colour; slower. Starts from a seed image.' },
+  animagine: { badge: 'Animagine', name: 'Animagine XL on this laptop', local: true, seed: 'img2img',
+    note: 'Free, no tokens. Anime look; often drifts from the subject. Starts from a seed image.' },
 };
-export const LOCAL = ['klein', 'zimage', 'playground'];
-const SPEED = { klein: 109, zimage: 185, playground: 75 };   // seconds per image, measured 24 Nov 2026 (until runs.csv says more)
+export const LOCAL = ['klein', 'zimage', 'playground', 'dreamshaper', 'juggernaut', 'zavychroma', 'animagine'];
+// seconds per image, measured 24-26 Nov 2026 (until runs.csv says more)
+const SPEED = { klein: 109, zimage: 185, playground: 75, dreamshaper: 40, juggernaut: 30, zavychroma: 81, animagine: 70 };
 export const modelBadge = (k) => MODELS[k]?.badge || (k === 'local' ? 'Local' : 'Codex');
 export const modelName = (k) => MODELS[k]?.name || (k === 'local' ? 'A local model (blind test)' : 'Codex image tool (ChatGPT plan)');
 
@@ -177,7 +187,7 @@ function localBlock(a, n, m, extra, seed) {
   const min = Math.max(1, Math.round((n * secs) / 60) + 1);
   const seedLine = seed && {
     edit: 'FLUX local edits the seed image.',
-    img2img: 'Playground starts from the seed image and redraws about half of it.',
+    img2img: `${MODELS[m].badge} starts from the seed image and redraws about half of it.`,
     prompt: 'Z-Image can\'t take an image: it works from the seed\'s prompt and the change.',
   }[MODELS[m].seed];
   return [

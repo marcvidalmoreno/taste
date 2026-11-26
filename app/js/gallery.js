@@ -14,7 +14,7 @@
 // Style tags (24 Nov 2026): one toggle chip per style instead of a dropdown; several can be on at once
 // (style=a,b in the address), none on = every style. Size sits at the end of the same filter row.
 // Model tags (25 Nov 2026): the same pattern for the model that made each image (model=a,b): ChatGPT, FLUX,
-// FLUX local, Z-Image, Playground.
+// FLUX local, Z-Image, Playground, and the SDXL fine-tunes (26 Nov 2026).
 import { api, styles, archivedStyles, allStyles } from './api.js';
 import { openStyleEdit } from './styleedit.js';
 import { setKept, keepButton, setPublished, publishButton } from './marks.js';

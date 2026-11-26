@@ -6,7 +6,9 @@ Models (ComfyUI on the Intel Arc 130V, %USERPROFILE%\\ComfyUI, http://127.0.0.1:
   zimage      Z-Image Turbo 6B, 9 steps, weights loaded as fp8 (bf16 ran out of memory); text only
   playground  Playground v2.5 (SDXL family), 30 steps, cfg 3, the avoid list as negative prompt; with a seed:
               img2img from it (denoise 0.55)
-All three decode with VAEDecodeTiled (512 tiles): a full 1024 px decode ran out of shared memory.
+  dreamshaper, juggernaut, zavychroma, animagine: SDXL community fine-tunes (26 Nov 2026, from the 25 Nov test),
+              each with its creator's steps / cfg / sampler (SDXL below); prompts and seeds as Playground
+All of them decode with VAEDecodeTiled (512 tiles): a full 1024 px decode ran out of shared memory.
 
 Not run alone for images: codex_run.py gen --route local --model <m> calls make() (the web app sets TASTE_ROUTE=local
 and TASTE_MODEL for its runs), so styles, mixes, batches, remixes and variations work unchanged.
@@ -28,7 +30,19 @@ MODELS = {   # key -> what the app shows (badge, full name) and what the model c
     'klein': {'badge': 'FLUX local', 'name': 'FLUX.2 klein 4B in ComfyUI', 'seed': 'edit'},
     'zimage': {'badge': 'Z-Image', 'name': 'Z-Image Turbo 6B', 'seed': 'prompt'},
     'playground': {'badge': 'Playground', 'name': 'Playground v2.5', 'seed': 'img2img'},
+    'dreamshaper': {'badge': 'DreamShaper', 'name': 'DreamShaper XL Lightning', 'seed': 'img2img'},
+    'juggernaut': {'badge': 'Juggernaut', 'name': 'Juggernaut XL Lightning', 'seed': 'img2img'},
+    'zavychroma': {'badge': 'ZavyChroma', 'name': 'ZavyChroma XL v10', 'seed': 'img2img'},
+    'animagine': {'badge': 'Animagine', 'name': 'Animagine XL 4.0', 'seed': 'img2img'},
 }
+# SDXL checkpoints in models/checkpoints: file, steps, cfg, sampler, scheduler (the creators' recommended settings).
+SDXL = {
+    'dreamshaper': ('DreamShaperXL_Lightning.safetensors', 6, 2.0, 'dpmpp_sde', 'karras'),
+    'juggernaut': ('Juggernaut_RunDiffusionPhoto2_Lightning_4Steps.safetensors', 5, 1.5, 'dpmpp_sde', 'karras'),
+    'zavychroma': ('zavychromaxl_v100.safetensors', 30, 5.0, 'dpmpp_2m', 'karras'),
+    'animagine': ('animagine-xl-4.0-opt.safetensors', 28, 5.0, 'euler_ancestral', 'normal'),
+}
+CLIP_MODELS = ('playground',) + tuple(SDXL)   # CLIP text encoder: short prompt, avoid list as negative
 SIZES = {'wide': (1024, 576), 'portrait': (832, 1024), 'square': (1024, 1024)}
 DENOISE = 0.55        # Playground from a seed: keeps its layout and palette, redraws the rest
 ADULTS = ' Every figure is an adult.'   # erotic style on a local model: limits in docs/local-route.md
@@ -73,7 +87,20 @@ def graph(model, prompt, negative, seed, w, h, ref=None, prefix='taste'):
                                                        'positive': ['5', 0], 'negative': ['6', 0], 'latent_image': ['7', 0]}},
             '9': {'class_type': 'VAEDecodeTiled', 'inputs': {'samples': ['8', 0], 'vae': ['3', 0], **TILED}},
             '10': {'class_type': 'SaveImage', 'inputs': {'images': ['9', 0], 'filename_prefix': prefix}}}
-    g = {
+    if model in SDXL:
+        ckpt, steps, cfg, sampler, scheduler = SDXL[model]
+        g = {
+            '1': {'class_type': 'CheckpointLoaderSimple', 'inputs': {'ckpt_name': ckpt}},
+            '3': {'class_type': 'CLIPTextEncode', 'inputs': {'text': prompt, 'clip': ['1', 1]}},
+            '4': {'class_type': 'CLIPTextEncode', 'inputs': {'text': negative, 'clip': ['1', 1]}},
+            '5': {'class_type': 'EmptyLatentImage', 'inputs': {'width': w, 'height': h, 'batch_size': 1}},
+            '6': {'class_type': 'KSampler', 'inputs': {'model': ['1', 0], 'seed': seed, 'steps': steps, 'cfg': cfg,
+                                                       'sampler_name': sampler, 'scheduler': scheduler, 'denoise': 1.0,
+                                                       'positive': ['3', 0], 'negative': ['4', 0], 'latent_image': ['5', 0]}},
+            '7': {'class_type': 'VAEDecodeTiled', 'inputs': {'samples': ['6', 0], 'vae': ['1', 2], **TILED}},
+            '8': {'class_type': 'SaveImage', 'inputs': {'images': ['7', 0], 'filename_prefix': prefix}}}
+    else:
+        g = {
         '1': {'class_type': 'CheckpointLoaderSimple', 'inputs': {'ckpt_name': 'playground-v2.5-1024px-aesthetic.fp16.safetensors'}},
         '2': {'class_type': 'ModelSamplingContinuousEDM', 'inputs': {'model': ['1', 0], 'sampling': 'edm_playground_v2.5',
                                                                      'sigma_max': 120.0, 'sigma_min': 0.002}},
@@ -100,7 +127,7 @@ def prompts(model, style, prompt):
     """(prompt, negative) for a full app prompt. FLUX and Z-Image get it as ChatGPT does; Playground (CLIP, 77
     tokens) gets it without the ratio line, the hex palette and the avoid list, and the avoid list as its negative."""
     text = prompt + (ADULTS if style == 'erotic' else '')
-    if model != 'playground':
+    if model not in CLIP_MODELS:
         return text, ''
     avoid = re.search(r'Avoid:(.*?)(?:No text, no logos, no watermark\.|$)', text, re.S)
     pos = re.sub(r'Avoid:.*?(?=No text|$)', '', text, flags=re.S)
@@ -109,6 +136,8 @@ def prompts(model, style, prompt):
     neg = (avoid.group(1).strip() if avoid else '') + '; text, logo, watermark, blurry, deformed hands'
     if style == 'erotic':
         neg += ', child, minor, explicit sex'
+    if model == 'animagine':   # its model card: quality tags at the end, its own negative tags first
+        return ' '.join(pos.split()) + ' masterpiece, high score, great score, absurdres',             'lowres, bad anatomy, bad hands, worst quality, low quality, ' + neg
     return ' '.join(pos.split()), neg
 
 

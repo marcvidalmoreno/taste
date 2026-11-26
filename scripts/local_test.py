@@ -33,13 +33,7 @@ from progress import Progress  # noqa: E402
 API = 'http://127.0.0.1:8188'
 W = H = 1024
 # Tiled VAE decode (24 Nov 2026): a full 1024px decode ran out of the Arc 130V's shared memory.
-# SDXL checkpoints: file, steps, cfg, sampler, scheduler (the creators' recommended settings).
-SDXL = {
-    'dreamshaper': ('DreamShaperXL_Lightning.safetensors', 6, 2.0, 'dpmpp_sde', 'karras'),
-    'juggernaut': ('Juggernaut_RunDiffusionPhoto2_Lightning_4Steps.safetensors', 5, 1.5, 'dpmpp_sde', 'karras'),
-    'zavychroma': ('zavychromaxl_v100.safetensors', 30, 5.0, 'dpmpp_2m', 'karras'),
-    'animagine': ('animagine-xl-4.0-opt.safetensors', 28, 5.0, 'euler_ancestral', 'normal'),
-}
+from local_run import SDXL  # noqa: E402  (file, steps, cfg, sampler, scheduler; one list for test and app)
 MODELS = ('klein', 'zimage', 'playground') + tuple(SDXL)
 DAY = datetime.date.today().isoformat()
 KEY = ROOT / 'generated' / 'codex' / 'local-blind-key.json'

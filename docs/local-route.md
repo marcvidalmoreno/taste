@@ -18,8 +18,10 @@ changed 25 Nov 2026 (Marc): it runs on this laptop.
 ## How it runs (25 Nov 2026)
 - ComfyUI in `%USERPROFILE%\ComfyUI` (Intel Arc), API at `http://127.0.0.1:8188`. It starts by itself, hidden,
   when a local run needs it, and lets go of the memory after the run.
-- Three models, each with a badge in the app: FLUX local (FLUX.2 klein 4B), Z-Image (Z-Image Turbo 6B) and
-  Playground (Playground v2.5). The Models page compares them and sets each style's default.
+- Seven models, each with a badge in the app: FLUX local (FLUX.2 klein 4B), Z-Image (Z-Image Turbo 6B),
+  Playground (Playground v2.5) and, since 26 Nov 2026, four SDXL community fine-tunes: DreamShaper XL Lightning,
+  Juggernaut XL Lightning, ZavyChroma XL v10 and Animagine XL 4.0 (CreativeML Open RAIL++-M; settings in
+  `local_run.SDXL`). The Models page compares them and sets each style's default.
 - `scripts/local_run.py` makes one image; `codex_run.py gen --route local --model <m>` calls it, so batches,
   remixes, variations, contact sheets and ratings work unchanged. Runs log to `generated/codex/runs.csv` with
   route `local` and session `local:<model>`.

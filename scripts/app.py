@@ -161,7 +161,7 @@ def pick_refs(paths, i):
 
 
 # ---------------------------------------------------------------- models (25 Nov 2026)
-# Five ways to make an image. key -> badge (tiles), full name ("How it was made"), route for codex_run.py, and what
+# Nine ways to make an image. key -> badge (tiles), full name ("How it was made"), route for codex_run.py, and what
 # the Models page says it is good at. Rows of runs.csv with no route read as ChatGPT; local rows say which model in
 # their session column ("local:<model>").
 
@@ -175,7 +175,16 @@ MODELS = {
     'zimage': {'badge': 'Z-Image', 'name': 'Z-Image Turbo 6B, on this laptop', 'route': 'local',
                'good': 'Rich, photographic detail; the slowest here. Works from words only, never from an image.'},
     'playground': {'badge': 'Playground', 'name': 'Playground v2.5, on this laptop', 'route': 'local',
-                   'good': 'Painterly, colourful look; the fastest local model. Starts from a seed image.'},
+                   'good': 'Painterly, colourful look. Starts from a seed image.'},
+    # SDXL community fine-tunes (26 Nov 2026, from the 25 Nov test of 64 images each).
+    'dreamshaper': {'badge': 'DreamShaper', 'name': 'DreamShaper XL Lightning, on this laptop', 'route': 'local',
+                    'good': 'All-rounder: painted, poster and print styles land well; fast. Starts from a seed image.'},
+    'juggernaut': {'badge': 'Juggernaut', 'name': 'Juggernaut XL Lightning, on this laptop', 'route': 'local',
+                   'good': 'Photographic and calm, good with people; the fastest local model. Starts from a seed image.'},
+    'zavychroma': {'badge': 'ZavyChroma', 'name': 'ZavyChroma XL v10, on this laptop', 'route': 'local',
+                   'good': 'Rich, saturated colour, close to the subject; slower. Starts from a seed image.'},
+    'animagine': {'badge': 'Animagine', 'name': 'Animagine XL 4.0, on this laptop', 'route': 'local',
+                  'good': 'Anime look; often turns the subject into an abstract scene. Starts from a seed image.'},
 }
 LOCAL_MODELS = [k for k, m in MODELS.items() if m['route'] == 'local']
 MODEL_SETTINGS = BASE / 'app-models.json'    # {"local_only": bool}
@@ -201,9 +210,9 @@ def style_models():
 
 
 def model_end(body):
-    """New FLUX runs get folders ending in -flux (23 Nov 2026); local ones -flux-local, -zimage, -playground."""
+    """New FLUX runs get folders ending in -flux (23 Nov 2026); local ones -flux-local or -<model> (-zimage, -playground, -dreamshaper ...)."""
     m = (body or {}).get('model') or (body or {}).get('route')
-    return {'cloudflare': '-flux', 'klein': '-flux-local', 'zimage': '-zimage', 'playground': '-playground'}.get(m, '')
+    return {'cloudflare': '-flux', 'klein': '-flux-local'}.get(m) or (f'-{m}' if m in LOCAL_MODELS else '')
 
 
 # ---------------------------------------------------------------- batches and images
@@ -1950,7 +1959,7 @@ def with_model(spec, body):
         m = rec.get('model') if rec.get('model') in MODELS else rec.get('route') if rec.get('route') in MODELS else None
     m = m or spec.get('model') or 'codex'
     if local_only() and m not in LOCAL_MODELS:
-        raise ApiError(409, 'Local only is on: pick FLUX local, Z-Image or Playground (or turn Local only off on the Models page).')
+        raise ApiError(409, 'Local only is on: pick a model on this laptop (or turn Local only off on the Models page).')
     if m == 'cloudflare' and not cf_run.creds():
         raise ApiError(409, 'Connect Cloudflare first (New run, Made with: FLUX).')
     spec.update(model=m, route=MODELS[m]['route'])
@@ -2812,7 +2821,7 @@ class Handler(BaseHTTPRequestHandler):
         out.sort(key=lambda x: x['mtime'], reverse=True)
         return out
 
-    # -- Models page (25 Nov 2026): compare the five models, set a default per style, Local only
+    # -- Models page (25 Nov 2026): compare the models, set a default per style, Local only
 
     def get_models(self):
         """One card per model: what it is good at, images made, median seconds per image, thumbs-up rate; plus Local
