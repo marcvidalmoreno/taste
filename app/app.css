@@ -938,3 +938,7 @@ dialog.remix .rx-chips[role=group], dialog.remix .rx-pals[role=group] { display:
 
 /* The regression check found a break (26 Nov 2026): a calm chip, no alarm colour; it leaves when a check passes. */
 .e2e-chip { font-size: .8rem; padding: .15rem .6rem; border: 1px solid var(--line); border-radius: 99px; color: var(--text); white-space: nowrap; cursor: help; }
+
+/* Character counter under limited text boxes (27 Nov 2026): quiet until 60 % full, amber from 90 % or after a cut paste. */
+.char-count { display: block; text-align: right; font-size: .75rem; line-height: 1.2; color: var(--pico-muted-color); font-variant-numeric: tabular-nums; }
+.char-count.near { color: var(--almost); }

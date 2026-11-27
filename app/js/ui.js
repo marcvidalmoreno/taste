@@ -136,3 +136,45 @@ export function toast(message, { action, onAction, onClose, timeout = 5000, tone
 }
 
 export const showError = (err) => toast(String(err.message || err), { tone: 'error', timeout: 8000 });
+
+// Character counter (27 Nov 2026). Every text box with a limit of 150+ characters (Change the style 400, the prompt
+// boxes 4000…) shows "368 / 400" once the text fills 60 % of it, amber from 90 %. A paste that does not fit says so
+// ("cut at 400: 37 didn't fit"), because the browser drops the rest without a word. One listener for the whole app,
+// so new dialogs get it without code of their own; the counter sits under the field's right edge.
+const COUNT_MIN = 150;
+const counted = (el) => el && el.maxLength >= COUNT_MIN && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text'));
+
+function counterFor(el) {
+  let c = el.nextElementSibling;
+  if (c?.classList.contains('char-count')) return c;
+  c = h('small', { class: 'char-count', 'aria-live': 'polite', hidden: true });
+  const mb = parseFloat(getComputedStyle(el).marginBottom) || 0;
+  if (mb >= 12) Object.assign(c.style, { marginTop: `${4 - mb}px`, marginBottom: `${mb - 16}px` });   // sit in the field's own gap
+  el.after(c);
+  return c;
+}
+
+function drawCount(el, cut = 0) {
+  const max = el.maxLength, n = el.value.length;
+  if (!cut && n < max * 0.6 && !el.nextElementSibling?.classList.contains('char-count')) return;
+  const c = counterFor(el);
+  c.hidden = !cut && n < max * 0.6;
+  c.classList.toggle('near', !!cut || n >= max * 0.9);
+  c.textContent = cut ? `${n} / ${max}: cut at ${max}, ${cut} didn't fit` : `${n} / ${max}`;
+}
+
+document.addEventListener('input', (e) => {
+  const el = e.target;
+  if (!counted(el) || (e.inputType === 'insertFromPaste' && el._cut)) return;   // the paste's own redraw says what was cut
+  el._cut = 0;
+  drawCount(el);
+}, true);
+document.addEventListener('focusin', (e) => { if (counted(e.target)) drawCount(e.target); });
+document.addEventListener('paste', (e) => {
+  const el = e.target;
+  if (!counted(el)) return;
+  const text = e.clipboardData?.getData('text') || '';
+  const room = el.maxLength - el.value.length + Math.abs((el.selectionEnd ?? 0) - (el.selectionStart ?? 0));
+  const cut = text.length - room;
+  if (cut > 0) { el._cut = cut; setTimeout(() => { if (el._cut) drawCount(el, cut); }); }
+}, true);

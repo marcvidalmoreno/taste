@@ -120,6 +120,25 @@ def test_leave_a_note(page, watch):
     watch.assert_clean('note')
 
 
+def test_character_counter_and_cut_paste(page, watch):
+    """Limited text boxes show "n / max" past 60 %, amber from 90 %, and say when a paste did not fit (27 Nov 2026)."""
+    open_note(page)
+    box = 'dialog.note-dialog textarea'
+    page.fill(box, 'a' * 100)
+    assert not page.is_visible('dialog.note-dialog .char-count'), 'counter shows too early'
+    page.fill(box, 'a' * 700)
+    count = page.locator('dialog.note-dialog .char-count')
+    wait_until(lambda: count.is_visible() and count.inner_text() == '700 / 1000', 'the counter at 700 / 1000')
+    assert 'near' not in (count.get_attribute('class') or '')
+    page.fill(box, 'a' * 950)
+    wait_until(lambda: 'near' in (count.get_attribute('class') or ''), 'the counter to turn amber')
+    page.fill(box, 'a' * 700)
+    page.eval_on_selector(box, """el => { const dt = new DataTransfer(); dt.setData('text/plain', 'b'.repeat(400));
+        el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true })); }""")
+    wait_until(lambda: "100 didn't fit" in count.inner_text(), 'the cut-paste message')
+    watch.assert_clean('character counter')
+
+
 def test_how_it_got_here(page, watch):
     go(page, f'/b/{B3}/tin-harbour-1')
     page.wait_for_selector('dialog[open] section.lineage')
