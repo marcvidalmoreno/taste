@@ -57,6 +57,7 @@ export async function loadGallery() {
 export async function renderGallery(view, query, open = '') {
   const want = galleryHref(Object.fromEntries(['q', 'style', 'model', 'rating', 'batch', 'pub'].map((k) => [k, query.get(k) || ''])));
   if (want !== pageKey || !view.querySelector('.jgrid')) await drawGallery(view, query);
+  else if (Date.now() - loadedAt > 5000) syncMarks();   // the grid on screen was read a while ago
   if (open) openFromUrl(open);
   else if (urlSync && dlg?.open) dlg.close();   // Back from an image: the grid stays as it was
 }
@@ -66,6 +67,7 @@ async function drawGallery(view, query) {
   view.replaceChildren(h('p', { 'aria-busy': 'true' }, 'Loading the gallery…'));
   try {
     ({ images: all, labels: styleMap } = await loadGallery());
+    loadedAt = Date.now();
   } catch (err) {
     view.replaceChildren(h('p', {}, 'Could not load the gallery.'));
     return showError(err);
@@ -205,6 +207,42 @@ function tile(im, i) {
 
 const keyOf = (im) => `${im.batch}/${im.name}`;
 
+// Fresh marks (27 Nov 2026): the grid reads every image once and keeps that list while the tab stays open, so an
+// image marked, kept or published in another tab or on its batch page still showed its old state here ("it lost
+// the data") until a reload. Now the marks are read again quietly when the Gallery is entered again or the tab
+// comes back; only tiles that changed are swapped, nothing reflows. A change made on this page after the read
+// started, or a why still being typed, wins over what the server sent.
+const LIVE = ['rating', 'why', 'kept', 'published'];
+let loadedAt = 0;              // when `all` was last read from the server
+const localAt = new Map();     // key -> when this page last changed that image
+const touch = (im) => localAt.set(keyOf(im), Date.now());
+let syncing = null;
+
+function syncMarks() {
+  if (!all.length || syncing) return syncing;
+  const started = Date.now();
+  syncing = api('gallery').then(({ images }) => {
+    loadedAt = Date.now();
+    const fresh = new Map(images.map((x) => [keyOf(x), x]));
+    for (const im of new Set([...all, ...stepList])) {
+      const k = keyOf(im), x = fresh.get(k);
+      if (!x || (localAt.get(k) || 0) >= started || pendingWhy.has(k)) continue;
+      if (LIVE.every((f) => (im[f] || null) === (x[f] || null))) continue;
+      const open = dlg?.open && stepList[index] === im;
+      if (open && isTyping({ target: document.activeElement || document.body })) continue;   // never redraw the why field under the cursor
+      LIVE.forEach((f) => { im[f] = x[f]; });
+      refreshTile(im);
+      if (open) { drawMarks(im); drawKeep(im); }
+    }
+  }).catch(() => {}).finally(() => { syncing = null; });
+  return syncing;
+}
+
+const onGallery = () => location.hash.startsWith('#/gallery') || dlg?.open;
+const backAgain = () => { if (!document.hidden && onGallery() && Date.now() - loadedAt > 5000) syncMarks(); };
+document.addEventListener('visibilitychange', backAgain);
+window.addEventListener('focus', backAgain);   // another window was in front: no visibilitychange
+
 // After a mark: swap the tile's badge in place (the grid keeps its order and filter until the page is read again).
 function refreshTile(im) {
   const el = document.querySelector(`.jtile[data-key="${CSS.escape(keyOf(im))}"]`);
@@ -222,6 +260,7 @@ function sendMark(im) {
 async function toggleMark(im, rating) {
   if (rating === 'almost') return;
   const before = { rating: im.rating, why: im.why };
+  touch(im);
   im.rating = im.rating === rating ? null : rating;
   clearTimeout(pendingWhy.get(keyOf(im)));
   pendingWhy.delete(keyOf(im));
@@ -237,6 +276,7 @@ async function toggleMark(im, rating) {
 
 function setWhy(im, why) {
   im.why = why;
+  touch(im);
   const k = keyOf(im);
   clearTimeout(pendingWhy.get(k));
   if (!im.rating) return;   // a why without a mark waits until a thumb is pressed
@@ -259,6 +299,7 @@ function redraw(im) {
 
 // Keep as example: the star shows on the tile and on Taste; the grid does not reflow.
 function keep(im) {
+  touch(im);
   setKept(im, im.batch, !im.kept).then(() => { refreshTile(im); if (dlg?.open && stepList[index] === im) drawKeep(im); }).catch(() => {});
 }
 
@@ -358,6 +399,7 @@ function step(d) {
 let markBox, keepBox, canvas, fitBtn;
 function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im)), publishButton(im, () => publish(im))); }
 function publish(im) {
+  touch(im);
   setPublished(im, im.batch, !im.published).then(() => { refreshTile(im); if (dlg?.open && stepList[index] === im) drawKeep(im); }).catch(() => {});
 }
 

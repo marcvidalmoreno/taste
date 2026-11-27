@@ -83,6 +83,23 @@ def test_ignore_and_undo(page, watch):
     watch.assert_clean('ignore')
 
 
+def test_gallery_shows_a_mark_made_in_another_tab(page, watch):   # 27 Nov 2026: an old Gallery tab showed it unmarked
+    go(page, f'/gallery/{B1}/quiet-meadow-4', wait='dialog[open]')
+    up = 'dialog.glarge button.mark-btn.keep'
+    assert page.get_attribute(up, 'aria-pressed') == 'false'
+    body = {'batch': B1, 'name': 'quiet-meadow-4', 'why': ''}
+    put = lambda rating: page.request.put(f'{URL}/api/mark', data=__import__('json').dumps({**body, 'rating': rating}),
+                                          headers={'Content-Type': 'application/json', 'X-Taste-App': '1'})
+    try:
+        assert put('keep').ok   # what another tab or the batch page does
+        page.wait_for_timeout(5200)   # the list on screen is now older than the 5 s the page waits before reading again
+        page.evaluate("window.dispatchEvent(new Event('focus'))")   # Marc comes back to this window
+        page.wait_for_selector(f'{up}[aria-pressed="true"]', timeout=10000)
+    finally:
+        put(None)
+    watch.assert_clean('fresh marks')
+
+
 def test_keep_as_example(page, watch):
     go(page, f'/b/{B2}/paper-lanterns-1')
     page.wait_for_selector('dialog[open]')
