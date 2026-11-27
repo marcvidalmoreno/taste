@@ -714,6 +714,8 @@ dialog.variations footer a[role=button] { margin: 0; width: auto; }
 .route-badge { font-size: .7rem; font-weight: 600; letter-spacing: .04em; padding: .05rem .35rem; border: 1px solid var(--line);
                border-radius: 3px; color: var(--pico-muted-color); flex-shrink: 0; }
 .route-badge.on-image { position: absolute; left: .35rem; bottom: .3rem; background: rgba(0,0,0,.6); color: #ddd; border-color: transparent; pointer-events: none; }
+/* Large views: placed on the drawn picture's corner by cornerBadge() (27 Nov 2026) */
+.route-badge.on-image.corner { bottom: auto; font-size: .75rem; z-index: 1; }
 .kept-star { position: absolute; right: .35rem; top: .3rem; color: #f2c94c; font-size: 1.1rem; line-height: 1; text-shadow: 0 0 3px rgba(0,0,0,.7); pointer-events: none; }
 .jtile { position: relative; }
 .rating-pill.kept { background: #f2c94c; color: #111; }

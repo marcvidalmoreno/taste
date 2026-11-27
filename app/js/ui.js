@@ -57,6 +57,26 @@ export function markBadge(im) {
   return h('span', { class: `mark ${r} saved`, title: `${RATING_LABELS[r].label} (saved)` }, RATING_LABELS[r].glyph);
 }
 
+// The model badge on the picture's bottom-left corner in the large views, as on the grid tiles (27 Nov 2026).
+// The image is drawn with object-fit: contain, so its corner moves with the window and the picture's shape:
+// the badge is placed from the drawn size, again on every load and resize. set(text) shows it; set('') hides it.
+export function cornerBadge(img, canvas) {
+  const el = h('span', { class: 'route-badge on-image corner', 'aria-hidden': 'true' });
+  const place = () => {
+    const nw = img.naturalWidth, nh = img.naturalHeight;
+    el.style.visibility = nw && el.textContent ? 'visible' : 'hidden';
+    if (!nw) return;
+    const s = Math.min(img.offsetWidth / nw, img.offsetHeight / nh);
+    el.style.left = `${img.offsetLeft + (img.offsetWidth - nw * s) / 2 + 6}px`;
+    el.style.top = `${img.offsetTop + (img.offsetHeight + nh * s) / 2 - el.offsetHeight - 6}px`;
+  };
+  img.addEventListener('load', place);
+  const ro = new ResizeObserver(place);
+  ro.observe(canvas);
+  canvas.append(el);
+  return { el, place, stop: () => ro.disconnect(), set(text) { el.textContent = text || ''; place(); } };
+}
+
 // Full screen for the large views (24 Nov 2026): F, like most video and photo viewers. The whole page goes full
 // screen (Chrome refuses a <dialog> itself); the open view already covers it, so stepping and redraws keep it.
 // CSS hides the side panel there. The browser's own Esc leaves it.

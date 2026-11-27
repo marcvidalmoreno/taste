@@ -100,6 +100,21 @@ def test_gallery_shows_a_mark_made_in_another_tab(page, watch):   # 27 Nov 2026:
     watch.assert_clean('fresh marks')
 
 
+def test_large_views_show_the_model_badge_on_the_picture(page, watch):   # 27 Nov 2026
+    im = next(i for i in api(page, f'batch/{B2}')['items'] if i.get('model'))
+    corner = """() => { const b = document.querySelector('dialog[open] .corner'), i = document.querySelector('dialog[open] .canvas img');
+      const r = b.getBoundingClientRect(), p = i.getBoundingClientRect(), s = Math.min(p.width / i.naturalWidth, p.height / i.naturalHeight);
+      const left = p.left + (p.width - i.naturalWidth * s) / 2, bottom = p.top + (p.height + i.naturalHeight * s) / 2;
+      return [b.textContent, getComputedStyle(b).visibility, r.left >= left && r.left - left < 20 && r.bottom <= bottom && bottom - r.bottom < 20]; }"""
+    for address in (f'/gallery/{B2}/{im["name"]}', f'/b/{B2}/{im["name"]}'):
+        go(page, address, wait='dialog[open] .canvas img')
+        page.wait_for_function("() => document.querySelector('dialog[open] .canvas img')?.naturalWidth > 0")
+        page.wait_for_timeout(200)
+        text, vis, on_corner = page.evaluate(corner)
+        assert text and text != 'undefined' and vis == 'visible' and on_corner, (address, text, vis, on_corner)
+    watch.assert_clean('model badge in the large views')
+
+
 def test_keep_as_example(page, watch):
     go(page, f'/b/{B2}/paper-lanterns-1')
     page.wait_for_selector('dialog[open]')

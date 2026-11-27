@@ -7,9 +7,9 @@ import { openNote } from './notes.js';
 import { openStyleEdit } from './styleedit.js';
 import { similarRow } from './similar.js';
 import { historySection } from './history.js';
-import { modelName, modelTag } from './cost.js';
+import { modelName, modelTag, modelBadge } from './cost.js';
 import { enqueueRun } from './job.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, showError, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, showError, downloadLink, fullscreenButton, toggleFullscreen, cornerBadge } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
 const CHANGES = {
@@ -19,7 +19,7 @@ const CHANGES = {
   mood: 'Other time of day; subject and framing kept.',
 };
 
-let dlg, img, seedTag, bar, panel, prevBtn, nextBtn, canvas;
+let dlg, img, seedTag, bar, panel, prevBtn, nextBtn, canvas, badge;
 let order = [];        // names to step through: the grid's list when the view opened
 let index = 0;
 let fit = true;        // fit to the window, or 1:1 pixels
@@ -33,6 +33,7 @@ function build() {
   canvas = h('div', { class: 'canvas fit', onClick: toggleFit },
     img = h('img', { alt: '' }),
     seedTag = h('span', { class: 'seed-tag', hidden: true }, 'Seed'));
+  badge = cornerBadge(img, canvas);
   dlg = h('dialog', { class: 'viewer', 'aria-label': 'Large view', tabindex: '-1' },
     h('div', { class: 'stage' },
       bar = h('div', { class: 'stage-bar' }),
@@ -107,6 +108,7 @@ function draw() {
   img.src = imgUrl(d.batch, im.file, im.mtime);
   img.alt = `${im.number}. ${styleName(im.style)}, ${kindOf(im)}`;
   canvas.className = `canvas ${fit ? 'fit' : 'actual'}`;
+  badge.set(im.model ? modelBadge(im.model) : '');
   prevBtn.disabled = index === 0;
   nextBtn.disabled = index === order.length - 1;
   bar.replaceChildren(...[   // replaceChildren would print "null": drop the empty parts first
@@ -271,6 +273,7 @@ function showSeed(on) {
   const d = store.data;
   if (!dlg?.open || !d?.seed || seedTag.hidden === !on) return;
   seedTag.hidden = !on;
+  badge.el.hidden = on;   // the seed was not made by this model
   const im = current();
   img.src = on ? imgUrl(d.batch, d.seed) : imgUrl(d.batch, im.file, im.mtime);
 }

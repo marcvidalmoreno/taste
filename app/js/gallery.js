@@ -23,7 +23,7 @@ import { openNote } from './notes.js';
 import { similarRow } from './similar.js';
 import { historySection } from './history.js';
 import { MODELS, modelBadge, modelName, modelTag } from './cost.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, plural, RATINGS, RATING_LABELS, ratingForKey, showError, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen, cornerBadge } from './ui.js';
 
 // Target row height in px; rows end up a little taller to fill the width. Large stays within the 640 px thumbnails.
 const SIZES = [['s', 'Small', 130], ['m', 'Medium', 220], ['l', 'Large', 360]];
@@ -396,7 +396,7 @@ function step(d) {
   draw();
 }
 
-let markBox, keepBox, canvas, fitBtn;
+let markBox, keepBox, canvas, fitBtn, badge;
 function drawKeep(im) { keepBox.replaceChildren(keepButton(im, () => keep(im)), publishButton(im, () => publish(im))); }
 function publish(im) {
   touch(im);
@@ -408,8 +408,11 @@ function draw() {
   const st = styleMap[im.style];
   const onGallery = location.hash.startsWith('#/gallery');
   if (urlSync) history.replaceState(history.state, '', galleryHref(curF, im));   // every step, "More like this" and Previous image
-  canvas = h('div', { class: `canvas ${fit ? 'fit' : 'actual'}`, onClick: toggleFit },
-    h('img', { src: imgUrl(im.batch, im.file, im.mtime), alt: `${st?.name || 'No style'}, ${ratingLabel(im.rating)}` }));
+  const pic = h('img', { src: imgUrl(im.batch, im.file, im.mtime), alt: `${st?.name || 'No style'}, ${ratingLabel(im.rating)}` });
+  canvas = h('div', { class: `canvas ${fit ? 'fit' : 'actual'}`, onClick: toggleFit }, pic);
+  badge?.stop();
+  badge = cornerBadge(pic, canvas);
+  badge.set(im.model ? modelBadge(im.model) : '');
   dlg.replaceChildren(
     h('div', { class: 'stage' },
       h('div', { class: 'stage-bar' },
@@ -481,6 +484,7 @@ async function copy(text) {
 function toggleFit() {
   fit = !fit;
   canvas.className = `canvas ${fit ? 'fit' : 'actual'}`;
+  badge?.place();
   fitBtn.setAttribute('aria-pressed', String(!fit));
   if (!fit) canvas.scrollTo((canvas.scrollWidth - canvas.clientWidth) / 2, (canvas.scrollHeight - canvas.clientHeight) / 2);
 }
