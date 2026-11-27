@@ -42,9 +42,19 @@ class Watch:
         page.on('request', lambda r: hit(r.method, r.url))
         page.on('console', lambda m: self.problems.append(f'console {m.type}: {m.text}') if m.type == 'error' and 'favicon' not in m.text and 'Failed to load resource' not in m.text else None)
         page.on('pageerror', lambda e: self.problems.append(f'uncaught: {e}'))
-        page.on('requestfailed', lambda r: self.problems.append(f'request failed: {r.url}') if '/api/' in r.url or '/img/' in r.url or '/thumb/' in r.url else None)
+        page.on('requestfailed', self._failed)
         page.on('response', lambda r: self.problems.append(f'HTTP {r.status}: {r.url}') if r.status >= 400 and 'favicon' not in r.url and (self.strict or '/img/' in r.url or '/thumb/' in r.url) else None)
     strict = True
+
+    def _failed(self, r):
+        # A picture whose load the page cancels because the view redrew (net::ERR_ABORTED) is not a break
+        # (27 Nov 2026: Start in New run redraws while thumbnails of other batches are still loading).
+        # A cancelled /api/ request still counts.
+        image = '/img/' in r.url or '/thumb/' in r.url
+        if image and 'ERR_ABORTED' in (r.failure or ''):
+            return
+        if image or '/api/' in r.url:
+            self.problems.append(f'request failed: {r.url} ({r.failure})')
 
     def clear(self):
         self.problems.clear()

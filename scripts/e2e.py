@@ -14,7 +14,7 @@ What it does: `git archive HEAD app scripts tests` into a temp folder, fake styl
 pytest. Marc's real generated/ and taste/ folders are never read or written, ComfyUI and Ollama are never started.
 Output (git-ignored): generated/e2e/ (last.json from the hook, e2e.log, screenshots of failures per run).
 """
-import datetime, hashlib, json, os, shutil, socket, subprocess, sys, tarfile, tempfile, time, io, re
+import datetime, hashlib, json, os, shutil, socket, subprocess, sys, tarfile, tempfile, time, io, re, random
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -42,7 +42,11 @@ def git(*args):
 
 
 def free_port(start=8795):
-    for p in range(start, start + 100):
+    """A free port from 8795 up, starting at a random point so two runs at once (the hook and a --working run)
+    rarely pick the same one; start_server also checks the app that answers is its own (27 Nov 2026)."""
+    first = random.randrange(100)
+    for i in range(100):
+        p = start + (first + i) % 100
         with socket.socket() as s:
             if s.connect_ex(('127.0.0.1', p)) != 0:
                 return p
@@ -109,7 +113,10 @@ def start_server(copy, port):
         if proc.poll() is not None:
             break
         if port_open(port):
-            return proc
+            time.sleep(1)   # if another run took the port first, our app fails to bind and exits: don't test theirs
+            if proc.poll() is None:
+                return proc
+            break
         time.sleep(0.2)
     stop_server(proc)
     raise SystemExit('the app did not start in the copy:\n' + (copy / 'server.log').read_text(encoding='utf-8', errors='replace')[-1500:])
@@ -142,8 +149,14 @@ def run(working=False, sabotaged=False, fake=False, keep=False, pytest_args=(), 
             sabotage(copy)
         if fake:
             fake_route(copy)
-        port = free_port()
-        proc = start_server(copy, port)
+        for attempt in range(3):   # the port can be taken between picking and binding (another run at once)
+            port = free_port()
+            try:
+                proc = start_server(copy, port)
+                break
+            except SystemExit:
+                if attempt == 2:
+                    raise
         url = f'http://127.0.0.1:{port}'
         if serve:
             say(f'the copy is on {url}  (folder {copy}); press Enter or Ctrl+C to stop and delete it')
