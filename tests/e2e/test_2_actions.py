@@ -237,6 +237,19 @@ def test_remix_queues_a_dry_run(page, watch):
     quiet(page)
 
 
+def test_redo_fix_the_body(page, watch):
+    """Redo, fix the body (27 Nov 2026): only on a turned-down image; one click queues the same prompt again."""
+    go(page, f'/b/{B1}/quiet-meadow-1')   # thumbs up: no Redo
+    page.wait_for_selector('dialog[open]')
+    assert page.locator('dialog.viewer .actions button:has-text("Redo, fix the body")').count() == 0
+    go(page, f'/b/{B1}/quiet-meadow-2')   # saved thumbs down, why "too busy"
+    page.wait_for_selector('dialog[open]')
+    page.click('dialog.viewer .actions button:has-text("Redo, fix the body")')
+    wait_until(lambda: any('Redo of quiet-meadow-2' in t for t in queued_titles(page)), 'the redo to be queued')
+    watch.assert_clean('redo')
+    quiet(page)
+
+
 def test_pause_resume_and_stop(page, watch):
     for i in range(5):
         status, body = post(page, 'run', {'kind': 'batch', 'styles': ['quiet-meadow'], 'n': 4, 'ratio': 'mixed', 'model': 'codex', 'name': f'pause-{i}'})

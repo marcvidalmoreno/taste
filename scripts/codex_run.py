@@ -359,6 +359,8 @@ def flux_people(a, prompt, refs, style_only):
     wish = (a.subject or '').strip()
     if seed and a.mode == 'variations' and a.change == 'subject' and BODY_PART.search(wish):
         return FLUX_FIX.format(wish), 'person: body fix sent as an edit that may re-pose (FLUX_FIX)'
+    if 'Anatomy:' in prompt:   # a Redo already carries the line (app.py spec_redo)
+        return _drop_people_avoid(prompt), 'person: people dropped from Avoid (anatomy line already there)'
     return _drop_people_avoid(prompt) + FLUX_ANATOMY, 'person: anatomy line added, people dropped from Avoid'
 
 

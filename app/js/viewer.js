@@ -8,7 +8,8 @@ import { openStyleEdit } from './styleedit.js';
 import { similarRow } from './similar.js';
 import { historySection } from './history.js';
 import { modelName, modelTag } from './cost.js';
-import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
+import { enqueueRun } from './job.js';
+import { h, imgUrl, thumbUrl, batchHref, batchTitle, shortDate, RATING_LABELS, ratingForKey, markBadge, isTyping, toast, showError, downloadLink, fullscreenButton, toggleFullscreen } from './ui.js';
 
 // What each variation type keeps and changes (scripts/variations.py).
 const CHANGES = {
@@ -178,6 +179,8 @@ function actions(im) {
     keepButton(im, () => keepOf(im)),
     publishButton(im, () => publishOf(im)),
     h('button', { class: 'secondary outline', onClick: () => remixOf(im), title: 'More images from this one, in its style: pick what changes, how close, how many' }, 'Remix… ', h('kbd', {}, 'R')),
+    isDown(im) && h('button', { class: 'secondary outline', onClick: (e) => redoOf(im, e.currentTarget),
+      title: 'Make this image again with the same prompt and a new random start, plus a line asking for a natural body; your why says what to fix' }, 'Redo, fix the body'),
     im.style && h('button', { class: 'secondary outline', onClick: () => styleOf(im), title: 'Say what should change in this style; it applies to the next images' }, 'Change the style… ', h('kbd', {}, 'E')),
     h('button', { class: 'secondary outline', onClick: () => noteOn(im), title: 'Feedback for Claude: on this image or its style' }, 'Note for Claude… ', h('kbd', {}, 'C')),
     !im.draft?.rating && h('button', { class: 'secondary outline', onClick: () => ignoreAndMove(im.name) },
@@ -188,6 +191,22 @@ const keepOf = (im) => setKept(im, store.data.batch, !im.kept).then(() => drawPa
 // changed() redraws this panel and the grid tile underneath.
 const publishOf = (im) => setPublished(im, store.data.batch, !im.published).then(() => changed(im.name, 'publish')).catch(() => {});
 const remixOf = (im) => openRemix({ batch: store.data.batch, file: im.file, label: `#${im.number}`, style: im.style, prompt: im.prompt });
+// Redo, fix the body (27 Nov 2026): only on a turned-down image, where a broken body is the usual reason.
+const isDown = (im) => ['no', 'almost'].includes(im.saved?.rating || im.draft?.rating);
+async function redoOf(im, btn) {
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    await flushWhy();
+    const res = await enqueueRun({ kind: 'redo', batch: store.data.batch, file: im.file, why: im.draft?.why || im.saved?.why || '' });
+    toast(res.position <= 1 ? `Making #${im.number} again, body fixed` : `Redo of #${im.number} queued, number ${res.position}`);
+  } catch (err) {
+    showError(err);
+  } finally {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+  }
+}
 const styleOf = (im) => im.style && openStyleEdit({ style: im.style, batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}` });
 const noteOn = (im) => openNote({ batch: store.data.batch, name: im.name, file: im.file, label: `#${im.number}`, style: im.style });
 

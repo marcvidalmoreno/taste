@@ -1391,6 +1391,35 @@ def spec_retry(body):
             'styles': [row['style']] if row['style'] else [], 'n': 1, 'expected': [name]}
 
 
+# Redo, fix the body (27 Nov 2026): in erotic line about half the turned-down images were turned down for the body
+# (bent arms, merged legs). One click makes the image again: same prompt and model, a new random start, no
+# reference (FLUX copied a flawed seed's anatomy), plus an anatomy line and Marc's own reason as the fix.
+from codex_run import FLUX_ANATOMY as _ANATOMY  # noqa: E402
+REDO_ANATOMY = _ANATOMY.strip()
+
+
+def spec_redo(body):
+    """Make a turned-down image again with the body fixed: {batch, file, why}. why: the page's reason (it may not
+    be saved yet), else the saved one. A new batch '<image>-redo', so the old image and its mark stay as they are."""
+    src = source_image(str(body.get('batch', '')), str(body.get('file', '')))
+    run = rate.batch_runs(src.parent.name).get(src.stem) or {}
+    prompt = (run.get('prompt') or '').strip()
+    if not prompt:
+        raise ApiError(404, f'no prompt saved for "{src.stem}", so it cannot be made again (use Remix)')
+    why = clean(body.get('why'), 200) or (saved_ratings().get((src.parent.name, src.stem)) or {}).get('why', '')
+    fix = f' Body fix (the last try got this wrong: {why.rstrip(".")}).' if why else ''
+    prompt = prompt.rstrip() + fix + ' ' + REDO_ANATOMY
+    model = model_of(run) if model_of(run) in MODELS and model_of(run) != 'local' else None
+    _, batch = free_slug(f'{src.stem}-redo', flux_end({**body, 'model': body.get('model') or model}))
+    style = run.get('style', '')
+    job = {'name': 'redo-1', 'prompt': prompt, 'style': style, 'mode': 'remix',
+           'change': 'redo: fix the body' + (f': {why}' if why else ''), 'ref': ''}
+    return {'kind': 'remix', 'title': f'Redo of {src.stem}: fix the body', 'batch': batch, 'jobs': [job],
+            'source': {'batch': src.parent.name, 'file': src.name}, 'change': 'redo: fix the body',
+            'styles': [style] if style else [], 'n': 1, 'expected': ['redo-1'],
+            'model': model}
+
+
 def spec_finish(body):
     """Make the images a stopped batch never made, with its own subjects, seed and kept examples: {batch}."""
     batch = str(body.get('batch', ''))
@@ -2541,13 +2570,13 @@ class Handler(BaseHTTPRequestHandler):
         return remix_palettes(batch, file, style)
 
     def post_run(self, body=None):
-        """Queue one run. kind: batch | single | remix | retry | finish | resume | variations (see the spec_* helpers)."""
+        """Queue one run. kind: batch | single | remix | redo | retry | finish | resume | variations (see the spec_* helpers)."""
         body = body or self.read_body()
         models = [m for m in dict.fromkeys(body.get('models') or []) if m in MODELS]
         if body.get('kind') in ('batch', 'single') and len(models) > 1:
             return self.post_runs(body, models)
         make = {'batch': spec_batch, 'single': spec_single, 'remix': spec_remix, 'retry': spec_retry,
-                'finish': spec_finish, 'resume': spec_resume, 'variations': spec_variations}.get(body.get('kind'))
+                'finish': spec_finish, 'resume': spec_resume, 'variations': spec_variations, 'redo': spec_redo}.get(body.get('kind'))
         if not make:
             raise ApiError(400, f'unknown kind "{body.get("kind")}"')
         with _QLOCK:
