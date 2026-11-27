@@ -2,6 +2,7 @@
 TASTE_E2E_COPY (the copy's folder). Tests never touch anything outside that folder."""
 import csv, json, os, re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 
@@ -10,6 +11,17 @@ COPY = Path(os.environ.get('TASTE_E2E_COPY', '.'))
 BASE = COPY / 'generated' / 'codex'
 B1, B2, B3, B4 = ('2026-01-01-quiet-meadow', '2026-01-02-paper-lanterns-flux', '2026-01-03-tin-harbour-klein', '2026-01-04-old-test-style')
 BAD_TEXT = ('undefined', 'NaN', '[object Object]')
+OUT = Path(os.environ['TASTE_E2E_OUT']) if os.environ.get('TASTE_E2E_OUT') else None
+
+# Write requests the tests sent (27 Nov 2026): 'POST api/keep' -> first test that sent it. test_9_coverage.py checks
+# them against tests/e2e/coverage.json; e2e.py's run folder gets hits.json.
+HITS, CURRENT = {}, ['']
+
+
+def hit(method, url):
+    path = urlparse(url).path.strip('/')
+    if method != 'GET' and path.startswith('api/'):
+        HITS.setdefault(f'{method} {path}', CURRENT[0])
 
 
 @pytest.fixture(scope='session')
@@ -27,6 +39,7 @@ class Watch:
     """What went wrong on the page: console errors, uncaught errors, failed or refused /api and image requests."""
     def __init__(self, page):
         self.problems = []
+        page.on('request', lambda r: hit(r.method, r.url))
         page.on('console', lambda m: self.problems.append(f'console {m.type}: {m.text}') if m.type == 'error' and 'favicon' not in m.text and 'Failed to load resource' not in m.text else None)
         page.on('pageerror', lambda e: self.problems.append(f'uncaught: {e}'))
         page.on('requestfailed', lambda r: self.problems.append(f'request failed: {r.url}') if '/api/' in r.url or '/img/' in r.url or '/thumb/' in r.url else None)
@@ -53,6 +66,7 @@ def api(page, path):
 
 
 def post(page, path, body):
+    hit('POST', f'{URL}/api/{path}')
     r = page.request.post(f'{URL}/api/{path}', data=json.dumps(body), headers={'Content-Type': 'application/json', 'X-Taste-App': '1'})
     return r.status, (r.json() if r.ok else r.text())
 
@@ -95,3 +109,13 @@ def pytest_runtest_makereport(item, call):
 def _skip_when_the_page_does_not_load(request):
     if SMOKE_FAILED and not request.module.__name__.endswith('test_0_smoke') and request.node.name != 'test_every_route_has_a_test':
         pytest.skip('the app does not load (see test_the_app_loads)')
+
+
+@pytest.fixture(autouse=True)
+def _name_the_test(request):
+    CURRENT[0] = request.node.originalname or request.node.name
+
+
+def pytest_sessionfinish(session):
+    if OUT and OUT.is_dir():
+        (OUT / 'hits.json').write_text(json.dumps(HITS, indent=1, sort_keys=True), encoding='utf-8')

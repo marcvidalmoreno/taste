@@ -61,3 +61,4 @@ A change to the web app that adds, removes or renames something Marc can see or 
 Guide (`app/guide.html`, its section and "Last updated" date) in the same commit (Marc, 21 Nov 2026).
 `app/about.html` holds the why, not features.
 Run `.venv/Scripts/python -I scripts/e2e.py --working` (about 2 min, fake data, nothing real touched) before committing a change to `app/` or `scripts/`; the check also runs after each commit, and a failing result is printed when a session starts: fix it first.
+A change that adds or changes something Marc can do in the app adds or updates its test in `tests/e2e/` in the same commit, and names it in `tests/e2e/coverage.json`; the pre-commit coverage guard blocks a write route or page with no entry (Marc, 27 Nov 2026).

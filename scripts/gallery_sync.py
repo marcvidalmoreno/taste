@@ -2,7 +2,8 @@
 
   .venv/Scripts/python -I scripts/gallery_sync.py                 # sync now (the app calls this ~5 min after the last Publish toggle)
   .venv/Scripts/python -I scripts/gallery_sync.py --hook <repo>   # from a post-commit hook: sync only after a major commit
-  .venv/Scripts/python -I scripts/gallery_sync.py --install-hooks # (re)install the post-commit hooks in taste and taste/
+  .venv/Scripts/python -I scripts/gallery_sync.py --install-hooks # (re)install the post-commit hooks in taste and taste/, and the
+                                                                   # pre-commit coverage guard in taste (scripts/coverage_guard.py)
                                                                    # (they also start the regression check, scripts/e2e.py --hook)
 
 Major commit: touches styles or taste.json in the private repo taste/, or the README (its changelog feeds the site)
@@ -32,6 +33,14 @@ ROOT="{root}"
 nohup "$ROOT/.venv/Scripts/python.exe" -I "$ROOT/scripts/gallery_sync.py" --hook "$(git rev-parse --show-toplevel)" >/dev/null 2>&1 &
 nohup "$ROOT/.venv/Scripts/python.exe" -I "$ROOT/scripts/e2e.py" --hook "$(git rev-parse --show-toplevel)" >/dev/null 2>&1 </dev/null &
 exit 0
+"""
+PRE_HOOK = """#!/bin/sh
+# Installed by scripts/gallery_sync.py --install-hooks (27 Nov 2026): the coverage guard (scripts/coverage_guard.py).
+# Only for commits touching app/, scripts/ or tests/; takes a second. It stops a commit that adds a write action or a
+# page the regression check does not test. Skip it once with `git commit --no-verify`.
+ROOT="{root}"
+git diff --cached --name-only | grep -qE '^(app|scripts|tests)/' || exit 0
+exec "$ROOT/.venv/Scripts/python.exe" -I "$ROOT/scripts/coverage_guard.py" --staged
 """
 
 
@@ -116,6 +125,14 @@ def install_hooks():
         target.write_text(HOOK.format(root=ROOT.as_posix()), encoding='utf-8', newline='\n')
         os.chmod(target, 0o755)
         print('installed', target)
+    target = Path(git(ROOT, 'rev-parse', '--git-path', 'hooks'))
+    target = (target if target.is_absolute() else ROOT / target) / 'pre-commit'
+    if target.exists() and 'coverage_guard.py' not in target.read_text(encoding='utf-8', errors='replace'):
+        print(f'{target} exists and is not ours; left alone')
+        return
+    target.write_text(PRE_HOOK.format(root=ROOT.as_posix()), encoding='utf-8', newline='\n')
+    os.chmod(target, 0o755)
+    print('installed', target)
 
 
 def main():
