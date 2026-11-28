@@ -317,6 +317,9 @@ export function pauseButton() {
     onClick: () => pauseRun(!!job.pausing) }, job.pausing ? 'Pause now' : 'Pause');
 }
 
+// The subject writer (28 Nov 2026) writes a queued New batch's subjects while another run draws.
+const SUBJECTS = { writing: ' · writing subjects…', ready: ' · subjects ready' };
+
 export function queueList(queue) {
   const paused = job.hold?.paused;
   return h('section', { class: 'queue' },
@@ -325,7 +328,7 @@ export function queueList(queue) {
       job.hold.auto ? 'Nothing starts until the script compiles again; then the queue goes on by itself.'
         : h('button', { class: 'ghost small', onClick: resumeQueue }, paused ? 'Resume' : 'Continue')),
     h('ol', {}, queue.map((q, i) => h('li', { 'data-id': q.id },
-      h('span', {}, h('strong', {}, q.title), ' ', h('span', { class: 'muted small' }, `${KIND[q.kind]?.label || q.kind} · ${noun(q.kind, q.expected.length)}`)),
+      h('span', {}, h('strong', {}, q.title), ' ', h('span', { class: 'muted small' }, `${KIND[q.kind]?.label || q.kind} · ${noun(q.kind, q.expected.length)}${SUBJECTS[q.subjects_state] || ''}`)),
       h('span', { class: 'queue-actions' },
         queue.length > 1 && h('button', { class: 'ghost small', 'data-move': 'up', disabled: i === 0, title: 'Move up',
           onClick: () => moveQueued(q.id, -1), 'aria-label': `Move ${q.title} up` }, '↑'),

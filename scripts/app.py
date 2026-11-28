@@ -374,6 +374,9 @@ RECENT = []               # the last finished app runs, newest last: the page re
 HOLD = {}                 # the queue is on hold: {'reason', 'since', 'auto'} (23 Nov 2026), see broken_scripts()
 _QLOCK = threading.Lock()
 SHARED_SUBJECTS = {}      # share id -> {style: [subjects]}: one New batch made with several models (post_runs)
+PREP = {'id': None, 'done': threading.Event(), 'failed': set()}   # subject writer (28 Nov 2026), see subject_writer()
+PREP['done'].set()
+_PREP_WAKE = threading.Event()
 _WAKE = threading.Event()
 RESTART = 3                   # exit code: "start me again", for the supervisor (scripts/ changed, 23 Nov 2026)
 BORN = [0.0]               # code_stamp() when this server started (set in main): a newer page may call a route it lacks
@@ -677,7 +680,10 @@ def save_queue():
 
 def public(spec):
     keys = ('id', 'kind', 'title', 'batch', 'expected', 'created', 'source', 'styles', 'n')
-    return {k: spec.get(k) for k in keys}
+    out = {k: spec.get(k) for k in keys}
+    if spec.get('kind') == 'batch':   # the queue list says it: "writing subjects…" / "subjects ready"
+        out['subjects_state'] = 'writing' if PREP['id'] == spec.get('id') else             'ready' if not subjects_missing(spec) else ''
+    return out
 
 
 def enqueue(spec):
@@ -688,7 +694,83 @@ def enqueue(spec):
         save_queue()
         pos = len(QUEUE) + (1 if CUR.get('running') or (not DRY_RUN and (chat_run() or {}).get('running')) else 0)
     _WAKE.set()
+    _PREP_WAKE.set()
     return {**job_state(), 'queued_id': spec['id'], 'position': pos}
+
+
+# -- subject writer (28 Nov 2026): a New batch's subjects (Codex or the local model, ~15 s a style) used to be written
+# inside the run, so nothing was drawn meanwhile and the queue waited. This thread writes them for the queued batches
+# while another run is drawing; the subjects go into the queued spec (and app-queue.json, so a restart keeps them),
+# and launch() finds them there. It only works ahead while something draws: with nothing running the run starts at
+# once and writes its own. Paused, on hold or restarting: it waits too, so nothing is spent on runs that may never go.
+
+def subjects_missing(spec):
+    """The first style of a queued New batch that still lacks subjects (none written ahead or shared), else None."""
+    if spec.get('kind') != 'batch':
+        return None
+    for st in spec.get('styles') or []:
+        have = [x for x in (spec.get('subjects') or {}).get(st, []) if str(x).strip()]
+        shared = SHARED_SUBJECTS.get(spec.get('share') or '', {}).get(st, [])
+        if len(have) < spec.get('n', 0) and len(shared) < spec.get('n', 0):
+            return st
+    return None
+
+
+def _next_to_prep():
+    """(spec, style) to write next, or (None, None). Call with _QLOCK held."""
+    if RESTARTING.is_set() or HOLD or not (CUR.get('running') or (not DRY_RUN and (chat_run() or {}).get('running'))):
+        return None, None
+    local = local_only()
+    for spec in QUEUE:
+        if spec['id'] in PREP['failed'] or (local and spec.get('route') != 'local'):
+            continue
+        st = subjects_missing(spec)
+        if st:
+            return spec, st
+    return None, None
+
+
+def subject_writer():
+    while True:
+        _PREP_WAKE.wait(5)
+        _PREP_WAKE.clear()
+        with _QLOCK:
+            spec, st = _next_to_prep()
+            if not spec:
+                continue
+            PREP['id'] = spec['id']
+            PREP['done'].clear()
+            n = spec['n'] - len([x for x in (spec.get('subjects') or {}).get(st, []) if str(x).strip()])
+            args = ('subjects', '--style', st, '--n', str(n), '--hint', (spec.get('hints') or {}).get(st, ''),
+                    *(['--wild'] if spec.get('experimental') else []))
+        try:
+            got = text_job(*args)['subjects']
+        except Exception:  # noqa: BLE001  (the run writes them itself, as before, and reports the reason)
+            got = None
+        with _QLOCK:
+            if got is None:
+                PREP['failed'].add(spec['id'])
+            else:
+                for other in [spec] + [q for q in QUEUE if spec.get('share') and q.get('share') == spec['share'] and q is not spec]:
+                    have = [x for x in (other.setdefault('subjects', {})).get(st, []) if str(x).strip()]
+                    if len(have) < other['n']:   # the same subjects for every model of one New batch
+                        other['subjects'][st] = (have + got)[:other['n']]
+                if any(q is spec for q in QUEUE):
+                    save_queue()
+            PREP['id'] = None
+            PREP['done'].set()
+        _PREP_WAKE.set()   # the next style or batch at once
+
+
+def wait_for_subject_writer(spec, say):
+    """A run that starts while the writer is on its subjects waits for it rather than paying for them twice."""
+    if PREP['id'] != spec['id']:
+        return
+    CUR['phase'] = f'{"The local model" if local_only() else "Codex"} is writing subjects'
+    say('subjects were being written ahead: waiting for them')
+    while not PREP['done'].wait(1):
+        if CUR.get('cancel'):
+            raise RuntimeError('stopped before the first image')
 
 
 # The queue holds instead of failing every run in turn (23 Nov 2026): a script that doesn't compile (a session
@@ -767,6 +849,7 @@ def worker():
             CUR.update(spec, running=True, phase='Starting', started=time.time(), finished=None, returncode=None,
                        log=[], stopped=False, cancel=False, dry_run=DRY_RUN, error=None, pausing=False, paused=False)
             RUN_SPEC['spec'] = spec
+        _PREP_WAKE.set()   # something draws now: the subject writer can work ahead
         try:
             launch(spec)
         except Exception as e:  # report it on the page; the queue goes on
@@ -793,6 +876,7 @@ def launch(spec):
             shutil.copy2(original, folder / f'seed{original.suffix.lower()}')
     say = lambda line: CUR.__setitem__('log', CUR['log'] + [f'{time.strftime("%H:%M:%S")}  {line}'])  # noqa: E731
     if spec['kind'] == 'batch':
+        wait_for_subject_writer(spec, say)
         subjects = {}
         for st in spec['styles']:
             have = [s for s in spec['subjects'].get(st, []) if s.strip()][:spec['n']]
@@ -3331,6 +3415,7 @@ def main():
     if PAUSE_FILE.is_file() and QUEUE:   # paused before the restart: stays paused until Resume
         hold_paused()
     threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=subject_writer, daemon=True).start()
     threading.Thread(target=maybe_auto_distil, daemon=True).start()
     threading.Thread(target=restart_when_idle, args=(httpd, state_file), daemon=True).start()
     url = f'http://127.0.0.1:{port}/'

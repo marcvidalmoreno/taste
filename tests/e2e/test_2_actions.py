@@ -265,6 +265,20 @@ def test_redo_fix_the_body(page, watch):
     quiet(page)
 
 
+def test_subjects_written_ahead_while_a_run_draws(page, watch):
+    """Subject writer (28 Nov 2026): a queued New batch gets its subjects while another run is drawing."""
+    for i in range(3):
+        status, body = post(page, 'run', {'kind': 'batch', 'styles': ['quiet-meadow'], 'n': 4, 'ratio': 'mixed', 'model': 'codex', 'name': f'ahead-{i}'})
+        assert status == 200, body
+    go(page, '/')
+    wait_until(lambda: api(page, 'job').get('running') and any(q.get('subjects_state') == 'ready' for q in api(page, 'job')['queue']),
+               'a queued batch with its subjects ready while a run draws', timeout=40)
+    page.click('#job-chip button.chip-log')
+    page.wait_for_selector('dialog[open] .queue li:has-text("subjects ready")', timeout=10000)
+    watch.assert_clean('subjects ahead')
+    quiet(page)
+
+
 def test_pause_resume_and_stop(page, watch):
     for i in range(5):
         status, body = post(page, 'run', {'kind': 'batch', 'styles': ['quiet-meadow'], 'n': 4, 'ratio': 'mixed', 'model': 'codex', 'name': f'pause-{i}'})
