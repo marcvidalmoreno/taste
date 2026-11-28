@@ -30,3 +30,10 @@ generated/
 
 # Styles, taste.json, Gem instructions: private repo marcvidalmoreno/taste-private, cloned here as taste/ (Marc, 23 Nov 2026)
 taste/
+
+# UX audit: chat <-> code mailbox (working chatter) and local tools (Marc, 28 Nov 2026)
+ux-audit/handoff/
+ux-audit/.tools/
+# Full screenshots and raw measurements stay local (16 MB, rerun recreates them); findings, report and top5 are committed
+ux-audit/screens/
+ux-audit/raw/
